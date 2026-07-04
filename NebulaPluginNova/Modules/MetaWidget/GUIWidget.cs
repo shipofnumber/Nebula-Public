@@ -270,6 +270,23 @@ public class NoSGameObjectGUIWrapper : AbstractGUIWidget
     }
 }
 
+public class GUISizeFixer : AbstractGUIWidget
+{
+    private Size size;
+    private Virial.Media.GUIWidget inner;
+    public GUISizeFixer(Virial.Media.GUIWidget inner, Size size) : base(inner.Alignment)
+    {
+        this.size = size;
+        this.inner = inner;
+    }
+
+    internal override GameObject? Instantiate(Size size, out Size actualSize)
+    {
+        actualSize = this.size;
+        return inner.Instantiate(size, out _);
+    }
+}
+
 public class LazyGUIWidget : AbstractGUIWidget
 {
     private GUIWidgetSupplier supprier;
@@ -495,6 +512,7 @@ public class NebulaGUIWidgetEngine : Virial.Media.GUI
     public Virial.Media.GUIWidget Masked(Virial.Media.GUIWidget inner) => new GUIMasking(inner);
     public Virial.Media.GUIWidget ButtonGrouped(Virial.Media.GUIWidget inner) => new GUIButtonGroup(inner);
     public Virial.Media.GUIWidget Logic(Virial.Media.GUIWidget inner, Action<GameObject, Size> logic) => new LogicGUIWidget(inner, logic);
+    public Virial.Media.GUIWidget FixSize(Virial.Media.GUIWidget inner, Size size) => new GUISizeFixer(inner, size);
     public void MarkAsCenter(GameObject obj, Size size) => ScrollViewInitializer.Adjust(obj, size);
 
     public void OpenAssignableFilterWindow<R>(string scrollerTag, IEnumerable<R> allRoles, Func<R, bool> test, Action<R> toggleAndShare) where R : DefinedAssignable

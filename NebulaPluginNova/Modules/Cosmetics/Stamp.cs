@@ -132,7 +132,7 @@ public static class StampHelpers
                 }
                 if (stamp != null) NebulaManager.Instance.StartCoroutine(CoUpdate().WrapToIl2Cpp());
             }
-        };
+        }.FixSize(new Virial.Compat.Size(size, size));
     }
 
     public static void TryShowStampRingMenu(Func<bool> showWhile)

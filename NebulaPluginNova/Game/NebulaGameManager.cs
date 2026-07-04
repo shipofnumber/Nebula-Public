@@ -298,6 +298,10 @@ internal class NebulaGameManager : AbstractModuleContainer, IRuntimePropertyHold
 
     //各種進行状況
     public NebulaGameStates GameState { get; private set; } = NebulaGameStates.NotStarted;
+    internal void SetAsStarted()
+    {
+        if (GameState <= NebulaGameStates.NotStarted) GameState = NebulaGameStates.Initialized;
+    }
     public EndState? EndState { get; set; } = null;
 
     //ゲーム内アセット

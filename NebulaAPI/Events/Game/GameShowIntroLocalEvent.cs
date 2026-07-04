@@ -20,7 +20,7 @@ public class GameShowIntroLocalEvent: Event
     private HashSet<byte> additionalPlayers = [];
     private HashSet<byte> removedPlayers = [];
     internal bool ShouldShowAdditionally(byte playerId) => additionalPlayers.Contains(playerId);
-    internal bool ShouldNotShow(byte playerId) => additionalPlayers.Contains(playerId);
+    internal bool ShouldNotShow(byte playerId) => removedPlayers.Contains(playerId);
     public void SetTeam(RoleTeam team, bool resetAdditionalPlayers = true)
     {
         TeamName = team.DisplayName;

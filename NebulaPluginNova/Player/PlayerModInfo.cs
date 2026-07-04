@@ -619,7 +619,11 @@ internal class PlayerModInfo : AbstractModuleContainer, IRuntimePropertyHolder, 
         else
             DestroyableSingleton<RoleManager>.Instance.SetRole(MyControl, RoleTypes.Crewmate);
 
-        if (isDead) MyControl.Die(DeathReason.Kill, false);
+        if (isDead)
+        {
+            MyControl.Die(DeathReason.Kill, false);
+            IsDead = true;
+        }
 
         myRole = role.CreateInstance(this, arguments);        
         if (NebulaGameManager.Instance?.GameState == NebulaGameStates.Initialized) myRole.ActivateAssignable();

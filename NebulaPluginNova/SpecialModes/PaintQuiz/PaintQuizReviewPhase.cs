@@ -74,7 +74,7 @@ internal class PaintQuizReviewPhase
         {
             waitScoringObj = new NoSGUIText(GUIAlignment.Center,
                 GUI.API.GetAttribute(AttributeAsset.OverlayContent),
-                new RawTextComponent($"{Language.Translate("paintQuiz.ui.waitScoring")}：{answerText}")).Instantiate(new(9f, 0.4f), out _);
+                new RawTextComponent(Language.Translate("paintQuiz.ui.waitScoring"))).Instantiate(new(9f, 0.4f), out _);
             if (waitScoringObj != null)
             {
                 waitScoringObj.AddComponent<SortingGroup>();
@@ -413,7 +413,7 @@ internal class PaintQuizReviewPhase
                 if (stamp != null)
                 {
                     cell.StampHolder.SetActive(true);
-                    var stampWidget = stamp.GetStampWidget(null, hostPlayer.PlayerId, GUIAlignment.Center, false, 0.4f);
+                    var stampWidget = stamp.GetStampWidget(null, hostPlayer.PlayerId, GUIAlignment.Center, false, 1.25f);
                     var stampObj = stampWidget.Instantiate(new(10f, 10f), out _);
                     if (stampObj.AsBoolFast())
                     {
@@ -433,7 +433,7 @@ internal class PaintQuizReviewPhase
     // 中央でブロップ → 左上角へ滑らかに移動しながら縮小
     private IEnumerator CoAnimateStamp(List<(Transform holder, Transform stamp)> stamps, float drawW, float drawH)
     {
-        foreach (var stamp in stamps) Effects.Bloop(0.1f, stamp.stamp).StartOnScene();
+        foreach (var stamp in stamps) Effects.Bloop(0.1f, stamp.holder).StartOnScene();
         yield return Effects.Wait(1.3f);
 
         VVector3 startPos = new(0f,0f,-0.2f);

@@ -23,6 +23,8 @@ internal static class SpecialModeFunctions
         buttonHolder.SetActive(false);
 
         NebulaAPI.CurrentGame?.GetModule<Synchronizer>()?.SendSync(SynchronizeTag.PreStartGame);
+
+        NebulaGameManager.Instance?.SetAsStarted();
     }
 
     static private void SetUpPlayers()

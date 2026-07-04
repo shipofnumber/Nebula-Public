@@ -24,7 +24,7 @@ internal static class PaintQuizStampConfig
     public static string GetStampId(byte grade)
     {
         if (grade < 1 || grade > 4) return "";
-        var table = _sessionStampIds ?? GradeStamps.Value;
+        var table = GradeStamps.Value;
         int idx = grade - 1;
         return idx < table.Length ? table[idx] : "";
     }

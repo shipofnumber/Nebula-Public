@@ -467,6 +467,7 @@ public interface GUI
     GUIWidget Masked(Virial.Media.GUIWidget inner);
     GUIWidget ButtonGrouped(Virial.Media.GUIWidget inner);
     internal GUIWidget Logic(Virial.Media.GUIWidget inner, Action<GameObject, Size> logic);
+    internal GUIWidget FixSize(Virial.Media.GUIWidget inner, Size size);
     internal void MarkAsCenter(GameObject obj, Size size);
 
     internal void OpenAssignableFilterWindow<R>(string scrollerTag, IEnumerable<R> allRoles, Func<R, bool> test, Action<R> toggleAndShare) where R : DefinedAssignable;
@@ -506,6 +507,7 @@ public interface GUI
 
 public static class GUIWidgetHelpers
 {
+    public static GUIWidget FixSize(this GUIWidget inner, Virial.Compat.Size size) => NebulaAPI.GUI.FixSize(inner, size);
     public static GUIWidget Enmask(this GUIWidget inner) => NebulaAPI.GUI.Masked(inner);
     public static GUIWidget AsButtonGroup(this GUIWidget inner) => NebulaAPI.GUI.ButtonGrouped(inner);
     public static GUIWidget WithLogic(this GUIWidget inner, Action<GameObject, Size> logic) => NebulaAPI.GUI.Logic(inner, logic);

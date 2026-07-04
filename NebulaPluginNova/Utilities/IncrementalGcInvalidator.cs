@@ -5,6 +5,7 @@ namespace Nebula.Utilities;
 
 internal static class IncrementalGcInvalidator
 {
+    static readonly bool Is64Bit = Environment.Is64BitProcess;
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern nint GetModuleHandleW(string? lpModuleName);
@@ -12,7 +13,13 @@ internal static class IncrementalGcInvalidator
     static extern nint GetProcAddress(nint hModule, string procName);
 
     [DllImport("GameAssembly", EntryPoint = "il2cpp_gc_is_incremental", CallingConvention = CallingConvention.Cdecl)]
-    static extern bool IsIncremental();
+    static extern bool IsIncrementalNative();
+
+    public static bool IsIncrementalGcActive()
+    {
+        try { return IsIncrementalNative(); }
+        catch { return false; }
+    }
 
     static unsafe nint ResolveJmpThunk(nint addr, int maxHops = 5)
     {
@@ -37,20 +44,29 @@ internal static class IncrementalGcInvalidator
         return 0;
     }
 
-    static unsafe nint FindMovEaxDisp32(nint funcAddr, int scanBytes)
+    static unsafe nint FindGlobalReadTarget(nint funcAddr, int scanBytes)
     {
         byte* p = (byte*)funcAddr;
-        for (int i = 0; i < scanBytes - 5; i++)
+        for (int i = 0; i < scanBytes - 6; i++)
         {
-            if (p[i] == 0xA1)
-                return (nint)(*(int*)(p + i + 1));
             if (p[i] == 0x8B && p[i + 1] == 0x05)
-                return (nint)(*(int*)(p + i + 2));
+            {
+                int disp = *(int*)(p + i + 2);
+                if (Is64Bit)
+                {
+                    nint nextInstrAddr = funcAddr + i + 6; // 8B 05 <disp32> で命令長6バイト
+                    return nextInstrAddr + disp;
+                }
+                return (nint)disp;
+            }
+            if (!Is64Bit && p[i] == 0xA1)
+            {
+                return (nint)(*(int*)(p + i + 1));
+            }
         }
         return 0;
     }
 
-    // is_incrementalフラグの実アドレスを返します
     static unsafe nint DiscoverFlagAddress()
     {
         nint hGameAssembly = GetModuleHandleW("GameAssembly.dll");
@@ -61,16 +77,16 @@ internal static class IncrementalGcInvalidator
 
         nint realFunc = ResolveJmpThunk(exportAddr);
 
-        // export解決先: mov eax,[disp32]
-        nint found = FindMovEaxDisp32(realFunc, 24);
+        // export解決先に直接グローバル読み出しがある
+        nint found = FindGlobalReadTarget(realFunc, 24);
         if (found != 0) return found;
 
-        // call先を1回辿る
+        // 最初のcall先
         nint callTarget = FindFirstCallTarget(realFunc, 24);
         if (callTarget != 0)
         {
             callTarget = ResolveJmpThunk(callTarget);
-            found = FindMovEaxDisp32(callTarget, 24);
+            found = FindGlobalReadTarget(callTarget, 24);
             if (found != 0) return found;
         }
         return 0;
@@ -79,28 +95,27 @@ internal static class IncrementalGcInvalidator
     public static unsafe bool TryDisable()
     {
         nint flagAddr = DiscoverFlagAddress();
-        if (flagAddr == 0) return false;
+        if (flagAddr == 0)
+            return false;
 
         bool apiSaysIncremental;
-        try 
-        { 
-            apiSaysIncremental = IsIncremental(); 
-        }
-        catch (Exception ex)
-        {
-            return false;
-        }
+        try { apiSaysIncremental = IsIncrementalNative(); }
+        catch (Exception ex) { return false; }
 
         int* p = (int*)flagAddr;
         int before = *p;
         bool memSaysIncremental = before != 0;
 
-        // 指し示す値に違いがある
-        if (memSaysIncremental != apiSaysIncremental) return false;
+        // 発見したアドレスの戻り値がAPIの戻り値と食い違う
+        if (memSaysIncremental != apiSaysIncremental)
+            return false;
+
+        if (!apiSaysIncremental)
+            return true;
 
         *p = 0;
         int after = *p;
-        bool validated = !IsIncremental();
+        bool validated = !IsIncrementalNative();
         return true;
     }
 }

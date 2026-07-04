@@ -431,7 +431,7 @@ public static class GeneralConfigurations
                 var currentStamp = PaintQuizStampConfig.GetStamp(grade);
                 GUIWidget preview = currentStamp != null
                     ? currentStamp.GetStampWidget(null, PlayerControl.LocalPlayer?.PlayerId ?? 0, GUIAlignment.Center, true, 0.36f)
-                    : GUI.API.RawText(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.OverlayContent), "未設定");
+                    : GUI.API.RawText(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.SmallWideButtonMasked), "未設定");
 
                 byte capturedGrade = grade;
                 return GUI.API.HorizontalHolder(GUIAlignment.Left,
