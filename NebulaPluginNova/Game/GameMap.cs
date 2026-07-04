@@ -29,7 +29,7 @@ internal class GameMapImpl : GameMap
 
     bool GameMap.AnyWallsBetween(Virial.Compat.Vector2 position1, Virial.Compat.Vector2 position2) => Helpers.AnyNonTriggersBetween(position1, position2, out _);
     bool GameMap.AnyShadowsBetween(Virial.Compat.Vector2 position1, Virial.Compat.Vector2 position2) => Helpers.AnyNonTriggersBetween(position1, position2, out _, Constants.ShadowMask);
-    Virial.Compat.Vector2 GameMap.EmergencyButtonPosition => AmongUsLLImpl.ShipStatusInstance.EmergencyButton.transform.position;
+    Virial.Compat.Vector2 GameMap.EmergencyButtonPosition => AmongUsLLImpl.ShipStatusInstance.EmergencyButton.ModGameObject(false).Position;
 
     float? shipMinLightRadius = null;
     float GameMap.ShipMinLightRadius

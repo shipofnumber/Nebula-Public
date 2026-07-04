@@ -12,7 +12,7 @@ namespace Nebula.Roles.Impostor;
 
 public class BountyHunter : DefinedSingleAbilityRoleTemplate<BountyHunter.Ability>, HasCitation, DefinedRole, IAssignableDocument
 {
-    private BountyHunter() : base("bountyHunter", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [BountyKillCoolDownOption, OthersKillCoolDownOption, ChangeBountyIntervalOption, ShowBountyArrowOption, ArrowUpdateIntervalOption]) { }
+    private BountyHunter() : base("bountyHunter", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [BountyKillCoolDownOption, OthersKillCoolDownOption, ChangeBountyIntervalOption, ShowBountyArrowOption, ArrowUpdateIntervalOption]) { }
     Citation? HasCitation.Citation => Citations.TheOtherRoles;
 
     public override Ability CreateAbility(GamePlayer player, int[] arguments) => new(player, arguments.GetAsBool(0));
@@ -99,9 +99,9 @@ public class BountyHunter : DefinedSingleAbilityRoleTemplate<BountyHunter.Abilit
                 this.BindGameObject(iconHolder.gameObject);
                 bountyIcon = AmongUsUtil.GetPlayerIcon(MyPlayer.Unbox().DefaultOutfit.Outfit.outfit, iconHolder.transform, Vector3.zero, Vector3.one * 0.5f);
                 bountyIcon.ToggleName(true);
-                bountyIcon.SetName("", Vector3.one * 4f, UnityEngine.Color.white, -1f);
+                bountyIcon.SetName("", new(4f, 4f, 4f), VColor.White.ToUnityColor(), -1f);
 
-                if (ShowBountyArrowOption) bountyArrow = new Arrow().SetColor(new(Palette.ImpostorRed)).Register(this);
+                if (ShowBountyArrowOption) bountyArrow = new Arrow().SetColor(VColor.ImpostorColor).Register(this);
 
                 ChangeBounty();
             }
@@ -116,7 +116,7 @@ public class BountyHunter : DefinedSingleAbilityRoleTemplate<BountyHunter.Abilit
         
         void ChangeBounty(GamePlayer? excluded = null)
         {
-            var arr = PlayerControl.AllPlayerControls.GetFastEnumerator().Where(p => !p.AmOwner && p.PlayerId != excluded?.PlayerId && !p.Data.IsDead && MyPlayer.CanKill(p.GetModInfo()!)).ToArray();
+            var arr = GamePlayer.AllPlayers.Where(p => !p.AmOwner && p.PlayerId != excluded?.PlayerId && !p.IsDead && MyPlayer.CanKill(p)).ToArray();
             if (arr.Length == 0) currentBounty = byte.MaxValue;
             else currentBounty = arr[System.Random.Shared.Next(arr.Length)].PlayerId;
 

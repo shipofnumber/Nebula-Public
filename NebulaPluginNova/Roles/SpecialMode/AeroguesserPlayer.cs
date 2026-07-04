@@ -12,7 +12,7 @@ namespace Nebula.Roles.SpecialMode;
 internal class AeroguesserPlayer : DefinedRoleTemplate, DefinedRole
 {
 
-    private AeroguesserPlayer() : base("aeroguesser.player", new(Palette.CrewmateBlue), RoleCategory.CrewmateRole, Crewmate.Crewmate.MyTeam, withOptionHolder: false)
+    private AeroguesserPlayer() : base("aeroguesser.player", VColor.CrewmateColor, RoleCategory.CrewmateRole, Crewmate.Crewmate.MyTeam, withOptionHolder: false)
     {
     }
 

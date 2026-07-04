@@ -19,7 +19,7 @@ namespace Nebula.Roles.Impostor;
 [NebulaRPCHolder]
 public class Raider : DefinedSingleAbilityRoleTemplate<Raider.Ability>, DefinedRole, IAssignableDocument
 {
-    private Raider() : base("raider", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [ThrowCoolDownOption, AxeSizeOption, AxeSpeedOption,CanKillImpostorOption]) {
+    private Raider() : base("raider", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [ThrowCoolDownOption, AxeSizeOption, AxeSpeedOption,CanKillImpostorOption]) {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagFunny, ConfigurationTags.TagDifficult);
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Raider.png");
 
@@ -71,13 +71,13 @@ public class Raider : DefinedSingleAbilityRoleTemplate<Raider.Ability>, DefinedR
         AchievementToken<int>? acTokenChallenge = null;
         HashSet<IPlayerlike> tryKillSet = [];
         private bool fakeLocal = false;
-        
 
-        public RaiderAxe(PlayerControl owner) : base(owner.GetTruePosition(),ZOption.Front,false,staticAxeSprite.GetSprite())
+
+        public RaiderAxe(GamePlayer owner) : base(owner.TruePosition, ZOption.Front, false, staticAxeSprite.GetSprite())
         {
         }
 
-        public RaiderAxe(PlayerControl owner, bool fakeLocal, Vector2? pos = null) : this(owner)
+        public RaiderAxe(GamePlayer owner, bool fakeLocal, VVector2? pos = null) : this(owner)
         {
             this.fakeLocal = fakeLocal;
             this.state = 2;
@@ -88,8 +88,8 @@ public class Raider : DefinedSingleAbilityRoleTemplate<Raider.Ability>, DefinedR
 
             if (pos.HasValue) {
                 Position = pos.Value;
-                var diff = (pos.Value - (Vector2)owner.transform.position);
-                thrownAngle = Mathf.Atan2(diff.y, diff.x);
+                var diff = (pos.Value - owner.Position);
+                thrownAngle = Mathn.Atan2(diff.y, diff.x);
                 MyRenderer.flipY = diff.x < 0f;
             }
 
@@ -102,18 +102,18 @@ public class Raider : DefinedSingleAbilityRoleTemplate<Raider.Ability>, DefinedR
             {
                 if (AmOwner) Owner.Unbox().RequireUpdateMouseAngle();
                 MyRenderer.transform.localEulerAngles = new Vector3(0, 0, Owner.Unbox().MouseAngle * 180f / Mathn.PI);
-                var pos = (VVector3)Owner.VanillaPlayer.transform.position + new VVector3(Mathn.Cos(Owner.Unbox().MouseAngle), Mathn.Sin(Owner.Unbox().MouseAngle), -1f) * 0.67f;
-                var diff = (pos - (VVector3)MyRenderer.transform.position) * ev.DeltaTime * 7.5f;
-                Position += diff.AsVector2();
+                var pos = Owner.Position + new VVector2(Mathn.Cos(Owner.Unbox().MouseAngle), Mathn.Sin(Owner.Unbox().MouseAngle)) * 0.67f;
+                var diff = (pos - (VVector2)MyTransform.GetPositionFast()) * ev.DeltaTime * 7.5f;
+                Position += diff;
                 MyRenderer.flipY = Mathn.Cos(Owner.Unbox().MouseAngle) < 0f;
 
                 if (AmOwner)
                 {
-                    var vec = MyRenderer.transform.position - AmongUsLLImpl.LocalPlayer.transform.position;
-                    if(PhysicsHelpers.AnyNonTriggersBetween(AmongUsLLImpl.LocalPlayer.GetTruePosition(),(Vector2)vec.normalized,((Vector2)vec).magnitude, Constants.ShipAndAllObjectsMask) && !Physics2D.Raycast(PlayerControl.LocalPlayer.GetTruePosition(), vec, vec.magnitude, 1 << LayerExpansion.GetRaiderColliderLayer()))
-                        MyRenderer.color = UnityEngine.Color.red;
+                    var vec = (VVector2)MyTransform.GetPositionFast() - GamePlayer.LocalPlayer!.Position;
+                    if (PhysicsHelpers.AnyNonTriggersBetween(AmongUsLLImpl.LocalPlayer.GetTruePosition(), vec.Normalized, vec.Magnitude, Constants.ShipAndAllObjectsMask) && !Physics2D.Raycast(GamePlayer.LocalPlayer!.TruePosition, vec, vec.Magnitude, 1 << LayerExpansion.GetRaiderColliderLayer()))
+                        MyRenderer.color = VColor.Red.ToUnityColor();
                     else
-                        MyRenderer.color = UnityEngine.Color.white;
+                        MyRenderer.color = VColor.White.ToUnityColor();
                 }
             }
             else if (state == 1)
@@ -138,7 +138,7 @@ public class Raider : DefinedSingleAbilityRoleTemplate<Raider.Ability>, DefinedR
 
                             if (tryKillSet.Contains(p)) continue;//一度キルを試行しているならなにもしない。
 
-                            if (!Helpers.AnyNonTriggersBetween(p.TruePosition,pos,out var diff,Constants.ShipAndAllObjectsMask) && diff.magnitude < size * 0.4f)
+                            if (!Helpers.AnyNonTriggersBetween(p.TruePosition,pos,out var diff,Constants.ShipAndAllObjectsMask) && diff.Magnitude < size * 0.4f)
                             {
                                 //不可視なプレイヤーは無視
                                 if (p.IsInvisible) continue;
@@ -176,20 +176,20 @@ public class Raider : DefinedSingleAbilityRoleTemplate<Raider.Ability>, DefinedR
                 {
                     state = 2;
                     MyRenderer.gameObject.SetActive(false);
-                    NebulaManager.Instance.StartCoroutine(ManagedEffects.CoDisappearEffect(MyRenderer.gameObject.layer, null, MyRenderer.transform.position, 0.8f).WrapToIl2Cpp());
+                    NebulaManager.Instance.StartCoroutine(ManagedEffects.CoDisappearEffect(MyRenderer.gameObject.layer, null, MyTransform.GetPositionFast(), 0.8f).WrapToIl2Cpp());
                 }
-                else if (!OverlapAxeIgnoreArea(MyRenderer.transform.position) && NebulaPhysicsHelpers.AnyNonTriggersBetween(MyRenderer.transform.position, vec, speed * 4f * Time.deltaTime, Constants.ShipAndAllObjectsMask | (1 << LayerExpansion.GetHookshotWallLayer()), out d))
+                else if (!OverlapAxeIgnoreArea(MyTransform.GetPositionFast()) && NebulaPhysicsHelpers.AnyNonTriggersBetween(MyTransform.GetPositionFast(), vec, speed * 4f * ev.DeltaTime, Constants.ShipAndAllObjectsMask | (1 << LayerExpansion.GetHookshotWallLayer()), out d))
                 {
                     state = 2;
                     MyRenderer.sprite = stuckAxeSprite.GetSprite();
-                    MyRenderer.transform.eulerAngles = new Vector3(0f, 0f, thrownAngle * 180f / Mathf.PI);
+                    MyTransform.eulerAngles = new Vector3(0f, 0f, thrownAngle * 180f / Mathn.PI);
 
                     if (AmOwner && killedMask == 0)
                         NebulaGameManager.Instance?.GameStatistics.RpcRecordEvent(GameStatistics.EventVariation.Kill, EventDetail.Missed, NebulaGameManager.Instance.CurrentTime - thrownTime, AmongUsLLImpl.LocalPlayer, 0);
                 }
                 else
                 {
-                    MyRenderer.transform.localEulerAngles += new Vector3(0f, 0f, MyRenderer.flipY ? Time.deltaTime * 2000f : Time.deltaTime * -2000f);
+                    MyTransform.localEulerAngles += new Vector3(0f, 0f, MyRenderer.flipY ? ev.DeltaTime * 2000f : ev.DeltaTime * -2000f);
                 }
 
                 Position += vec * d;
@@ -236,9 +236,9 @@ public class Raider : DefinedSingleAbilityRoleTemplate<Raider.Ability>, DefinedR
 
         static RaiderAxe()
         {
-            NebulaSyncObject.RegisterInstantiater(MyTag, (args) => new RaiderAxe(Helpers.GetPlayer((byte)args[0])!));
-            NebulaSyncObject.RegisterInstantiater(MyLocalFakeTag, (args) => new RaiderAxe(Helpers.GetPlayer((byte)args[0])!, true));
-            NebulaSyncObject.RegisterInstantiater(MyGlobalFakeTag, (args) => new RaiderAxe(Helpers.GetPlayer((byte)args[0])!, false, new(args[1], args[2])));
+            NebulaSyncObject.RegisterInstantiater(MyTag, (args) => new RaiderAxe(GamePlayer.GetPlayer((byte)args[0])!));
+            NebulaSyncObject.RegisterInstantiater(MyLocalFakeTag, (args) => new RaiderAxe(GamePlayer.GetPlayer((byte)args[0])!, true));
+            NebulaSyncObject.RegisterInstantiater(MyGlobalFakeTag, (args) => new RaiderAxe(GamePlayer.GetPlayer((byte)args[0])!, false, new(args[1], args[2])));
         }
         
     }

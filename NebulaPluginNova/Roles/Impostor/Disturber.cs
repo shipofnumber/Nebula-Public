@@ -76,7 +76,7 @@ public class Disturber : DefinedSingleAbilityRoleTemplate<Disturber.Ability>, De
         static public RemoteProcess<int> RpcActivate = new("ActivatePole", (id, _) => NebulaSyncObject.GetObject<DisturbPole>(id)?.Activate());
     }
 
-    private Disturber() : base("disturber", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [DisturbCoolDownOption, DisturbDurationOption, MaxNumOfPolesOption, MaxDistanceBetweenPolesOption]) {
+    private Disturber() : base("disturber", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [DisturbCoolDownOption, DisturbDurationOption, MaxNumOfPolesOption, MaxDistanceBetweenPolesOption]) {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagDifficult, ConfigurationTags.TagFunny);
     }
 

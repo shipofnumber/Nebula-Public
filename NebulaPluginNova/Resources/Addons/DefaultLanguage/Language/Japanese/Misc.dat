@@ -94,6 +94,7 @@
 "gamemode.standard" : "標準"
 "gamemode.freeplay" : "フリープレイ"
 "gamemode.aeroguesser" : "アモゲッサー"
+"gamemode.paintquiz" : "手書きクイズ"
 
 # Notification
 
@@ -192,6 +193,7 @@
 "stats.group.roles" : "ロール"
 "stats.group.perks" : "パーク"
 "stats.group.aeroGuesser" : "アモゲッサー"
+"stats.group.paintQuiz" : "手書きクイズ"
 "stats.role.common.assigned" : "%ROLE% プレイ回数"
 "stats.role.common.won" : "%ROLE%として勝利"
 "stats.modifier.common.assigned" : "%MODIFIER% プレイ回数"
@@ -209,6 +211,19 @@
 "stats.aeroGuesser.gamePlay" : "総ゲーム数"
 "stats.aeroGuesser.totalScore" : "累計獲得スコア"
 "stats.aeroGuesser.perfectScore" : "フルスコア獲得回数"
+"stats.paintQuiz.gamePlay" : "総ゲーム数"
+"stats.paintQuiz.gamePlay.host" : "総ホスト回数"
+"stats.paintQuiz.totalScore.double" : "累計獲得スコア"
+"stats.paintQuiz.score.give.1" : "-1pt 付与回数"
+"stats.paintQuiz.score.give.0" : "0pt 付与回数"
+"stats.paintQuiz.score.give.2" : "0.5pt 付与回数"
+"stats.paintQuiz.score.give.3" : "1pt 付与回数"
+"stats.paintQuiz.score.give.4" : "2pt 付与回数"
+"stats.paintQuiz.score.get.1" : "-1pt 獲得回数"
+"stats.paintQuiz.score.get.0" : "0pt 獲得回数"
+"stats.paintQuiz.score.get.2" : "0.5pt 獲得回数"
+"stats.paintQuiz.score.get.3" : "1pt 獲得回数"
+"stats.paintQuiz.score.get.4" : "2pt 獲得回数"
 
 # Common UI
 

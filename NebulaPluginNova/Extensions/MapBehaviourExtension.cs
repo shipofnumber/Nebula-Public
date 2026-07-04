@@ -46,38 +46,43 @@ public static class MapBehaviourExtension
 
     public static void UpdateCount(this CounterArea counterArea, int cnt, int impostors, int deadBodies)
     {
-        while (counterArea.myIcons.Count < cnt)
+        var myIcons = counterArea.myIcons;
+
+        while (myIcons.Count < cnt)
         {
             PoolableBehavior item = counterArea.pool.Get<PoolableBehavior>();
-            counterArea.myIcons.Add(item);
+            myIcons.Add(item);
         }
-        while (counterArea.myIcons.Count > cnt)
+        while (myIcons.Count > cnt)
         {
-            PoolableBehavior poolableBehavior = counterArea.myIcons[counterArea.myIcons.Count - 1];
-            counterArea.myIcons.RemoveAt(counterArea.myIcons.Count - 1);
+            PoolableBehavior poolableBehavior = myIcons[myIcons.Count - 1];
+            myIcons.RemoveAt(myIcons.Count - 1);
             poolableBehavior.OwnerPool.Reclaim(poolableBehavior);
         }
 
-        for (int i = 0; i < counterArea.myIcons.Count; i++)
+        var counterAreaTransform = counterArea.ModGameObject();
+        var xOffset = counterArea.XOffset;
+        var yOffset = counterArea.YOffset;
+        for (int i = 0; i < myIcons.Count; i++)
         {
             int num = i % counterArea.MaxColumns;
             int num2 = i / counterArea.MaxColumns;
-            float num3 = (float)(Mathn.Min(cnt - num2 * counterArea.MaxColumns, counterArea.MaxColumns) - 1) * counterArea.XOffset / -2f;
-            counterArea.myIcons[i].transform.position = counterArea.transform.position + new Vector3(num3 + (float)num * counterArea.XOffset, (float)num2 * counterArea.YOffset, -1f);
+            float num3 = (float)(Mathn.Min(cnt - num2 * counterArea.MaxColumns, counterArea.MaxColumns) - 1) * xOffset / -2f;
+            myIcons[i].ModGameObject().Position = counterAreaTransform.Position + new VVector3(num3 + (float)num * xOffset, (float)num2 * yOffset, -1f);
 
             if (impostors > 0)
             {
                 impostors--;
-                PlayerMaterial.SetColors(Palette.ImpostorRed, counterArea.myIcons[i].GetComponent<SpriteRenderer>());
+                PlayerMaterial.SetColors(Palette.ImpostorRed, myIcons[i].GetComponent<SpriteRenderer>());
             }
             else if (deadBodies > 0)
             {
                 deadBodies--;
-                PlayerMaterial.SetColors(Palette.DisabledGrey, counterArea.myIcons[i].GetComponent<SpriteRenderer>());
+                PlayerMaterial.SetColors(Palette.DisabledGrey, myIcons[i].GetComponent<SpriteRenderer>());
             }
             else
             {
-                PlayerMaterial.SetColors(new Color(224f / 255f, 255f / 255f, 0f / 255f), counterArea.myIcons[i].GetComponent<SpriteRenderer>());
+                PlayerMaterial.SetColors(new Color(224f / 255f, 255f / 255f, 0f / 255f), myIcons[i].GetComponent<SpriteRenderer>());
             }
         }
     }

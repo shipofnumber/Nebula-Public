@@ -86,9 +86,9 @@ public static class PlayerColorPatch
 
 internal static class HighlightManager
 {
-    static private List<Renderer> lastHighlightRenderers = [];
-    static public void AddHighlightedRenderer(Renderer renderer) => lastHighlightRenderers.Add(renderer);
-    static public IEnumerable<Renderer> HighlightedRenderers => lastHighlightRenderers;
+    static private List<(Renderer, Material)> lastHighlightRenderers = [];
+    static public void AddHighlightedRenderer(Renderer renderer) => lastHighlightRenderers.Add((renderer, renderer.material));
+    static public IEnumerable<(Renderer renderer, Material material)> HighlightedRenderers => lastHighlightRenderers;
     static public void Reset() => lastHighlightRenderers.Clear();
 }
 
@@ -117,16 +117,13 @@ public static class PlayerUpdatePatch
 
     static void Prefix(PlayerControl __instance)
     {
-        NebulaProfiler.LapTimer("Before Prefix-PlayerControl.FixedUpdate");
         lastKillTimer = __instance.killTimer;
 
         if (__instance.AmOwner)
         {
-            foreach(var r in HighlightManager.HighlightedRenderers) if(r.AsBoolFast()) r.material.SetFloat("_Outline", 0f);
+            foreach(var r in HighlightManager.HighlightedRenderers) if(r.renderer.AsBoolFast()) r.material.SetFloat("_Outline", 0f);
             HighlightManager.Reset();
         }
-
-        NebulaProfiler.LapTimer("Prefix-PlayerControl.FixedUpdate");
     }
 
     
@@ -136,11 +133,7 @@ public static class PlayerUpdatePatch
 
         var deltaTime = Time.fixedDeltaTime;
 
-        NebulaProfiler.LapTimer("Before Postfix-PlayerControl.FixedUpdate", 150);
-
         if (__instance.AmOwner) NebulaGameManager.Instance.OnFixedAlwaysUpdate(deltaTime);
-
-        NebulaProfiler.LapTimer("OnFixedAlwaysUpdate");
 
         if (NebulaGameManager.Instance.GameState == NebulaGameStates.NotStarted)
         {
@@ -157,36 +150,27 @@ public static class PlayerUpdatePatch
             return;
         }
 
-        NebulaProfiler.LapTimer("ExternalColorSupport");
+        var modPlayer = NebulaGameManager.Instance.GetPlayer(__instance.PlayerId);
+        modPlayer?.Unbox().Update(deltaTime);
 
-        NebulaGameManager.Instance.GetPlayer(__instance.PlayerId)?.Unbox().Update(deltaTime);
-
-        NebulaProfiler.LapTimer("GamePlayer.Update");
-
-        if (__instance.AmOwner)
+        if (modPlayer?.AmOwner ?? false)
         {
             NebulaGameManager.Instance.OnFixedUpdate(deltaTime);
 
-            NebulaProfiler.LapTimer("NebulaGameManager.OnFixedUpdate");
-
             //ペット・レポートボタンの使用可否
-            if (HudManager.InstanceExists && GamePlayer.LocalPlayer.IsDived)
+            if (AmongUsLLImpl.TryGetHudManager(out var hudManager) && modPlayer.IsDived)
             {
-                HudManager.Instance.ReportButton.SetDisabled();
-                HudManager.Instance.PetButton.SetDisabled();
+                hudManager.ReportButton.SetDisabled();
+                hudManager.PetButton.SetDisabled();
             }
 
-            NebulaProfiler.LapTimer("Check Report/Pet Button");
-
-            if (__instance.inVent && Vent.currentVent.AsBoolFast())
+            if (__instance.inVent && Vent.currentVent.AsBoolFast(out var currentVent))
             {
-                Vector2 vector = Vent.currentVent.transform.position;
-                vector -= __instance.Collider.offset;
+                VVector2 vector = currentVent.ModGameObject(false).Position;
+                vector -= (VVector2)__instance.Collider.offset;
 
-                if (__instance.MyPhysics.body.transform.position.Distance(vector) > 0.001f) __instance.NetTransform.RpcSnapTo(vector);
+                if (__instance.MyPhysics.body.ModGameObject(false).Position.Distance(vector) > 0.001f) __instance.NetTransform.RpcSnapTo(vector);
             }
-
-            NebulaProfiler.LapTimer("VentCheck");
 
             //キルボタンのクールダウン進行
             {
@@ -199,19 +183,15 @@ public static class PlayerUpdatePatch
                     __instance.SetKillTimer(lastKillTimer - deltaTime);
                 }
             }
-
-            NebulaProfiler.LapTimer("ProcessKillButton");
         }
 
-        var transform = __instance.cosmetics.transform;
-        if (transform.localScale.z < 100f)
+        var transform = modPlayer.VanillaCosmetics.ModGameObject(false);
+        if (transform.LocalScale.z < 100f)
         {
-            var scale = transform.localScale;
+            var scale = transform.LocalScale;
             scale.z = 100f;
-            transform.localScale = scale;
+            transform.LocalScale = scale;
         }
-
-        NebulaProfiler.LapTimer("UpdateCosmeticsZ");
     }
 }
 
@@ -220,16 +200,10 @@ public class PlayerControlSetAlphaPatch
 {
     public static void Postfix(PlayerControl __instance)
     {
-        NebulaProfiler.LapTimer("Before SetHatAndVisorAlpha");
-
         if (NebulaGameManager.Instance == null) return;
         if (NebulaGameManager.Instance.GameState == NebulaGameStates.NotStarted) return;
 
-        NebulaProfiler.LapTimer("SetHatAndVisorAlpha.1");
-
         NebulaGameManager.Instance.GetPlayer(__instance.PlayerId)?.Unbox().UpdateVisibility(null, false);
-
-        NebulaProfiler.LapTimer("SetHatAndVisorAlpha.2");
     }
 }
 
@@ -403,33 +377,23 @@ class PlayerCanMovePatch
     private static int? canMoveCameraId = null;
     public static void SetMovableCamera(MonoBehaviour behaviour)
     {
-        canMoveCameraId = behaviour.GetInstanceID();
+        canMoveCameraId = behaviour.GetInstanceIdFast();
     }
     private static bool CameraAllowMoving()
     {
-        NebulaProfiler.LapTimer("BeforeCameraAllowMoving (Maybe After PlayerControl.CanMove.2)");
         var currentTarget = AmongUsLLImpl.HudManagerInstance.PlayerCam.Target;
-        if (currentTarget == AmongUsLLImpl.LocalPlayer) return true;
-        if (currentTarget && currentTarget.GetInstanceID() == canMoveCameraId) return true;
-        NebulaProfiler.LapTimer("CameraAllowMoving");
+        if (currentTarget.EqualsFast(AmongUsLLImpl.LocalPlayer)) return true;
+        if (currentTarget && currentTarget.GetInstanceIdFast() == canMoveCameraId) return true;
         return false;
     }
 
     public static void Postfix(PlayerControl __instance, ref bool __result)
     {
-        NebulaProfiler.LapTimer("Before PlayerControl.CanMove");
-
         if (__instance != AmongUsLLImpl.LocalPlayer) return;
-
-        NebulaProfiler.LapTimer("PlayerControl.CanMove.1");
 
         var modPlayer = __instance.GetModInfo();
 
-        NebulaProfiler.LapTimer("PlayerControl.CanMove.2");
-
         __result &= !TextField.AnyoneValid && CameraAllowMoving() && !ModSingleton<Marketplace>.Instance.AsBoolFast() && !(modPlayer?.IsTeleporting ?? false);
-
-        NebulaProfiler.LapTimer("PlayerControl.CanMove.3");
     }
 }
 
@@ -441,7 +405,7 @@ class WalkPatch
     {
         var info = __instance.myPlayer.GetModInfo()?.Unbox();
         if (info == null) return;
-
+        
         var orig = __result;
 
         VVector4 temp = new(0f, 0f, 0f, 0f);
@@ -491,12 +455,13 @@ class PlayerPhysicsFixedUpdatePatch
 {
     public static bool Prefix(PlayerPhysics __instance)
     {
-        NetworkedPlayerInfo data = __instance.myPlayer.Data;
-        bool amDead = data != null && data.IsDead;
+        PlayerControl control = __instance.myPlayer;
+        NetworkedPlayerInfo data = control.Data;
+        bool amDead = data.AsBoolFast() && data.IsDead;
         __instance.HandleAnimation(amDead);
         if (__instance.AmOwner)
         {
-            if (__instance.myPlayer.CanMove && GameData.Instance.AsBoolFast() && DestroyableSingleton<HudManager>.InstanceExists && DestroyableSingleton<HudManager>.Instance.joystick != null)
+            if (control.CanMove && GameData.Instance.AsBoolFast() && DestroyableSingleton<HudManager>.InstanceExists && DestroyableSingleton<HudManager>.Instance.joystick != null)
             {
                 __instance.SetNormalizedVelocity(DestroyableSingleton<HudManager>.Instance.joystick.DeltaL);
             }
@@ -685,10 +650,11 @@ public static class UsePlatformPatch
             Vector3 vector2 = (!isLeft) ? __instance.LeftUsePosition : __instance.RightUsePosition;
             Vector3 sourcePos = isLeft ? __instance.LeftPosition : __instance.RightPosition;
             Vector3 targetPos = (!isLeft) ? __instance.LeftPosition : __instance.RightPosition;
-            Vector3 worldUseSourcePos = parent.TransformPoint(vector);
-            Vector3 worldUseTargetPos = parent.TransformPoint(vector2);
-            Vector3 worldSourcePos = parent.TransformPoint(sourcePos);
-            Vector3 worldTargetPos = parent.TransformPoint(targetPos);
+            Vector3 worldUseSourcePos = parent.TransformPointFast(vector);
+            Vector3 worldUseTargetPos = parent.TransformPointFast(vector2);
+            Vector3 worldSourcePos = parent.TransformPointFast(sourcePos);
+            Vector3 worldTargetPos = parent.TransformPointFast(targetPos);
+
             var modPlayer = target.GetModInfo();
 
             modPlayer?.DeathPosition = new(worldUseSourcePos, worldUseSourcePos);
@@ -720,7 +686,7 @@ public static class UsePlatformPatch
 
 
             yield return target.MyPhysics.WalkPlayerTo(worldUseTargetPos, 0.01f, 1f, false);
-            target.SetPetPosition(target.transform.position);
+            target.SetPetPosition(target.transform.GetPositionFast());
             target.inMovingPlat = false;
             target.moveable = true;
             target.ForceKillTimerContinue = false;
@@ -744,7 +710,7 @@ public static class UseLadderPatch
     {
         try
         {
-            Vector2 GetPosition(Ladder ladder) => ladder.IsTop ? (Vector2)ladder.transform.position + new Vector2(0f, 1.2f) : ladder.transform.position;
+            Vector2 GetPosition(Ladder ladder) => ladder.IsTop ? (Vector2)ladder.transform.GetPositionFast() + new Vector2(0f, 1.2f) : ladder.transform.GetPositionFast();
             
             __instance.myPlayer.GetModInfo()!.DeathPosition = new(GetPosition(source), GetPosition(source.Destination));
         }
@@ -772,8 +738,6 @@ internal class NetworkedPlayerInfoPatch
 {
     static bool Prefix(NetworkedPlayerInfo __instance, [HarmonyArgument(0)] Hazel.MessageReader reader, [HarmonyArgument(1)] bool initialState)
     {
-        NebulaProfiler.LapTimer("Before NetworkedPlayerInfo.Deserialize");
-
         Virial.Utilities.MessageReader virialReader;
         
         virialReader = Virial.Utilities.MessageReader.Get(reader);
@@ -829,8 +793,6 @@ internal class NetworkedPlayerInfoPatch
         }
         //GameData.Instance.RecomputeTaskCounts();
 
-        NebulaProfiler.LapTimer("NetworkedPlayerInfo.Deserialize");
-
         return false;
     }
 }
@@ -843,8 +805,9 @@ public class SyncTransformPatch
     {
         __instance.sendQueue.Clear();
         __instance.incomingPosQueue.Clear();
-        __instance.lastPosition = __instance.transform.position;
-        __instance.lastPosSent = __instance.transform.position;
+        var pos = __instance.ModGameObject(false).Position.AsVector2().ToUnityVector();
+        __instance.lastPosition = pos;
+        __instance.lastPosSent = pos;
     }
 }
 
@@ -856,11 +819,12 @@ class CustomNetworkTransformPatch
     
     public static void Prefix(CustomNetworkTransform __instance)
     {
-        if (__instance.isPaused && __instance.AmOwner && __instance.sendQueue.Count > 0) __instance.sendQueue.Clear();
-        if(__instance.AmOwner && __instance.sendQueue.Count == 0) __instance.lastPosSent = __instance.transform.position;
+        var amOwner = __instance.AmOwner;
+        if (__instance.isPaused && amOwner && __instance.sendQueue.Count > 0) __instance.sendQueue.Clear();
+        if(amOwner && __instance.sendQueue.Count == 0) __instance.lastPosSent = __instance.ModGameObject(false).Position.AsVector2();
 
         if (__instance.isPaused && __instance.incomingPosQueue.Count > 0) __instance.incomingPosQueue.Clear();
-        if (__instance.incomingPosQueue.Count == 0) __instance.lastPosition = __instance.transform.position;
+        if (__instance.incomingPosQueue.Count == 0) __instance.lastPosition = __instance.ModGameObject(false).Position.AsVector2();
 
         //rubberbandModifierをいじる関数にフックできないのでここで変更(バニラの変更を考慮して大きめな値にしておく)
         if (GeneralConfigurations.LowLatencyPlayerSyncOption && (AmongUsUtil.IsCustomServer() || AmongUsUtil.IsLocalServer()))
@@ -872,7 +836,7 @@ class CustomNetworkTransformPatch
                 4 or 5 => 2.5f, //0.5にしようとしてくるやつを抑制するので大きめに
                 _ => 1.8f
             };
-            __instance.rubberbandModifier = Mathn.Lerp(__instance.rubberbandModifier, num, Time.fixedDeltaTime * 3f);
+            __instance.rubberbandModifier = Mathn.Lerp(__instance.rubberbandModifier, num, FastMethods.GetFixedDeltaTimeFast() * 3f);
         }
     }
     
@@ -980,7 +944,7 @@ public static class PlayerPhysicsPatch
     {
         if (AmongUsClient.Instance.GameState >= InnerNet.InnerNetClient.GameStates.Started)
         {
-            Vector3 position = __instance.transform.position;
+            var position = __instance.ModGameObject(false).Position;
             var ev = GameOperatorManager.Instance?.Run(new PlayerFixZPositionEvent(__instance.myPlayer.GetModInfo()!, position.y));
             if (ev != null)
             {
@@ -1057,7 +1021,8 @@ public class PlayerGetTruePositionPatch
 {
     public static bool Prefix(PlayerControl __instance, ref Vector2 __result)
     {
-        __result = (Vector2)__instance.transform.position + __instance.transform.localScale.x * __instance.Collider.offset;
+        var transform = __instance.ModGameObject();
+        __result = transform.Position.AsVector2() + (VVector2)__instance.Collider.offset * transform.LocalScale.x;
         return false;
     }
 }

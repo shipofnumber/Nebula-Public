@@ -205,6 +205,7 @@ public static class MeetingHudExtension
 
             player.VanillaPlayer.Exiled();
             player.VanillaPlayer.Data.IsDead = true;
+            (player as PlayerModInfo)?.UpdateModDead(true);
             PlayerExtension.ResetOnDying(player.VanillaPlayer);
 
             player.Unbox().MyState = victims.playerState;
@@ -310,14 +311,17 @@ public static class MeetingHudExtension
                 (NebulaGameManager.Instance?.LocalFakeSabotage?.MyFakeTasks.All(
                     type => AmongUsLLImpl.ShipStatusInstance.GetSabotageTask(type)?.TaskType != task.TaskType) ?? true))) != null) return;
 
-        if (reporter.Data.IsDead) return;
+        var modReporter = reporter.GetModInfo();
+
+        if (modReporter == null) return;
+        if (modReporter.IsDead) return;
         if (!AmongUsLLImpl.AmongUsClientInstance.AmHost) return;
 
         HudManager.Instance.OpenMeetingRoom(reporter);
 
-        RpcStartMeeting.Invoke((reporter.GetModInfo()!, GamePlayer.GetPlayer(deadBody ? deadBody!.PlayerId : (byte)255), reportType));
+        RpcStartMeeting.Invoke((modReporter, GamePlayer.GetPlayer(deadBody ? deadBody!.PlayerId : (byte)255), reportType));
 
-        MeetingModRpc.RpcNoticeStartMeeting.Invoke((reporter.PlayerId, deadBody?.PlayerId ?? 255));
+        MeetingModRpc.RpcNoticeStartMeeting.Invoke((modReporter.PlayerId, deadBody?.PlayerId ?? 255));
 
         if (consumeEmergencyButton)
         {
@@ -332,17 +336,15 @@ public static class MeetingHudExtension
         
         MeetingRoomManager.Instance.RemoveSelf();
         DestroyableSingleton<HudManager>.Instance.InitMap();
-        MapBehaviour.Instance.SetPreMeetingPosition(AmongUsLLImpl.LocalPlayer.transform.position, false);
+        MapBehaviour.Instance.SetPreMeetingPosition((GamePlayer.LocalPlayer?.Position ?? VVector2.Zero).AsUnityVector3(0f), false);
         foreach(var player in GamePlayer.AllPlayers)
         {
             if (player.VanillaPlayer.AsBoolFast()) player.VanillaPlayer.ResetForMeeting();
         }
 
-        var map = MapBehaviour.Instance;
-        if (map.AsBoolFast()) map.Close();
+        if (MapBehaviour.Instance.AsBoolFast(out var map)) map.Close();
+        if (Minigame.Instance.AsBoolFast(out var minigame)) minigame.ForceClose();
 
-        var minigame = Minigame.Instance;
-        if (minigame.AsBoolFast()) minigame.ForceClose();
         AmongUsLLImpl.ShipStatusInstance.OnMeetingCalled();
         KillAnimation.SetMovement(reporter, true);
         GameData.TimeLastMeetingStarted = Time.realtimeSinceStartup;
@@ -383,13 +385,19 @@ public static class MeetingHudExtension
         yield return Effects.Wait(0.5f);
         yield return meetingHud.MeetingIntro.CoRun();
         meetingHud.SetMasksEnabled(false);
-        meetingHud.TitleText.text = DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.MeetingWhoIsTitle);
+        meetingHud.TitleText.text = VanillaTranslationCache.GetString(StringNames.MeetingWhoIsTitle);
         meetingHud.state = MeetingHud.VoteStates.Discussion;
         ControllerManager.Instance.OpenOverlayMenu(meetingHud.name, null, meetingHud.DefaultButtonSelected, meetingHud.ControllerSelectable, false);
         ConsoleJoystick.SetMode_Menu();
         yield break;
     }
 
+    // From FloatRange (Among Us)
+    private static float SpreadEvenly(float min, float max, int i, int stops)
+    {
+        float num = (float)(i + 1) / ((float)stops + 1f);
+        return Mathn.Lerp(min, max, num);
+    }
     private static void ModMeetingIntroInit(MeetingIntroAnimation intro, NetworkedPlayerInfo reporter, DeadBody[] deadBodies)
     {
         var prefab = intro.VoteAreaPrefab;
@@ -416,23 +424,23 @@ public static class MeetingHudExtension
         float num = intro.background.size.x / 2f;
         float num2 = intro.VoteAreaPrefab.MaskArea.bounds.size.y + 0.2f;
         float x = intro.VoteAreaPrefab.MaskArea.bounds.extents.x;
-        int num3 = Mathf.CeilToInt((float)deadBodies.Length / 3f);
+        int num3 = Mathn.CeilToInt((float)deadBodies.Length / 3f);
         for (int i = 0; i < deadBodies.Length; i += 3)
         {
             float num4 = (float)(num3 / 2 - i / 3) * num2;
-            int num5 = Mathf.Min(deadBodies.Length - i, 3);
+            int num5 = Mathn.Min(deadBodies.Length - i, 3);
             for (int j = 0; j < num5; j++)
             {
                 int num6 = i + j;
-                float num7 = FloatRange.SpreadEvenly(-num - x, num + x, j, num5);
+                float num7 = SpreadEvenly(-num - x, num + x, j, num5);
                 PlayerVoteArea playerVoteArea2 = GeneratePva(intro.DeadParent, new Vector3(num7, num4, 0f), GameData.Instance.GetPlayerById(deadBodies[num6]?.ParentId ?? 255), false, num6);
                 intro.deadCards.Add(playerVoteArea2);
             }
         }
         if (deadBodies.Length == 0)
         {
-            intro.DeadBodiesText.text = DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.NoDeadBodiesFound);
-            intro.DeadBodiesText.transform.localPosition = Vector3.zero;
+            intro.DeadBodiesText.text = VanillaTranslationCache.GetString(StringNames.NoDeadBodiesFound);
+            intro.DeadBodiesText.transform.localPosition = new(0f, 0f, 0f);
             intro.BloodSplat.enabled = false;
         }
         intro.ProtectedRecently.SetActive(false);
@@ -444,7 +452,7 @@ public static class MeetingHudExtension
     internal static void ModStartMeeting(PlayerControl reporter, NetworkedPlayerInfo? deadBody, ReportType reportType)
     {
         //会議前の位置を共有する
-        PlayerModInfo.RpcSharePreMeetingPoint.Invoke((AmongUsLLImpl.LocalPlayer.PlayerId, AmongUsLLImpl.LocalPlayer.transform.position));
+        PlayerModInfo.RpcSharePreMeetingPoint.Invoke((AmongUsLLImpl.LocalPlayer.PlayerId, GamePlayer.LocalPlayer?.Position ?? VVector2.Zero));
 
         //ShipStatus.StartMeeting ここから
         AmongUsLLImpl.ShipStatusInstance.StartCoroutine(ModCoStartMeeting(reporter, deadBody, reportType).WrapToIl2Cpp());

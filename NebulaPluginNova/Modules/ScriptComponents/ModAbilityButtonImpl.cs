@@ -86,7 +86,8 @@ public class ModAbilityButtonImpl : DependentLifespan, ModAbilityButton, IGameOp
         var vanillaKillButton = HudManager.Instance.KillButton;
         VanillaButton = UnityEngine.Object.Instantiate(vanillaKillButton, vanillaKillButton.transform.parent);
         VanillaButton.gameObject.ForEachChild((Il2CppSystem.Action<GameObject>)((c) => { if (c.name.Equals("HotKeyGuide")) GameObject.Destroy(c); }));
-        VanillaButton.cooldownTimerText.gameObject.SetActive(true);
+        var cooldownText = VanillaButton.cooldownTimerText;
+        cooldownText.gameObject.SetActive(true);
         VanillaButton.buttonLabelText.transform.SetLocalZ(-0.001f);
         SetSprite(vanillaKillImage.GetSprite());
 
@@ -105,6 +106,9 @@ public class ModAbilityButtonImpl : DependentLifespan, ModAbilityButton, IGameOp
         SetLabelType(ModAbilityButton.LabelType.Standard);
 
         NebulaManager.Instance.ScheduleDelayAction(PlayFlashOnce);
+
+        cooldownTextColorObserver = new(false, inEffect => cooldownText.color = (inEffect ? VColor.Green : VColor.White).ToUnityColor(), true);
+        cooldownTextObserver = new("", text => cooldownText.text = text, true);
     }
 
     int IHudContent.Priority { get => gridContent.Priority; set => gridContent.SetPriority(Mathn.Clamp(value, -5000, 9999)); }
@@ -234,6 +238,8 @@ public class ModAbilityButtonImpl : DependentLifespan, ModAbilityButton, IGameOp
 
     void OnHudActiveChange(Patches.HudActivePatch.HudActiveChangeEvent ev) => UpdateVisibility();
 
+    ValueObserver<bool> cooldownTextColorObserver;
+    ValueObserver<string> cooldownTextObserver;
     void OnHudUpdate(GameHudUpdateEvent ev)
     {
         UpdateVisibility();
@@ -246,8 +252,9 @@ public class ModAbilityButtonImpl : DependentLifespan, ModAbilityButton, IGameOp
 
         string timerText = "";
         if (CurrentTimer?.IsProgressing ?? false) timerText = CurrentTimer.TimerText ?? "";
-        VanillaButton.cooldownTimerText.text = timerText;
-        VanillaButton.cooldownTimerText.color = EffectActive ? Color.green : Color.white;
+        var cooldownText = VanillaButton.cooldownTimerText;
+        cooldownTextObserver.Set(timerText);
+        cooldownTextColorObserver.Set(EffectActive);
 
         if ((keyCode?.KeyDownInGame ?? false) || (canUseByMouseClick && CheckMouseClick() && !AmongUsUtil.UsingMouseMovement)) DoClick();
         if (subKeyCode?.KeyDownInGame ?? false) DoSubClick();
@@ -303,7 +310,7 @@ public class ModAbilityButtonImpl : DependentLifespan, ModAbilityButton, IGameOp
         if (UseCoolDownSupport && CoolDownTimer != null && CoolDownTimer is TimerImpl timer)
         {
             if (GeneralConfigurations.UseShortenCooldownAtGameStartOption)
-                timer.Start(Mathf.Min(timer.Max, CoolDownOnGameStart));
+                timer.Start(Mathn.Min(timer.Max, CoolDownOnGameStart));
             else
                 StartCoolDown();
         }
@@ -472,15 +479,16 @@ public class ModAbilityButtonImpl : DependentLifespan, ModAbilityButton, IGameOp
 
         if (guideObj.AsBoolFast())
         {
-            guideObj!.transform.localScale = new(1f / 0.7f, 1f / 0.7f, 1f);
+            var transform = guideObj!.ModGameObject();
+            transform.LocalScale = new(1f / 0.7f, 1f / 0.7f, 1f);
 
-            var renderer = UnityHelper.CreateObject<SpriteRenderer>("HotKeyOption", guideObj.transform, new UnityEngine.Vector3(0.12f, 0.07f, -2f));
+            var renderer = UnityHelper.CreateObject<SpriteRenderer>("HotKeyOption", transform.GetUnityTransform(), new(0.12f, 0.07f, -2f));
             renderer.sprite = aidActionSprite.GetSprite();
 
             if (isCriticalSubAction)
             {
                 Tutorial.WaitAndShowTutorial(() => !VanillaButton.gameObject.activeSelf || !AmongUsLLImpl.LocalPlayer.CanMove,
-                    new TutorialBuilder(() => renderer.transform.position, true)
+                    new TutorialBuilder(() => renderer.ModGameObject(false).Position, true)
                     .ShowWhile(() => VanillaButton && renderer)
                     .BindHistory("subaction")
                     .AsGraphicalWidget(aidActionSprite, new(0.3f, 0.3f), Language.Translate("tutorial.variations.subAction")));

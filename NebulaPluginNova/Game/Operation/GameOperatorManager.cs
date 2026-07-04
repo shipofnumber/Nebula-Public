@@ -71,9 +71,7 @@ internal class GameOperatorBuilder
             var lastProcedure = myProcedure;
             myProcedure = e =>
             {
-                NebulaProfiler.LapTimer("Before Event: " + e.GetType().Name);
                 lastProcedure.Invoke(e);
-                NebulaProfiler.LapTimer($"Event: {e.GetType().Name}, Type: {instance.GetType().FullName}");
             };
         }
         return myProcedure;

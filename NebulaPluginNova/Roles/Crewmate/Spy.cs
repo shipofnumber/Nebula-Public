@@ -19,7 +19,7 @@ namespace Nebula.Roles.Crewmate;
 
 internal class Spy : DefinedRoleTemplate, HasCitation, DefinedRole, IAssignableDocument, ISpawnable
 {
-    private Spy() : base("spy", new(Palette.ImpostorRed), RoleCategory.CrewmateRole, Crewmate.MyTeam, [VentConfiguration, NumOfExemptedTasksOption])
+    private Spy() : base("spy", VColor.ImpostorColor, RoleCategory.CrewmateRole, Crewmate.MyTeam, [VentConfiguration, NumOfExemptedTasksOption])
     {
     }
 

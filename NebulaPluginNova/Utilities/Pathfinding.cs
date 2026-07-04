@@ -265,8 +265,8 @@ public static class NavVerticesHelpers
             var outer = door.transform.FindChild("OuterConsole");
             if (inner && outer)
             {
-                var innerDistance = inner.transform.position.Distance(player.Position);
-                var outerDistance = outer.transform.position.Distance(player.Position);
+                var innerDistance = inner.ModGameObject(false).Position.Distance(player.Position);
+                var outerDistance = outer.ModGameObject(false).Position.Distance(player.Position);
                 var decon = (innerDistance < outerDistance ? inner : outer).GetComponent<DeconControl>();
                 if (decon)
                 {
@@ -342,7 +342,7 @@ public static class NavVerticesHelpers
 
         int currentTarget = 1;
         float VHMovementCoeff = VHMovementInitCoeff;
-        Vector2 lastPos = player.Position;
+        var lastPos = player.Position;
         int noMoveCount = 0;
         bool shouldNotSnapToTargetPos = false;
 
@@ -355,21 +355,21 @@ public static class NavVerticesHelpers
                 break;
             }
 
-            var d = player.TrueSpeed * Time.fixedDeltaTime + 0.01f;
+            var d = player.TrueSpeed * FastMethods.GetFixedDeltaTimeFast() + 0.01f;
 
-            Vector2 currentPos = player.Position;
-            Vector2 currentDisp = currentPos - lastPos;
+            var currentPos = player.Position;
+            var currentDisp = currentPos - lastPos;
 
-            if (currentPos.Distance(lastPos) < d * 0.5f) VHMovementCoeff -= Time.deltaTime * 3f;
+            if (currentPos.Distance(lastPos) < d * 0.5f) VHMovementCoeff -= FastMethods.GetDeltaTimeFast() * 3f;
             lastPos = currentPos;
 
-            Vector2 currentGoal = path[currentTarget];
-            Vector2 diff = currentGoal - player.TruePosition;
+            VVector2 currentGoal = path[currentTarget];
+            VVector2 diff = currentGoal - player.TruePosition;
 
 
-            Vector2 velocity = Vector2.zero;
+            VVector2 velocity = VVector2.Zero;
 
-            if (diff.magnitude < d * 0.7f)
+            if (diff.Magnitude < d * 0.7f)
             {
                 currentTarget++;
                 VHMovementCoeff = VHMovementInitCoeff;
@@ -397,15 +397,15 @@ public static class NavVerticesHelpers
                 if (absY > absX * 0.8f) velocity.y = 1f;
             }
             else velocity.y = diff.y;
-            player.SetNormalizedVelocity(velocity.normalized);
+            player.SetNormalizedVelocity(velocity.Normalized);
 
-            if (diff.magnitude < d)
+            if (diff.Magnitude < d)
             {
                 currentTarget++;
                 VHMovementCoeff = VHMovementInitCoeff;
             }
 
-            float dispMagnitude = currentDisp.magnitude;
+            float dispMagnitude = currentDisp.Magnitude;
 
             if (dispMagnitude < 0.005f)
                 noMoveCount++;
@@ -413,9 +413,8 @@ public static class NavVerticesHelpers
                 noMoveCount = 0;
             if (noMoveCount > 80)
             {
-                Vector3 snapTo = (currentGoal - player.GroundCollider.offset);
-                snapTo.z = snapTo.y / 1000f;
-                player.Body.transform.position = snapTo;
+                VVector2 snapTo = (currentGoal - (VVector2)player.GroundCollider.offset);
+                player.Body.transform.position = snapTo.AsGameWorldUnityVector3();
                 currentTarget++;
                 continue;
             }
@@ -423,14 +422,14 @@ public static class NavVerticesHelpers
             foreach (var door in manualDoors)
             {
                 if (door.Opening) continue;
-                var doorPos = door.transform.position;
+                var doorPos = door.ModGameObject(false).Position;
                 var distance = doorPos.Distance(currentPos);
                 if (distance > (dispMagnitude < 0.01f ? 1.1f : 0.6f)) continue;
-                var dir = (Vector2)door.transform.position - player.TruePosition;
+                var dir = (VVector2)doorPos - player.TruePosition;
 
-                if (Vector2.Dot(dir, velocity.normalized) > 0.25f || distance < (dispMagnitude < 0.01f ? 0.9f : 0.27f))
+                if (VVector2.Dot(dir, velocity.Normalized) > 0.25f || distance < (dispMagnitude < 0.01f ? 0.9f : 0.27f))
                 {
-                    player.Body.velocity = Vector2.zero;
+                    player.Body.velocity = VVector2.Zero;
                     yield return CoInteractManualDoor(player, door);
                 }
             }
@@ -440,32 +439,32 @@ public static class NavVerticesHelpers
             foreach (var door in ship.AllDoors)
             {
                 if (door.IsOpen) continue;
-                var doorPos = door.transform.position;
+                var doorPos = door.ModGameObject(false).Position;
                 var distance = doorPos.Distance(currentPos);
                 if (distance > (dispMagnitude < 0.01f ? 1.1f : 0.6f)) continue;
-                var dir = (Vector2)door.transform.position - player.TruePosition;
+                var dir = (VVector2)doorPos - player.TruePosition;
 
-                if (Vector2.Dot(dir, velocity.normalized) > 0.25f || distance < (dispMagnitude < 0.01f ? 0.9f : 0.27f))
+                if (VVector2.Dot(dir, velocity.Normalized) > 0.25f || distance < (dispMagnitude < 0.01f ? 0.9f : 0.27f))
                 {
-                    player.Body.velocity = Vector2.zero;
+                    player.Body.velocity = new(0f, 0f);
                     yield return CoInteractDoor(player, door);
                 }
             }
 
             foreach (var ladder in ship.Ladders)
             {
-                var ladderPos = ladder.transform.position;
+                var ladderPos = ladder.ModGameObject(false).Position;
                 var distance = ladderPos.Distance(currentPos);
 
                 if (distance > 0.8f) continue;
-                var dir = (Vector2)ladder.Destination.transform.position - player.TruePosition;
+                VVector2 dir = (VVector2)ladder.Destination.ModGameObject(false).Position - player.TruePosition;
 
                 //次のノードと梯子の行先はある程度近づける必要がある。
-                if (ladder.Destination.transform.position.Distance(currentGoal) > 1.2f) continue;
+                if (ladder.Destination.ModGameObject(false).Position.Distance(currentGoal) > 1.2f) continue;
 
-                if (Vector2.Dot(dir, velocity.normalized) > 0.6f || (dispMagnitude < 0.01f && distance < 0.4f))
+                if (VVector2.Dot(dir, velocity.Normalized) > 0.6f || (dispMagnitude < 0.01f && distance < 0.4f))
                 {
-                    player.Body.velocity = Vector2.zero;
+                    player.Body.velocity = VVector2.Zero;
                     yield return player.UseLadder(ladder);
                     break;
                 }
@@ -473,18 +472,18 @@ public static class NavVerticesHelpers
 
             foreach (var zipline in ziplineConsoles)
             {
-                var ziplinePos = zipline.transform.position;
+                var ziplinePos = zipline.ModGameObject(false).Position;
                 var distance = ziplinePos.Distance(currentPos);
 
                 if (distance > 3f) continue;
 
-                var topDistance = zipline.zipline.dropPositionTop.position.Distance(currentPos);
-                var bottomDistance = zipline.zipline.dropPositionBottom.position.Distance(currentPos);
+                var topDistance = zipline.zipline.dropPositionTop.ModGameObject(false).Position.Distance(currentPos);
+                var bottomDistance = zipline.zipline.dropPositionBottom.ModGameObject(false).Position.Distance(currentPos);
                 var targetTransform = topDistance > bottomDistance ? zipline.zipline.landingPositionTop : zipline.zipline.landingPositionBottom;
                 //次のノードとジップラインの行先はある程度近づける必要がある。
-                if (currentGoal.Distance(targetTransform.position) > 3f) continue;
+                if (currentGoal.Distance(targetTransform.ModGameObject(false).Position) > 3f) continue;
 
-                player.Body.velocity = Vector2.zero;
+                player.Body.velocity = VVector2.Zero;
                 yield return player.UseZipline(zipline);
                 break;
             }
@@ -494,8 +493,8 @@ public static class NavVerticesHelpers
                 if (movingPlatform.Target) RecalcPath(); //状態が変わったため経路を再計算する。
                 else
                 {
-                    var mpDir = movingPlatform.IsLeft ? Vector2.right : Vector2.left;
-                    if (Vector2.Dot(mpDir, velocity.normalized) > 0.9f && movingPlatform.transform.position.Distance(currentPos) < 1f)
+                    var mpDir = movingPlatform.IsLeft ? VVector2.Right : VVector2.Left;
+                    if (VVector2.Dot(mpDir, velocity.Normalized) > 0.9f && movingPlatform.ModGameObject(false).Position.Distance(currentPos) < 1f)
                     {
                         Variable<bool> done = new();
                         yield return player.UseMovingPlatform(movingPlatform, done);
@@ -509,7 +508,7 @@ public static class NavVerticesHelpers
 
         if (player.IsActive)
         {
-            player.Body.velocity = Vector2.zero;
+            player.Body.velocity = VVector2.Zero;
             if (!player.Player.IsDead && !shouldNotSnapToTargetPos) player.SnapTo(path[^1] - player.GroundCollider.offset);
         }
     }

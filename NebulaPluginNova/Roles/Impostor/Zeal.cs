@@ -23,7 +23,7 @@ internal class Zeal : DefinedSingleAbilityRoleTemplate<Zeal.Ability>, DefinedRol
     static private FloatConfiguration AbsorbDurationOption = NebulaAPI.Configurations.Configuration("options.role.zeal.absorbDuration", (1f, 10f, 1f), 3f, FloatConfigurationDecorator.Second);
     static private FloatConfiguration AbsorbAdditionalDurationOption = NebulaAPI.Configurations.Configuration("options.role.zeal.absorbAdditionalDuration", (float[])[0f, 0.5f, 1f, 1.5f, 2f, 2.5f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f], 3f, FloatConfigurationDecorator.Second);
     static private FloatConfiguration EnthusiasmCooldownOption = NebulaAPI.Configurations.Configuration("options.role.zeal.enthusiasmCooldown", (10f, 120f, 10f), 60f, FloatConfigurationDecorator.Second);
-    private Zeal() : base("zeal", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [KillCoolDownOption, AbsorbCooldownOption, AbsorbDurationOption, AbsorbAdditionalDurationOption, EnthusiasmCooldownOption])
+    private Zeal() : base("zeal", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [KillCoolDownOption, AbsorbCooldownOption, AbsorbDurationOption, AbsorbAdditionalDurationOption, EnthusiasmCooldownOption])
     {
         
     }

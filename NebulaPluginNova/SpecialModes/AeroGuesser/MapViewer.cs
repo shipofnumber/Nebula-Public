@@ -104,7 +104,7 @@ internal class MapViewer : CustomCameraBehaviour
         void FixPosition()
         {
             camObject.transform.position = position.AsUnityVector3(0f);
-            var cam = HudManager.Instance.PlayerCam;
+            var cam = AmongUsLLImpl.HudManagerInstance.PlayerCam;
             cam.Locked = true;
             cam.SetTarget(camObject);
         }

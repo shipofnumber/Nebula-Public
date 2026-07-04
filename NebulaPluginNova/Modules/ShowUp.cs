@@ -199,7 +199,7 @@ internal class ShowUp : AbstractModule<Virial.Game.Game>, IGameOperator
 
         if (AnySocialShown && timer < 1f) timer = 1f;
 
-        if (!InLobbySetting && AmongUsLLImpl.LobbyInstance.AsBoolFast() && AmongUsLLImpl.AmongUsClientInstance.AmHost && GameStartManager.InstanceExists && ShouldBeShownSocialSettings)
+        if (!InLobbySetting.AsBoolFast() && AmongUsLLImpl.LobbyInstance.AsBoolFast() && AmongUsLLImpl.AmongUsClientInstance.AmHost && GameStartManager.InstanceExists && ShouldBeShownSocialSettings)
         {
             var widget = ModSingleton<ShowUp>.Instance.GetSettingWidget().Instantiate(new(100f, 100f), out _);
             widget!.AddComponent<SortingGroup>();
@@ -244,7 +244,7 @@ internal class ShowUp : AbstractModule<Virial.Game.Game>, IGameOperator
 
     public PlayerControl? CurrentShowUp { get; private set; } = null;
     private HashSet<GameObject> AllShowUp = [];
-    public bool AnyoneShowedUp => CurrentShowUp != null && CurrentShowUp.AsBoolFast();
+    public bool AnyoneShowedUp => CurrentShowUp.AsBoolFast();
     public bool AnySocialShown => AnyoneShowedUp || AllShowUp.Count > 0;
     public bool ShowedUp(GamePlayer player) => AnyoneShowedUp && CurrentShowUp!.PlayerId == player.PlayerId;
 
@@ -263,7 +263,7 @@ internal class ShowUp : AbstractModule<Virial.Game.Game>, IGameOperator
             CurrentShowUp = player;
 
             NebulaGameManager.Instance?.WideCamera.SetDrawShadow(false);
-            Vector3 lastPlayerPos = player.transform.position;
+            Vector3 lastPlayerPos = player.transform.GetPositionFast();
             NebulaManager.Instance.StartCoroutine(
                 CoShowSocial("PlayerZoom", new(1.5f, -0.6f),
                 GUI.API.VerticalHolder(Virial.Media.GUIAlignment.Center,
@@ -274,7 +274,7 @@ internal class ShowUp : AbstractModule<Virial.Game.Game>, IGameOperator
                 (obj, size) => { obj.transform.localScale = new(1.8f, 1.8f, 1f); }, duration,
                 (0.3f, () =>
                 {
-                    var diff = (player.transform.position - lastPlayerPos);
+                    var diff = (player.transform.GetPositionFast() - lastPlayerPos);
                     lastPlayerPos += diff.Delta(5f, 0.0001f);
                     return lastPlayerPos + new Vector3(0.3f, -0.02f).RotateZ(angle);
                 }, angle), true, 0.2f, 0.2f).WrapToIl2Cpp()

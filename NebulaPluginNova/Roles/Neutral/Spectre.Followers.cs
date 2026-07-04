@@ -175,7 +175,7 @@ internal class SpectreImmoralist : DefinedRoleTemplate, DefinedRole, IAssignable
             if (AmOwner)
             {
                 ObjectTracker<Dish> friesTracker = new ObjectTrackerUnityImpl<Dish, Dish>(MyPlayer.VanillaPlayer, 0.8f, ()=>ModSingleton<FriesDishManager>.Instance.AllDishes,
-                    dish => dish.Ate == !MyPlayer.IsDead, dish => MyPlayer.IsDead || !NebulaPhysicsHelpers.AnyShadowBetween(MyPlayer.TruePosition, dish.Position, out _), d => d, dish => [dish.Console.transform.position], dish => dish.Console.Renderer, MyRole.UnityColor, true).Register(this);
+                    dish => dish.Ate == !MyPlayer.IsDead, dish => MyPlayer.IsDead || !NebulaPhysicsHelpers.AnyShadowBetween(MyPlayer.TruePosition, dish.Position, out _), d => d, dish => [dish.Console.transform.GetPositionFast()], dish => dish.Console.Renderer, MyRole.UnityColor, true).Register(this);
                 
                 var boostButton = NebulaAPI.Modules.EffectButton(this, MyPlayer, Virial.Compat.VirtualKeyInput.Ability,
                     RespawnCooldownOption, RespawnDurationOption, "immoralist.place", friesBoostButtonSprite,

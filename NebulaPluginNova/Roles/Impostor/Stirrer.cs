@@ -13,7 +13,7 @@ namespace Nebula.Roles.Impostor;
 
 public class Stirrer : DefinedRoleTemplate, DefinedRole, IAssignableDocument
 {
-    private Stirrer() : base("stirrer", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [StirCoolDownOption,SabotageChargeOption, SabotageMaxChargeOption,SabotageCoolDownOption,SabotageIntervalOption]) {
+    private Stirrer() : base("stirrer", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [StirCoolDownOption,SabotageChargeOption, SabotageMaxChargeOption,SabotageCoolDownOption,SabotageIntervalOption]) {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagFunny);
     }
 
@@ -64,7 +64,7 @@ public class Stirrer : DefinedRoleTemplate, DefinedRole, IAssignableDocument
                     {
                         int charge = 0;
                         if (sabotageChargeMap.TryGetValue(p!.RealPlayer.PlayerId, out var v)) charge = v;
-                        sabotageChargeMap[sampleTracker.CurrentTarget!.RealPlayer.PlayerId] = Mathf.Min(SabotageMaxChargeOption, charge + SabotageChargeOption);
+                        sabotageChargeMap[sampleTracker.CurrentTarget!.RealPlayer.PlayerId] = Mathn.Min(SabotageMaxChargeOption, charge + SabotageChargeOption);
 
                         button.StartCoolDown();
                         StatsStir.Progress();
@@ -72,7 +72,7 @@ public class Stirrer : DefinedRoleTemplate, DefinedRole, IAssignableDocument
                     _ => sampleTracker.CurrentTarget != null && (!sabotageChargeMap.TryGetValue(sampleTracker.CurrentTarget.PlayerId, out int charge) || charge < SabotageMaxChargeOption));
 
                 var sabotageButton = NebulaAPI.Modules.AbilityButton(this, MyPlayer, Virial.Compat.VirtualKeyInput.SecondaryAbility,"stirrer.fakeSabo",
-                    Mathf.Max(SabotageIntervalOption, SabotageCoolDownOption), "fakeSabotage", sabotageButtonImage,
+                    Mathn.Max(SabotageIntervalOption, SabotageCoolDownOption), "fakeSabotage", sabotageButtonImage,
                     _ => sabotageChargeMap.Any(entry => entry.Value > 0) && AmongUsLLImpl.LocalPlayer.myTasks.Find((Il2CppSystem.Predicate<PlayerTask>)(task => task.TryCast<SabotageTask>() != null)) == null
                     );
                 sabotageButton.CoolDownTimer!.Start(SabotageCoolDownOption);

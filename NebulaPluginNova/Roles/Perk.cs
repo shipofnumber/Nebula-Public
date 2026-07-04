@@ -226,8 +226,9 @@ public class PerkInstance : FlexibleLifespan, IGameOperator
     static public Image IconMaskSprite = SpriteLoader.FromResource("Nebula.Resources.Perks.PerkMask.png", 100f);
     static private Image IconHighlightSprite = SpriteLoader.FromResource("Nebula.Resources.Perks.Highlight.png", 100f);
 
-    internal GameObject RelatedGameObject => obj;
+    internal ModGameObject RelatedGameObject => modObj;
     private GameObject obj;
+    private ModGameObject modObj;
     private SpriteRenderer back;
     private SpriteRenderer gem;
     private SpriteRenderer icon;
@@ -243,6 +244,7 @@ public class PerkInstance : FlexibleLifespan, IGameOperator
     public PerkInstance(PerkDefinition definition, Transform parent)
     {
         PerkUtils.GeneratePerkObject(definition, parent, out obj, out back, out gem, out icon);
+        modObj = obj.ModGameObject(true);
         highlight = UnityHelper.CreateObject<SpriteRenderer>("Highlight", obj.transform, new(0f, 0f, -0.5f));
         highlight.sprite = IconHighlightSprite.GetSprite();
         coolDown = UnityHelper.CreateObject<SpriteRenderer>("Mask", obj.transform, new(0f, 0f, -0.3f));
@@ -277,7 +279,7 @@ public class PerkInstance : FlexibleLifespan, IGameOperator
 
     void IGameOperator.OnReleased()
     {
-        if (obj) GameObject.Destroy(obj);
+        if (obj.AsBoolFast()) GameObject.Destroy(obj);
     }
 
     public PerkInstance BindTimer(GameTimer? timer)
@@ -345,10 +347,10 @@ public class PerkInstance : FlexibleLifespan, IGameOperator
         }
     }
 
-    internal void UpdateLocalPos(UnityEngine.Vector3 pos)
+    internal void UpdateLocalPos(VVector3 pos)
     {
         if (IsDeadObject) return;
 
-        this.obj.transform.localPosition = pos;
+        this.modObj.LocalPosition = pos;
     }
 }

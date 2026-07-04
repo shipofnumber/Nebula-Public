@@ -201,13 +201,13 @@ public class VanillaAsset
         scroller.active = true;
 
         scroller.name = ClickMaskName;
-        var instanceId = scroller.gameObject.GetInstanceID();
+        var instanceId = scroller.gameObject.GetInstanceIdFast();
         var buttonManager = PassiveButtonManager.Instance;
         var predicate = (Il2CppSystem.Predicate<PassiveUiElement>)(b => b != null && b && b.isActiveAndEnabled && b.name == ClickMaskName);
         scroller.gameObject.AddComponent<ScriptBehaviour>().UpdateHandler += () =>
         {
             var found = buttonManager.Buttons.Find(predicate);
-            if (found.AsBoolFast() && found.gameObject.GetInstanceID() == instanceId)
+            if (found.AsBoolFast() && found.gameObject.GetInstanceIdFast() == instanceId)
             {
                 scroller.MouseMustBeOverToScroll = false;
                 collider.size = size;

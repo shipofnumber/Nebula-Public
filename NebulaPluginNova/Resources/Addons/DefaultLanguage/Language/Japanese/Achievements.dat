@@ -33,6 +33,7 @@
 "achievement.type.seasonal" : "期間限定"
 "achievement.type.costume" : "コスチューム"
 "achievement.type.aeroGuesser" : "アモゲッサー"
+"achievement.type.paintQuiz" : "手書きクイズ"
 "achievement.type.innersloth" : "Among Us"
 "achievement.type.perk" : "パーク"
 
@@ -42,6 +43,7 @@
 "achievement.group.perk" : "パーク"
 "achievement.group.costume" : "コスチューム"
 "achievement.group.aeroGuesser" : "アモゲッサー"
+"achievement.group.paintQuiz" : "手書きクイズ"
 "achievement.group.others" : "その他"
 "achievement.group.innersloth" : "Among Us"
 "achievement.group.custom" : "クラフト"

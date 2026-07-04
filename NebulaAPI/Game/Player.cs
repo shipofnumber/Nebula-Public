@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Virial.Assignable;
 using Virial.Attributes;
 using Virial.Command;
@@ -346,7 +347,6 @@ public interface Player : ICommandExecutor, IArchivedPlayer, IPlayerlike
 
     internal PlayerControl VanillaPlayer { get; }
     internal PlayerPhysics VanillaPhysics { get; }
-
 
     // PlayerAPI
     PlayerDiving? CurrentDiving { get; }
@@ -801,11 +801,12 @@ public interface Player : ICommandExecutor, IArchivedPlayer, IPlayerlike
     public bool IsSameSideOf(Player player)
     {
         //TODO: いずれイベントでまとめる
+        var myTeam = this.Role.Role.Team;
         if(this.IsTrueCrewmate && player.IsTrueCrewmate) return true;
         if((this.IsImpostor || this.IsMadmate) && (player.IsImpostor || player.IsMadmate)) return true;
-        if (this.Role.Role.Team == NebulaTeams.JackalTeam) return !this.CanKill(player);
+        if (myTeam == NebulaTeams.JackalTeam) return !this.CanKill(player);
         if (player.Role.Role.Team == NebulaTeams.JackalTeam) return !player.CanKill(this);
-        if(this.Role.Role.Team == player.Role.Role.Team) return true;
+        if(myTeam == player.Role.Role.Team) return true;
         return false;
     }
 }

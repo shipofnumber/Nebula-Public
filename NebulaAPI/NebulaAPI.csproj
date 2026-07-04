@@ -27,6 +27,10 @@
 	<Reference Include="$(AmongUs)\BepInEx\core\*.dll" />
 	<Reference Include="$(AmongUs)\BepInEx\interop\*.dll" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Fast\" />
+  </ItemGroup>
 	
   <Target Name="CopyCustomContent" AfterTargets="AfterBuild">
 	<Message Text="Second occurrence" />

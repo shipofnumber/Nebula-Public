@@ -90,7 +90,7 @@ public class DebugScreen
 
     private void Update()
     {
-        if (!text) return;
+        if (!text.AsBoolFast()) return;
 
         StringBuilder sb = new();
         allContents.RemoveAll(c =>

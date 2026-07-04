@@ -164,6 +164,7 @@ public class AchievementType
     static public readonly AchievementType Innersloth = new("innersloth");
     static public readonly AchievementType Perk = new("perk");
     static public readonly AchievementType AeroGuesser = new("aeroGuesser");
+    static public readonly AchievementType PaintQuiz = new("paintQuiz");
 
     //static public readonly AchievementType SomeCollab = new("collab");
 
@@ -192,15 +193,13 @@ public class ProgressRecord
     public int Progress => entry.Value;
     public int Goal => goal;
     public string? GroupId { get; private init; }
+    public bool AllowMinus { get; init; }
 
     public bool IsCleared => !DebugTools.LockAllAchievement && (DebugTools.ReleaseAllAchievement || goal <= entry.Value);
 
     public string OldEntryTag => "a." + key.ComputeConstantHashAsString();
     public string EntryTag => GroupId != null ? ("a." + GroupId + "." + this.hashedKey) : ("a." + this.hashedKey);
-    public void AdoptBigger(int value)
-    {
-        if(entry.Value < value) entry.Value = value;
-    }
+    
     public ProgressRecord(string? group, string key, int goal, bool canClearOnce, string? defaultSource = null)
     {
         this.GroupId = group;
@@ -229,10 +228,10 @@ public class ProgressRecord
     //トークンによってクリアする場合はこちらから
     virtual public ClearDisplayState Unite(int localValue, bool update)
     {
-        if (localValue < 0) return ClearDisplayState.None;
+        if (localValue < 0 && !AllowMinus) return ClearDisplayState.None;
 
         int lastValue = entry.Value;
-        int newValue = Math.Min(goal, lastValue + localValue);
+        int newValue = Mathn.Clamp(lastValue + localValue, -goal, goal);
         if (update) entry.Value = newValue;
 
         if (newValue >= goal && lastValue < goal)
@@ -1023,6 +1022,21 @@ static public class NebulaAchievementManager
         RegisterStats("stats.aeroGuesser.totalScore", GameStatsCategory.AeroGuesser, null, null, 2);
         RegisterStats("stats.aeroGuesser.perfectScore", GameStatsCategory.AeroGuesser, null, null, 3);
 
+        RegisterStats("stats.paintQuiz.gamePlay", GameStatsCategory.PaintQuiz, null, null, 1);
+        RegisterStats("stats.paintQuiz.gamePlay.host", GameStatsCategory.PaintQuiz, null, null, 2);
+        RegisterStats("stats.paintQuiz.totalScore.double", GameStatsCategory.PaintQuiz, null, null, 3, val => ((float)(val / 2)).ToString("0.#").Color(val < 0 ? new(1f, 0.7f, 0.7f) : VColor.White), true);
+        RegisterStats("stats.paintQuiz.score.give.0", GameStatsCategory.PaintQuiz, null, null, 7);
+        RegisterStats("stats.paintQuiz.score.give.1", GameStatsCategory.PaintQuiz, null, null, 8);
+        RegisterStats("stats.paintQuiz.score.give.2", GameStatsCategory.PaintQuiz, null, null, 6);
+        RegisterStats("stats.paintQuiz.score.give.3", GameStatsCategory.PaintQuiz, null, null, 5);
+        RegisterStats("stats.paintQuiz.score.give.4", GameStatsCategory.PaintQuiz, null, null, 4);
+        RegisterStats("stats.paintQuiz.score.get.0", GameStatsCategory.PaintQuiz, null, null, 12);
+        RegisterStats("stats.paintQuiz.score.get.1", GameStatsCategory.PaintQuiz, null, null, 13);
+        RegisterStats("stats.paintQuiz.score.get.2", GameStatsCategory.PaintQuiz, null, null, 11);
+        RegisterStats("stats.paintQuiz.score.get.3", GameStatsCategory.PaintQuiz, null, null, 10);
+        RegisterStats("stats.paintQuiz.score.get.4", GameStatsCategory.PaintQuiz, null, null, 9);
+
+
         NebulaAchievementManager.SortStats();
 
         //組み込みレコード
@@ -1087,6 +1101,9 @@ static public class NebulaAchievementManager
                         break;
                     case "aeroGuesser":
                         types.Add(AchievementType.AeroGuesser);
+                        break;
+                    case "paintQuiz":
+                        types.Add(AchievementType.PaintQuiz);
                         break;
                     case "seasonal":
                         types.Add(AchievementType.Seasonal);
@@ -1229,10 +1246,10 @@ static public class NebulaAchievementManager
         long hash = ach.Id.ComputeConstantLongHash();
         if (!fastAchievements.TryAdd(hash, ach)) NebulaLogger.Instance.Warning($"Duplicated Achievement! (Hash: {hash}, Achievement: {ach.Id} & {fastAchievements[hash].Id})");
     }
-    static internal GameStatsEntry RegisterStats(string id, GameStatsCategory category, DefinedAssignable? relatedAssignable, TextComponent? displayName = null, int innerPriority = 0)
+    static internal GameStatsEntry RegisterStats(string id, GameStatsCategory category, DefinedAssignable? relatedAssignable, TextComponent? displayName = null, int innerPriority = 0, Func<int, string>? valueDecorator = null, bool allowMinus = false)
     {
-        var record = new ProgressRecord(null, id, 800000000, false);
-        var statsEntry = new GameStatsEntryImpl(record, category, relatedAssignable, displayName, innerPriority);
+        var record = new ProgressRecord(null, id, 800000000, false) {  AllowMinus = allowMinus };
+        var statsEntry = new GameStatsEntryImpl(record, category, relatedAssignable, displayName, innerPriority, valueDecorator);
         allStats.Add(statsEntry);
         return statsEntry;
     }
@@ -1544,14 +1561,16 @@ file class GameStatsEntryImpl : GameStatsEntry
     private GameStatsCategory category;
     private DefinedAssignable? relatedAssignable;
     private TextComponent? displayName;
+    private Func<int, string>? valueDecorator = null;
     private int innerPriority = 0;
-    public GameStatsEntryImpl(ProgressRecord record, GameStatsCategory category, DefinedAssignable? relatedAssignable, TextComponent? displayName, int innerPriority)
+    public GameStatsEntryImpl(ProgressRecord record, GameStatsCategory category, DefinedAssignable? relatedAssignable, TextComponent? displayName, int innerPriority, Func<int, string>? valueDecorator = null)
     {
         this.myRecord = record;
         this.category = category;
         this.relatedAssignable = relatedAssignable;
         this.displayName = displayName;
         this.innerPriority = innerPriority;
+        this.valueDecorator = valueDecorator;
     }
     string GameStatsEntry.Id => myRecord.Id;
     TextComponent GameStatsEntry.DisplayName => displayName ?? GUI.API.LocalizedTextComponent(myRecord.Id);
@@ -1559,5 +1578,6 @@ file class GameStatsEntryImpl : GameStatsEntry
     GameStatsCategory GameStatsEntry.Category => category;
     DefinedAssignable? GameStatsEntry.RelatedAssignable => relatedAssignable;
     int GameStatsEntry.InnerPriority => innerPriority;
+    string GameStatsEntry.DisplayValue => valueDecorator?.Invoke(myRecord.Progress) ?? myRecord.Progress.ToString("N0");
 }
 

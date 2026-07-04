@@ -18,7 +18,9 @@ public class GameShowIntroLocalEvent: Event
     public TeamRevealType RevealType { get; set; }
     public RoleTeam? RelatedTeam { get; private set; }
     private HashSet<byte> additionalPlayers = [];
+    private HashSet<byte> removedPlayers = [];
     internal bool ShouldShowAdditionally(byte playerId) => additionalPlayers.Contains(playerId);
+    internal bool ShouldNotShow(byte playerId) => additionalPlayers.Contains(playerId);
     public void SetTeam(RoleTeam team, bool resetAdditionalPlayers = true)
     {
         TeamName = team.DisplayName;
@@ -43,9 +45,17 @@ public class GameShowIntroLocalEvent: Event
         TeamFadeColor = role.IsMadmate ? Virial.Color.ImpostorColor : null;
         RoleColor = role.Color;
     }
+    
     public void AddPlayer(Virial.Game.Player player)
     {
+        removedPlayers.Remove(player.PlayerId);
         additionalPlayers.Add(player.PlayerId);
+    }
+
+    public void RemovePlayer(Virial.Game.Player player)
+    {
+        additionalPlayers.Remove(player.PlayerId);
+        removedPlayers.Add(player.PlayerId);
     }
 
     internal GameShowIntroLocalEvent(RoleTeam team, RuntimeRole role)

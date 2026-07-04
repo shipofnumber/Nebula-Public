@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Virial.Utilities;
 
-public class ValueObserver<T> where T : struct
+public class ValueObserver<T>
 {
     static private readonly EqualityComparer<T> comparer = EqualityComparer<T>.Default;
 

@@ -37,7 +37,7 @@ public static class VentCanUsePatch
             var ventState = GameOperatorManager.Instance?.Run(new Virial.Events.Player.PlayerUpdateVentStateLocalEvent(modInfo));
             couldUse &= ((ventState?.CanUseVentButton ?? false)) || @object.inVent || @object.walkingToVent;
             if (modInfo?.Role.HaveNormalTask ?? false) couldUse &= !@object.MustCleanVent(__instance.Id);
-            couldUse &= !pc.IsDead && @object.CanMove;
+            couldUse &= !modInfo.IsDead && @object.CanMove;
         }
 
         ISystemType systemType;
@@ -52,7 +52,7 @@ public static class VentCanUsePatch
         if (canUse)
         {
             Vector3 center = @object.Collider.bounds.center;
-            Vector3 position = __instance.transform.position;
+            Vector3 position = __instance.transform.GetPositionFast();
             num = Vector2.Distance(center, position);
             canUse &= (num <= __instance.UsableDistance && !PhysicsHelpers.AnythingBetween(@object.Collider, center, position, Constants.ShipOnlyMask, false));
         }
@@ -322,7 +322,7 @@ public static class ConsoleUsePatch
     public static void Postfix(Console __instance)
     {
         var minigame = Minigame.Instance;
-        if (minigame.AsBoolFast() && minigame.Console.AsBoolFast() && minigame.Console.GetInstanceID() == __instance.GetInstanceID())
+        if (minigame.AsBoolFast() && minigame.Console.AsBoolFast() && minigame.Console.GetInstanceIdFast() == __instance.GetInstanceIdFast())
         {
             GameOperatorManager.Instance?.Run(new PlayerBeginMinigameByConsoleLocalEvent(GamePlayer.LocalPlayer!, __instance));
         }
@@ -474,7 +474,7 @@ public static class ArrowUpdatePatch
         Vector3 vector2 = new(Mathn.LerpUnclamped(0f, num * 0.88f, vector.x), Mathn.LerpUnclamped(0f, safeOrthographicSize * 0.79f, vector.y), 0f);
         var transform = __instance.transform;
         var maxScale = __instance.MaxScale;
-        transform.position = cam.transform.position + vector2;
+        transform.position = cam.transform.GetPositionFast() + vector2;
         transform.localScale = new Vector3(maxScale, maxScale, maxScale);
     }
     internal static bool FixInternal(ArrowBehaviour __instance, Transform lookAt) {
@@ -482,7 +482,7 @@ public static class ArrowUpdatePatch
 
         try
         {
-            var transform = __instance.transform;
+            var transform = __instance.ModGameObject(false);
 
             __instance.gameObject.layer = LayerExpansion.GetArrowLayer();
             if(__instance.image.AsBoolFast()) __instance.image.sortingOrder = 10;
@@ -491,43 +491,43 @@ public static class ArrowUpdatePatch
             Camera main = NebulaGameManager.Instance?.WideCamera.Camera ?? UnityHelper.FindCamera(LayerExpansion.GetUILayer())!;
             //距離を測るのは表示用のカメラ
             Camera worldCam = (NebulaGameManager.Instance?.WideCamera.IsShown ?? false) ? NebulaGameManager.Instance.WideCamera.Camera : Camera.main;
+            float worldCamSize = worldCam.orthographicSize;
+            float mainCamSize = Camera.main.orthographicSize;
 
-            Vector2 del = __instance.target - main.transform.position;
+            VVector2 del = (VVector2)__instance.target - main.ModGameObject(false).Position;
 
-            float num = del.magnitude / (worldCam.orthographicSize * __instance.perc);
+            float num = del.Magnitude / (worldCamSize * __instance.perc);
             if (__instance.image.AsBoolFast()) __instance.image.enabled = (num > __instance.minDistanceToShowArrow);
 
-            Vector2 vector = worldCam.WorldToViewportPoint(__instance.target);
+            VVector2 vector = worldCam.WorldToViewportPoint(__instance.target);
 
             //カメラに合わせて見かけ上の位置に偽装させる
+            VVector2 hudPos =  AmongUsLLImpl.HudManagerBridge.MyTransform.ModGameObject(false).Position;
             var tempTarget = __instance.target;
-            var diff = __instance.target - HudManager.Instance.transform.position;
-            var pos = HudManager.Instance.transform.position + diff / (worldCam.orthographicSize / 3f);
-            pos.z = tempTarget.z;
-            __instance.target = pos;
+            var diff = __instance.target - hudPos;
+            VVector2 pos = hudPos + diff / (worldCamSize / 3f);
+            __instance.target = pos.AsUnityVector3(tempTarget.z);
 
             if (InArea(ovalMode, vector))
             {
-                Vector2 temp = worldCam.transform.position + (__instance.target - worldCam.transform.position) * (worldCam.orthographicSize / Camera.main.orthographicSize);
-                transform.position = temp - del.normalized * 0.6f * (worldCam.orthographicSize / Camera.main.orthographicSize);
-                if (__instance.alwaysMaxSize)
-                    transform.localScale = Vector3.one * __instance.MaxScale;
-                else
-                    transform.localScale = Vector3.one * Mathn.Clamp(num, 0f, __instance.MaxScale);
+                VVector2 worldCamPos = worldCam.ModGameObject(false).Position;
+                VVector2 temp = worldCamPos + (__instance.target - worldCamPos) * (worldCamSize / mainCamSize);
+                transform.Position = (temp - del.Normalized * 0.6f * (worldCamSize / mainCamSize)).AsVector3();
+
+                float scale = __instance.alwaysMaxSize ? __instance.MaxScale : Mathn.Clamp(num, 0f, __instance.MaxScale);
+                transform.LocalScale = new(scale, scale, 1f);
             }
             else
                 DistancedBehaviour(ovalMode, __instance, vector, del, num, main);
 
-            transform.localScale *= (worldCam.orthographicSize / Camera.main.orthographicSize);
+            transform.LocalScale *= (worldCamSize / mainCamSize);
 
             __instance.target = tempTarget;
 
             lookAt.LookAt2d(__instance.target);
 
             //Zの位置を調整
-            var localPos = transform.localPosition;
-            localPos.z = -100f;
-            transform.localPosition = localPos;
+            transform.SetLocalZ(-100f);
         }catch(System.Exception e) {
             LogUtils.WriteToConsole(e.ToString());
         }
@@ -633,13 +633,13 @@ class ZiplineSetCoolDownPatch
                     modPlayer?.Unbox().AddPlayerColorRenderers(apjz.hand.handRenderer);
                     if(modPlayer != null)
                     {
-                        GameOperatorManager.Instance?.Run<PlayerUseZiplineEvent>(new(modPlayer, !__instance.fromTop, __instance.start.position, __instance.end.position));
+                        GameOperatorManager.Instance?.Run<PlayerUseZiplineEvent>(new(modPlayer, !__instance.fromTop, __instance.start.GetPositionFast(), __instance.end.GetPositionFast()));
                     }
                     try
                     {
                         modPlayer?.DeathPosition = new(
-                            __instance.fromTop ? __instance.__4__this.landingPositionBottom.position : __instance.__4__this.landingPositionTop.position,
-                            __instance.fromTop ?__instance.__4__this.landingPositionTop.position : __instance.__4__this.landingPositionBottom.position
+                            __instance.fromTop ? __instance.__4__this.landingPositionBottom.GetPositionFast() : __instance.__4__this.landingPositionTop.GetPositionFast(),
+                            __instance.fromTop ?__instance.__4__this.landingPositionTop.GetPositionFast() : __instance.__4__this.landingPositionBottom.GetPositionFast()
                             );
                     }
                     catch
@@ -691,7 +691,7 @@ public static class MapConsoleUsePatch
     {
         int mapId = NebulaAPI.AmongUs.MapId;
         int consoleId = 0;
-        if (mapId == 4 && __instance.transform.position.x > 10f) consoleId = 1;
+        if (mapId == 4 && __instance.transform.GetPositionFast().x > 10f) consoleId = 1;
         MapBehaviourExtension.RestrictRoom(MapBehaviour.Instance, GeneralConfigurations.AdminRoomOptions[mapId][consoleId].Value << 1);
     }
 }

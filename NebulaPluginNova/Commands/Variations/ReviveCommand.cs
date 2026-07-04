@@ -37,7 +37,7 @@ public class ReviveCommand : ICommand
                             {
                                 if (!player.IsDead) continue;
 
-                                player.VanillaPlayer.ModRevive((healer ?? player).VanillaPlayer, player.VanillaPlayer.transform.position, true);
+                                player.VanillaPlayer.ModRevive((healer ?? player).VanillaPlayer, player.Position, true);
                                 count++;
                             }
                         }

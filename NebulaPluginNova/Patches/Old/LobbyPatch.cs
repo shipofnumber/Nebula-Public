@@ -19,6 +19,7 @@ using Virial.Assignable;
 using Virial.Events.Game;
 using Virial.Events.Lobby;
 using Virial.Game;
+using Virial.Helpers;
 using static Il2CppSystem.Net.Http.Headers.Parser;
 
 namespace Nebula.Patches;
@@ -37,15 +38,14 @@ public class GameStartManagerUpdatePatch
         var auClient = AmongUsLLImpl.AmongUsClientInstance;
         bool isGamePublic = auClient.IsGamePublic;
 
+        bool amHost = auClient.AmHost;
+
 #if PC
         //公開ルームではスライド使用不可 (不特定多数への画像配信を禁止)
         if (isGamePublic) NebulaGameManager.Instance?.LobbySlideManager.Abandon();
 #endif
 
         __instance.MinPlayers = GeneralConfigurations.CurrentGameMode.MinPlayers;
-
-
-        TranslationController translation = DestroyableSingleton<TranslationController>.Instance;
 
         try
         {
@@ -54,13 +54,13 @@ public class GameStartManagerUpdatePatch
             if (ConfigurationValues.CurrentPresetName.Length > 0)
                 __instance.RulesPresetText.text = ConfigurationValues.CurrentPresetName;
             else
-                __instance.RulesPresetText.text = translation.GetString(GameOptionsManager.Instance.CurrentGameOptions.GetRulesPresetTitle());
+                __instance.RulesPresetText.text = VanillaTranslationCache.GetString(GameOptionsManager.Instance.CurrentGameOptions.GetRulesPresetTitle());
         }
         catch { }
 
-        if (GameCode.IntToGameName(auClient.GameId) == null) __instance.privatePublicPanelText.text = translation.GetString(StringNames.LocalButton);
-        else if (isGamePublic) __instance.privatePublicPanelText.text = translation.GetString(StringNames.PublicHeader);
-        else __instance.privatePublicPanelText.text = translation.GetString(StringNames.PrivateHeader);
+        if (GameCode.IntToGameName(auClient.GameId) == null) __instance.privatePublicPanelText.text = VanillaTranslationCache.GetString(StringNames.LocalButton);
+        else if (isGamePublic) __instance.privatePublicPanelText.text = VanillaTranslationCache.GetString(StringNames.PublicHeader);
+        else __instance.privatePublicPanelText.text = VanillaTranslationCache.GetString(StringNames.PrivateHeader);
         
         __instance.HostPrivateButton.gameObject.SetActive(!isGamePublic);
         __instance.HostPublicButton.gameObject.SetActive(isGamePublic);
@@ -70,7 +70,7 @@ public class GameStartManagerUpdatePatch
 
         if (DestroyableSingleton<DiscordManager>.InstanceExists)
         {
-            bool active = auClient.AmHost && auClient.NetworkMode == NetworkModes.OnlineGame && DestroyableSingleton<DiscordManager>.Instance.CanShareGameOnDiscord() && DestroyableSingleton<DiscordManager>.Instance.HasValidPartyID();
+            bool active = amHost && auClient.NetworkMode == NetworkModes.OnlineGame && DestroyableSingleton<DiscordManager>.Instance.CanShareGameOnDiscord() && DestroyableSingleton<DiscordManager>.Instance.HasValidPartyID();
             __instance.ShareOnDiscordButton.gameObject.SetActive(active);
         }
 
@@ -98,28 +98,28 @@ public class GameStartManagerUpdatePatch
         LastChecked = canStart;
         __instance.StartButton.SetButtonEnableState(canStart);
         ActionMapGlyphDisplay startButtonGlyph = __instance.StartButtonGlyph;
-        if(startButtonGlyph != null) startButtonGlyph?.SetColor(canStart ? Palette.EnabledColor : Palette.DisabledClear);
+        if(startButtonGlyph.AsBoolFast()) startButtonGlyph?.SetColor(canStart ? Palette.EnabledColor : Palette.DisabledClear);
 
         if (canStart)
         {
-            __instance.StartButton.ChangeButtonText(translation.GetString(StringNames.StartLabel));
-            __instance.GameStartTextClient.text = translation.GetString(StringNames.WaitingForHost);
+            __instance.StartButton.ChangeButtonText(VanillaTranslationCache.GetString(StringNames.StartLabel));
+            __instance.GameStartTextClient.text = VanillaTranslationCache.GetString(StringNames.WaitingForHost);
         }
         else
         {
-            __instance.StartButton.ChangeButtonText(translation.GetString(StringNames.WaitingForPlayers));
-            __instance.GameStartTextClient.text = translation.GetString(StringNames.WaitingForPlayers);
+            __instance.StartButton.ChangeButtonText(VanillaTranslationCache.GetString(StringNames.WaitingForPlayers));
+            __instance.GameStartTextClient.text = VanillaTranslationCache.GetString(StringNames.WaitingForPlayers);
         }
 
         if (DestroyableSingleton<DiscordManager>.InstanceExists)
         {
-            if (auClient.AmHost && auClient.NetworkMode == NetworkModes.OnlineGame)
+            if (amHost && auClient.NetworkMode == NetworkModes.OnlineGame)
                 DestroyableSingleton<DiscordManager>.Instance.SetInLobbyHost(__instance.LastPlayerCount, gameManager.LogicOptions.MaxPlayers, auClient.GameId);
             else
                 DestroyableSingleton<DiscordManager>.Instance.SetInLobbyClient(__instance.LastPlayerCount, gameManager.LogicOptions.MaxPlayers, auClient.GameId);
         }
     
-        if (auClient.AmHost)
+        if (amHost)
         {
             if (__instance.startState == GameStartManager.StartingStates.Countdown)
             {
@@ -129,7 +129,7 @@ public class GameStartManagerUpdatePatch
                 if (!__instance.GameStartTextParent.activeSelf) AmongUsLLImpl.SoundManagerInstance.PlaySound(__instance.gameStartSound, false, 1f, null);
 
                 __instance.GameStartTextParent.SetActive(true);
-                __instance.GameStartText.text = translation.GetString(StringNames.GameStarting, num2);
+                __instance.GameStartText.text = TranslationController.Instance.GetString(StringNames.GameStarting, num2);
                 if (num != num2)
                 {
                     AmongUsLLImpl.LocalPlayer.RpcSetStartCounter(num2);
@@ -321,7 +321,7 @@ public class DelayPlayDropshipAmbiencePatch
 
         System.Collections.IEnumerator CoUpdateLogo()
         {
-            while (logoHolder)
+            while (logoHolder.AsBoolFast())
             {
                 logoHolder.SetActive(ClientOption.GetValue(ClientOption.ClientOptionType.ShowNoSLogoInLobby) == 1);
                 yield return null;
@@ -391,7 +391,7 @@ public class MarketplaceConsolePatch
         {
             var transform = leftBox.transform;
             transform.localPosition = new(-1.51f, 0.2336f, 0f);
-            var pos = transform.position;
+            var pos = transform.GetPositionFast();
             pos.z = pos.y / 1000f;
             transform.position = pos;
         }
@@ -579,10 +579,11 @@ public class GlobalCosMismatchShowerPatch
                 UpdateUnacquiredItems();
                 bool show = MoreCosmic.UnacquiredItems.Count > 0;
                 rendererObj.SetActive(show);
-                
+
                 //たまに大きくなるアニメーション
-                var t = Mathf.Repeat(Time.time, 2.4f);
-                animRenderer.transform.localScale = Vector3.one * (1f + Helpers.MountainCurve(Mathn.Clamp01(t / 0.25f), 0.6f));
+                var t = Mathf.Repeat(NebulaGameManager.Instance?.CurrentTime ?? 0f, 2.4f);
+                var scale = (1f + Helpers.MountainCurve(Mathn.Clamp01(t / 0.25f), 0.6f));
+                animRenderer.transform.localScale = new(scale, scale, 1f);
 
                 yield return null;
             }
@@ -605,14 +606,14 @@ public class HostInfoPanelUpdatePatch
     {
         NetworkedPlayerInfo host = GameData.Instance.GetHost();
         if (host == null || host.IsIncomplete) return;
-        string text = ColorUtility.ToHtmlStringRGB(DynamicPalette.PlayerColors[__instance.player.ColorId].ToUnityColor());
+        var color = DynamicPalette.PlayerColors[host.PlayerId];
         if (AmongUsLLImpl.AmongUsClientInstance.AmHost)
         {
-            __instance.playerName.text = string.IsNullOrEmpty(host.PlayerName) ? "..." : string.Concat("<color=#", text, ">", host.PlayerName, "</color>" ) + "  <size=90%><b><font=\"Barlow-BoldItalic SDF\" material=\"Barlow-BoldItalic SDF Outline\">" + DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.HostYouLabel);
+            __instance.playerName.text = $"{(host.PlayerName ?? "...").Color(color)} <size=90%><b><font=\"Barlow-BoldItalic SDF\" material=\"Barlow-BoldItalic SDF Outline\">{VanillaTranslationCache.GetString(StringNames.HostYouLabel)}";
         }
         else
         {
-            __instance.playerName.text = string.IsNullOrEmpty(host.PlayerName) ? "..." : string.Concat("<color=#", text, ">", host.PlayerName, "</color>" ) + " (" + __instance.player.ColorBlindName + ")";
+            __instance.playerName.text = $"{(host.PlayerName ?? "...").Color(color)} ({__instance.player.ColorBlindName})";
         }
     }
 }

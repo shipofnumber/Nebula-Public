@@ -91,14 +91,14 @@ internal class Navvy : DefinedSingleAbilityRoleTemplate<Navvy.Ability>, DefinedR
                     if (leftTapes < CostForDoorSealingOption) return;
 
                     float min = 10f;
-                    var playerPos = MyPlayer.VanillaPlayer.transform.position;
+                    var playerPos = MyPlayer.VanillaPlayer.transform.GetPositionFast();
                     var nearbyDoor = doors.MinBy(d =>
                     {
                         if (!d.IsOpen) return 100f;
                         if (nextSealedDoors.Contains(d.Id)) return 100f;
                         if (!mapData.IsSealableDoor(d)) return 100f;
                         if (UtilityInvalidationSystem.Instance.TryGetInvalidDoor(d, out var invalidDoor) && (!RedundantSealingOption || invalidDoor.Level + DoorRemoveStepsOption >= 8)) return 100f;
-                        var distance = playerPos.Distance(d.transform.position);
+                        var distance = playerPos.Distance(d.transform.GetPositionFast());
                         if (distance < min) min = distance;
                         return distance;
                     });
@@ -134,7 +134,7 @@ internal class Navvy : DefinedSingleAbilityRoleTemplate<Navvy.Ability>, DefinedR
                         //テープを設置
                         var isVert = InvalidDoor.IsVertDoor(currentTargetDoor);
                         sealRenderer = UnityHelper.CreateObject<SpriteRenderer>("Seal", AmongUsLLImpl.ShipStatusInstance.transform, VVector3.Zero, LayerExpansion.GetShipLayer());
-                        sealRenderer.transform.position = currentTargetDoor.transform.position + NebulaAPI.AmongUs.MapId switch
+                        sealRenderer.transform.position = currentTargetDoor.transform.GetPositionFast() + NebulaAPI.AmongUs.MapId switch
                         {
                             5 => isVert ? new(0.25f, -1.0f, -0.001f) : new(0.35f, -0.6f, -0.001f),
                             4 => isVert ? new(0.25f, -0.7f, -0.001f) : new(0.55f, -0.5f, -0.001f),

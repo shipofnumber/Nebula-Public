@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine.Networking;
 
 namespace Nebula.Utilities;
@@ -51,7 +52,25 @@ internal class NebulaWebRequest
             yield break;
         }
 
-        onSuccess(request.downloadHandler.GetNativeData().ToArray());
+
+
+        var nativeData = request.downloadHandler.GetNativeData();
+        var sourceLength = nativeData.m_Length;
+        byte[] managedData = new byte[sourceLength];
+
+        unsafe
+        {
+            var sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(nativeData);
+
+            fixed (byte* destinationPtr = managedData)
+            {
+                long byteCount = (long)sourceLength * sizeof(byte);
+                Buffer.MemoryCopy(sourcePtr, destinationPtr, byteCount, byteCount);
+            }
+        }
+
+        onSuccess(managedData);
+
         request.Dispose();
     }
 

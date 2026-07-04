@@ -12,7 +12,7 @@ namespace Nebula.Roles.Impostor;
 
 public class Reaper : DefinedRoleTemplate, DefinedRole, IAssignableDocument
 {
-    private Reaper() : base("reaper", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [ConnectVentsOption, VentConfiguration, CanUseVentWhileHoldingDeadbodyOption]) {
+    private Reaper() : base("reaper", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [ConnectVentsOption, VentConfiguration, CanUseVentWhileHoldingDeadbodyOption]) {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagBeginner);
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Reaper.png");
     }

@@ -15,7 +15,7 @@ namespace Nebula.Roles.Impostor;
 
 public class Jailer : DefinedSingleAbilityRoleTemplate<Jailer.Ability>, DefinedRole, IAssignableDocument
 {
-    private Jailer() : base("jailer", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [CanMoveWithMapWatchingOption, CanUseAdminOnMeetingOption, CanIdentifyDeadBodiesOption, CanIdentifyImpostorsOption, InheritAbilityOnDyingOption])
+    private Jailer() : base("jailer", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [CanMoveWithMapWatchingOption, CanUseAdminOnMeetingOption, CanIdentifyDeadBodiesOption, CanIdentifyImpostorsOption, InheritAbilityOnDyingOption])
     {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagBeginner);
         ConfigurationHolder?.ScheduleAddRelated(() => [JailerModifier.MyRole.ConfigurationHolder!]);
@@ -104,8 +104,8 @@ public class Jailer : DefinedSingleAbilityRoleTemplate<Jailer.Ability>, DefinedR
         {
             if(acTokenCommon2 != null && !MeetingHud.Instance.AsBoolFast() && !ExileController.Instance.AsBoolFast())
             {
-                if(Helpers.AllDeadBodies().Any(d => d.transform.position.Distance(MyPlayer.VanillaPlayer.transform.position) < 5f))
-                    acTokenCommon2.Value += Time.deltaTime;
+                if(Helpers.AllDeadBodies().Any(d => new VVector2(d.transform.GetPositionFast()).Distance(MyPlayer.Position) < 5f))
+                    acTokenCommon2.Value += FastMethods.GetDeltaTimeFast();
                 else if(acTokenCommon2.Value < 10f)
                     acTokenCommon2.Value = 0f;
             }
@@ -130,7 +130,7 @@ public class Jailer : DefinedSingleAbilityRoleTemplate<Jailer.Ability>, DefinedR
 
 public class JailerModifier : DefinedAllocatableModifierTemplate, DefinedAllocatableModifier, IAssignableDocument
 {
-    private JailerModifier() : base("jailer", "JLR", new(Palette.ImpostorRed), [Jailer.CanMoveWithMapWatchingOption, Jailer.CanUseAdminOnMeetingOption, Jailer.CanIdentifyDeadBodiesOption, Jailer.CanIdentifyImpostorsOption], allocateToNeutral: false, allocateToCrewmate: false)
+    private JailerModifier() : base("jailer", "JLR", VColor.ImpostorColor, [Jailer.CanMoveWithMapWatchingOption, Jailer.CanUseAdminOnMeetingOption, Jailer.CanIdentifyDeadBodiesOption, Jailer.CanIdentifyImpostorsOption], allocateToNeutral: false, allocateToCrewmate: false)
     {
         ConfigurationHolder?.ScheduleAddRelated(() => [Jailer.MyRole.ConfigurationHolder!]);
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Jailer.png");

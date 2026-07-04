@@ -39,7 +39,7 @@ internal class CustomHooksManager<T> where T : class
 
     public bool TryGet(GameObject obj, [MaybeNullWhen(false)] out T found)
     {
-        if(allHooks.TryGetValue(obj.GetInstanceID(), out var wrapped))
+        if(allHooks.TryGetValue(obj.GetInstanceIdFast(), out var wrapped))
         {
             found = wrapped.Hooks;
             return true;
@@ -51,9 +51,9 @@ internal class CustomHooksManager<T> where T : class
 
     public T Get(GameObject obj)
     {
-        if (allHooks.TryGetValue(obj.GetInstanceID(), out var found) && found.Obj == obj) return found.Hooks;
+        if (allHooks.TryGetValue(obj.GetInstanceIdFast(), out var found) && found.Obj == obj) return found.Hooks;
         var generated = constructor.Invoke();
-        allHooks[obj.GetInstanceID()] = new(obj, generated);
+        allHooks[obj.GetInstanceIdFast()] = new(obj, generated);
         return generated;
 
     }

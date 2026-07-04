@@ -34,16 +34,20 @@ public static class PlayerParticleUpdatePatch
         if (MainMenuManagerInstance.MainMenu.AsBoolFast())
         {
             var transform = MainMenuManagerInstance.MainMenu!.screenMask.transform;
-            var xScale = transform.lossyScale.x * 0.5f + 1.6f;
-            var yScale = transform.lossyScale.y * 0.5f + 1.6f;
-            var xPos = transform.position.x;
-            var yPos = transform.position.y;
+            var lossyScale = transform.lossyScale;
+            var xScale = lossyScale.x * 0.5f + 1.6f;
+            var yScale = lossyScale.y * 0.5f + 1.6f;
+            VVector2 position = transform.GetPositionFast();
+            var xPos = position.x;
+            var yPos = position.y;
 
-            var myX = __instance.transform.position.x;
-            var myY = __instance.transform.position.y;
+            VVector2 myPosition = __instance.transform.GetPositionFast();
+            var myX = myPosition.x;
+            var myY = myPosition.y;
 
-            if (Mathn.Abs(myX - xPos) > xScale || Mathn.Abs(myY - yPos) > yScale) {
-                var dot = Vector2.Dot(__instance.velocity.normalized, ((Vector2)transform.position - (Vector2)__instance.transform.position).normalized);
+            if (Mathn.Abs(myX - xPos) > xScale || Mathn.Abs(myY - yPos) > yScale) 
+            {
+                var dot = VVector2.Dot(new VVector2(__instance.velocity).Normalized, (position - myPosition).Normalized);
                 if (dot < 0.1f)
                 {
                     __instance.OwnerPool.Reclaim(__instance);
@@ -68,20 +72,23 @@ public static class PlayerParticlesPlacePatch
         if (MainMenuManagerInstance.MainMenu.AsBoolFast() && !initial)
         {
             var transform = MainMenuManagerInstance.MainMenu!.screenMask.transform;
-            var xScale = transform.lossyScale.x * 0.5f + 1.6f;
-            var yScale = transform.lossyScale.y * 0.5f + 1.6f;
-            var xPos = transform.position.x;
-            var yPos = transform.position.y;
+            var lossyScale = transform.lossyScale;
+            var xScale = lossyScale.x * 0.5f + 1.6f;
+            var yScale = lossyScale.y * 0.5f + 1.6f;
+            VVector2 position = transform.GetPositionFast();
+            var xPos = position.x;
+            var yPos = position.y;
 
-            var myX = part.transform.position.x;
-            var myY = part.transform.position.y;
+            VVector2 myPosition = part.transform.GetPositionFast();
+            var myX = myPosition.x;
+            var myY = myPosition.y;
 
             var diffX = myX - xPos;
             var diffY = myY - yPos;
             if (Mathn.Abs(diffX) > xScale + 0.8f) myX = diffX < 0f ? xPos - xScale : xPos + xScale;
             if (Mathn.Abs(diffY) > yScale + 0.8f) myY = diffY < 0f ? yPos - yScale : yPos + yScale;
 
-            part.transform.position = new(myX, myY, part.transform.position.z);
+            part.transform.position = new(myX, myY, part.transform.GetPositionFast().z);
         }
     }
 }

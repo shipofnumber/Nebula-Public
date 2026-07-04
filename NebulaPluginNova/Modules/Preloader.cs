@@ -8,6 +8,7 @@ using Nebula.Roles.Impostor;
 using Nebula.SpecialModes.AeroGuesser;
 using Nebula.SpecialModes.PaintQuiz;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Virial;
 using Virial.Achievements;
 using Virial.Assignable;
@@ -17,6 +18,7 @@ using Virial.Game.Console;
 using Virial.Runtime;
 using Virial.Text;
 using Virial.Utilities;
+using xCloud;
 using static Virial.Attributes.NebulaPreprocess;
 
 namespace Nebula.Modules;

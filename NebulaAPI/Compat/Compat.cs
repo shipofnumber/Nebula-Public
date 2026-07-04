@@ -79,6 +79,7 @@ public struct Vector2
 
     public Vector3 AsVector3(float z = 0f) => new(x, y, z);
     public UnityEngine.Vector3 AsUnityVector3(float z = 0f) => new(x, y, z);
+    public UnityEngine.Vector3 AsGameWorldUnityVector3() => new(x, y, y / 1000f);
 
     public float Magnitude
     {
@@ -96,7 +97,8 @@ public struct Vector2
 
     static public implicit operator UnityEngine.Vector2(Vector2 v) => v.ToUnityVector();
     static public implicit operator Vector2(UnityEngine.Vector2 v) => new(v);
-    static public implicit operator Vector2(UnityEngine.Vector3 v) => new(v);
+    static public implicit operator Vector2(UnityEngine.Vector3 v) => new(v.x, v.y);
+    static public implicit operator Vector2(Vector3 v) => new(v.x, v.y);
     static public Compat.Vector2 operator +(Vector2 v) => v;
     static public Compat.Vector2 operator -(Vector2 v) => new(-v.x, -v.y);
     static public Compat.Vector2 operator +(Vector2 v1, Vector2 v2) => new(v1.x + v2.x, v1.y + v2.y);
@@ -338,6 +340,40 @@ public struct Vector3
         return new Vector3(v.x * inv, v.y * inv, v.z * inv);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float Distance(Vector3 v) => MathF.Sqrt(Sqr2DDistance(this, v));
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public float Distance(Vector2 v) => Vector2.Distance(new(x, y), v);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal float Distance(UnityEngine.Vector3 v) => MathF.Sqrt(Sqr2DDistance(this, v));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Vector3 RotateZ(float degrees) => Vector2.RotateDeg(new(x,y), degrees).AsVector3(z);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float Sqr2DDistance(Vector3 a, Vector3 b)
+    {
+        float dx = a.x - b.x;
+        float dy = a.y - b.y;
+        return dx * dx + dy * dy;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector3 Lerp(Vector3 a, Vector3 b, float t)
+    {
+        t = Mathn.Clamp01(t);
+        return LerpUnclamped(a, b, t);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Vector3 LerpUnclamped(Vector3 a, Vector3 b, float t)
+    {
+        return new Vector3(
+            a.x + (b.x - a.x) * t,
+            a.y + (b.y - a.y) * t,
+            a.z + (b.z - a.z) * t
+        );
+    }
 }
 
 public struct Vector4

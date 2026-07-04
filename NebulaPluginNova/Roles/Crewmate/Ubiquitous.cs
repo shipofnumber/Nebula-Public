@@ -72,9 +72,9 @@ public class UbiquitousDrone : MonoBehaviour
     float updateTimer = 0f;
     int imageIndex = 0;
     
-    public Vector3 ColliderPosition => myRigidBody.transform.position;
+    public Vector3 ColliderPosition => myRigidBody.transform.GetPositionFast();
 
-    public int CameraRoughness => 1 << Mathn.Min(5, (int)(AmongUsLLImpl.LocalPlayer.transform.position.Distance(transform.position) / 5.2f));
+    public int CameraRoughness => 1 << Mathn.Min(5, (int)(GamePlayer.LocalPlayer!.Position.Distance((VVector2)transform.GetPositionFast()) / 5.2f));
 
     void UpdateSprite()
     {
@@ -106,7 +106,7 @@ public class UbiquitousDrone : MonoBehaviour
         else
             myRigidBody.velocity = Vector2.zero;
 
-        var pos = myRigidBody.transform.position;
+        var pos = myRigidBody.transform.GetPositionFast();
         pos.z = pos.y / 1000f;
         myRigidBody.transform.position = pos;
     }
@@ -163,7 +163,7 @@ public class UbiquitousDetachedDrone : MonoBehaviour, IVoiceComponent
         shadeRenderer.sprite = UbiquitousDroneAsset.droneShadeSprite.GetSprite();
         shadeRenderer.color = new(1f, 1f, 1f, 0.5f);
 
-        var pos = transform.position;
+        var pos = transform.GetPositionFast();
         pos.z = pos.y / 1000f;
         transform.position = pos;
     }
@@ -183,7 +183,7 @@ public class UbiquitousDetachedDrone : MonoBehaviour, IVoiceComponent
 
     float IVoiceComponent.Volume => 0.95f;
 
-    Vector2 IVoiceComponent.Position => transform.position;
+    Vector2 IVoiceComponent.Position => transform.GetPositionFast();
 
     bool IVoiceComponent.CanPlaySoundFrom(IVoiceComponent mic)
     {
@@ -252,11 +252,11 @@ public class UbiquitousMapLayer : MonoBehaviour
 
             foreach (var pos in dronePos)
             {
-                float d = pos.Distance(p.VanillaPlayer.transform.position);
+                float d = pos.Distance(p.Position);
                 if(d < Ubiquitous.droneDetectionRadiousOption)
                 {
                     var icon = (ModSingleton<BalancedColorManager>.Instance.IsLightColor(DynamicPalette.PlayerColors[p.PlayerId]) ? lightIconPool : darkIconPool).Instantiate();
-                    icon.transform.localPosition = VanillaAsset.ConvertToMinimapPos(p.VanillaPlayer.transform.position, center, scale).AsUnityVector3();
+                    icon.transform.localPosition = VanillaAsset.ConvertToMinimapPos(p.Position, center, scale).AsUnityVector3();
                     shown++;
                     if (alive >= 10 && alive == shown) challengeToken.Value = true;
                     break;
@@ -432,7 +432,7 @@ public class Ubiquitous : DefinedSingleAbilityRoleTemplate<Ubiquitous.Ability>, 
                     float distance = doorHackRadiousOption;
                     foreach(var door in AmongUsLLImpl.ShipStatusInstance.AllDoors.GetFastEnumerator())
                     {
-                        if (!door.IsOpen && door.Room != SystemTypes.Decontamination && myDrone!.ColliderPosition.Distance(door.transform.position) < distance)
+                        if (!door.IsOpen && door.Room != SystemTypes.Decontamination && myDrone!.ColliderPosition.Distance(door.transform.GetPositionFast()) < distance)
                         {
                             AmongUsLLImpl.ShipStatusInstance.RpcUpdateSystem(SystemTypes.Doors, (byte)(door.Id | 64));
 

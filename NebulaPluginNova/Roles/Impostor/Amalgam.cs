@@ -28,7 +28,7 @@ namespace Nebula.Roles.Impostor;
 [NebulaRPCHolder]
 internal class Amalgam : DefinedRoleTemplate, DefinedRole, DefinedSingleAbilityRole<Amalgam.Ability>, ICustomAssignableStatus, IAssignableDocument
 {
-    private Amalgam() : base("amalgam", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [MaxRolesOption, RandomAssignmentOption, NumOfRandomAssignmentOption, CanBeGuessedAsLoadedRolesOption, AmalgamBreakdownOption, RoleFilterOption])
+    private Amalgam() : base("amalgam", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [MaxRolesOption, RandomAssignmentOption, NumOfRandomAssignmentOption, CanBeGuessedAsLoadedRolesOption, AmalgamBreakdownOption, RoleFilterOption])
     {
         ICustomAssignableStatus.Register(this);
     }

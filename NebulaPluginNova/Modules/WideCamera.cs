@@ -13,16 +13,16 @@ public interface INoisedCamera
 
 public interface CameraAttention : ILifespan
 {
-    public record Attention(float eulerAngle, float view, Vector2 center);
+    public record Attention(float eulerAngle, float view, VVector2 center);
     public Attention GetAttention();
 }
 
 public class SimpleAttention : CameraAttention
 {
     private float eulerAngle, view;
-    private Vector2 center;
+    private VVector2 center;
     private ILifespan myLifespan;
-    public SimpleAttention(float eulerAngle, float view, Vector2 center, ILifespan lifespan)
+    public SimpleAttention(float eulerAngle, float view, VVector2 center, ILifespan lifespan)
     {
         this.eulerAngle = eulerAngle;
         this.view = view;
@@ -74,6 +74,7 @@ public class WideCamera : ICustomWideCamera
 {
     private GameObject myHolder;
     private Camera myCamera;
+    private Virial.Compat.ModGameObject myCameraObj;
 
     private float targetRate = 1f; // エフェクト効果に依らない目標拡大率 Wideカメラを有効にしている時のみ掛け合わせられる。
 
@@ -82,6 +83,7 @@ public class WideCamera : ICustomWideCamera
     public float CurrentRate => orthographicCache / 3f;
     public Camera Camera => myCamera;
     private MeshRenderer meshRenderer;
+    private Virial.Compat.ModGameObject meshRendererObj;
     private MeshFilter meshFilter;
     private float meshAngleZ = 0f;
     private float orthographicCache = 3f;
@@ -119,13 +121,14 @@ public class WideCamera : ICustomWideCamera
         mat.SetFloat("_ClipV", v);
     }
 
-    public Transform ViewerTransform => meshRenderer.transform;
+    public Virial.Compat.ModGameObject ViewerTransform => meshRendererObj;
 
     public WideCamera()
     {
-        myHolder = UnityHelper.CreateObject("WideCam", HudManager.Instance.transform.parent, Vector3.zero);
+        myHolder = UnityHelper.CreateObject("WideCam", HudManager.Instance.transform.parent, new(0f, 0f, 0f), out var myHolderTransform);
 
-        myCamera = UnityHelper.CreateObject<Camera>("SubCam", myHolder.transform, Vector3.zero);
+        myCamera = UnityHelper.CreateObject<Camera>("SubCam", myHolderTransform, new(0f, 0f, 0f));
+        myCameraObj = myCamera.ModGameObject(true);
         myCamera.backgroundColor = Color.black;
         myCamera.allowHDR = false;
         myCamera.allowMSAA = false;
@@ -134,11 +137,11 @@ public class WideCamera : ICustomWideCamera
         myCamera.nearClipPlane = -1000f;
         myCamera.orthographic = true;
         orthographicCache = myCamera.orthographicSize = 3;
-        var customIgnoreShadow = myCamera.gameObject.AddComponent<CustomIgnoreShadowCamera>();
+        var customIgnoreShadow = myCameraObj.AddComponent<CustomIgnoreShadowCamera>();
         customIgnoreShadow.IgnoreShadow = () => !DrawShadow;
         SetDrawShadow(true);
 
-        var blackCam = UnityHelper.CreateObject<Camera>("BlackCam", myHolder.transform, Vector3.zero);
+        var blackCam = UnityHelper.CreateObject<Camera>("BlackCam", myHolderTransform, new(0f, 0f, 0f));
         blackCam.backgroundColor = Color.black;
         blackCam.allowHDR = false;
         blackCam.allowMSAA = false;
@@ -149,7 +152,7 @@ public class WideCamera : ICustomWideCamera
         blackCam.orthographic = true;
         blackCam.orthographicSize = 3;
 
-        var collider = UnityHelper.CreateObject<BoxCollider2D>("ClickGuard", myHolder.transform, new(0f, 0f, -1f));
+        var collider = UnityHelper.CreateObject<BoxCollider2D>("ClickGuard", myHolderTransform, new(0f, 0f, -1f));
         collider.size = new(100f, 100f);
         collider.isTrigger = true;
         collider.gameObject.layer = LayerExpansion.GetShipLayer();
@@ -166,24 +169,25 @@ public class WideCamera : ICustomWideCamera
                 //船およびオブジェクトレイヤーのボタンが対象
                 if (((1 << button.gameObject.layer) & layer) == 0) continue;
                 if (!button.Colliders.Any(c => c && c.OverlapPoint(worldPos))) continue;
-                if (passiveButton != null && passiveButton.transform.position.z < button.transform.position.z) continue;
+                if (passiveButton.AsBoolFast() && passiveButton!.transform.GetPositionFast().z < button.transform.GetPositionFast().z) continue;
 
                 //Debug.Log("Button");
                 passiveButton = button;
             }
 
-            if (passiveButton != null) passiveButton.ReceiveClickDown();
+            if (passiveButton.AsBoolFast()) passiveButton.ReceiveClickDown();
         });
 
         myHolder.gameObject.SetActive(false);
 
-        (meshRenderer, meshFilter) = UnityHelper.CreateMeshRenderer("mesh", myHolder.transform, new(0f, 0f, 10f), LayerExpansion.GetUILayer());
+        (meshRenderer, meshFilter) = UnityHelper.CreateMeshRenderer("mesh", myHolderTransform, new(0f, 0f, 10f), LayerExpansion.GetUILayer());
+        meshRendererObj = meshRenderer.ModGameObject();
         meshRenderer.material = new Material(NebulaAsset.HSVNAShader);
         rendererSharedMaterial = meshRenderer.sharedMaterial;
 
-        hueVal = new ValueObserver<float>(0f, val => meshRenderer.sharedMaterial.SetFloat("_Hue", val));
-        saturationVal = new ValueObserver<float>(1f, val => meshRenderer.sharedMaterial.SetFloat("_Sat", val));
-        brightnessVal = new ValueObserver<float>(1f, val => meshRenderer.sharedMaterial.SetFloat("_Val", val));
+        hueVal = new ValueObserver<float>(0f, val => rendererSharedMaterial.SetFloat("_Hue", val));
+        saturationVal = new ValueObserver<float>(1f, val => rendererSharedMaterial.SetFloat("_Sat", val));
+        brightnessVal = new ValueObserver<float>(1f, val => rendererSharedMaterial.SetFloat("_Val", val));
 
         SetUp();
         SetUpShadowCam();
@@ -264,7 +268,7 @@ public class WideCamera : ICustomWideCamera
 
     public bool HasAttention => attention != null;
 
-    public void CheckPlayerState(out Vector3 localScale, out float localRotateZ)
+    public void CheckPlayerState(out VVector3 localScale, out float localRotateZ)
     {
         localScale = new(1f, 1f, 1f);
 
@@ -281,25 +285,26 @@ public class WideCamera : ICustomWideCamera
     }
 
     //カメラ上の位置を表すワールド座標を計算します。
-    public VVector3 ConvertToWideCameraPos(Vector3 worldPosition)
+    public VVector3 ConvertToWideCameraPos(VVector3 worldPosition)
     {
-        var localPos = (worldPosition - Camera.transform.position);
+        var localPos = (worldPosition - myCameraObj.Position);
         //カメラの拡大縮小
         localPos /= myCamera.orthographicSize / 3f;
         //反転エフェクトの効果
-        localPos.x *= ViewerTransform.localScale.x;
-        localPos.y *= ViewerTransform.localScale.y;
-        return Camera.transform.position + localPos.RotateZ(ViewerTransform.localEulerAngles.z);
+        var localScale = ViewerTransform.LocalScale;
+        localPos.x *= localScale.x;
+        localPos.y *= localScale.y;
+        return myCameraObj.Position + localPos.RotateZ(ViewerTransform.LocalEulerAngles.z);
     }
 
     public VVector2 ConvertToWorldPos(VVector2 cameraWorldPosition)
     {
-        VVector2 cameraPos = Camera.transform.position;
+        VVector2 cameraPos = myCameraObj.Position;
         var localPos = cameraWorldPosition - cameraPos;
-        localPos = localPos.Rotate(-ViewerTransform.localEulerAngles.z);
+        localPos = localPos.Rotate(-ViewerTransform.LocalEulerAngles.z);
         try
         {
-            localPos.x /= ViewerTransform.localScale.x;
+            localPos.x /= ViewerTransform.LocalScale.x;
         }
         catch
         {
@@ -307,7 +312,7 @@ public class WideCamera : ICustomWideCamera
         }
         try
         {
-            localPos.y /= ViewerTransform.localScale.y;
+            localPos.y /= ViewerTransform.LocalScale.y;
         }
         catch
         {
@@ -319,31 +324,32 @@ public class WideCamera : ICustomWideCamera
 
     private void FixVentArrow()
     {
-        if (AmongUsLLImpl.TryGetLocalPlayer(out var localPlayer) && AmongUsLLImpl.TryGetShipStatus(out var ship))
+        var localPlayer = GamePlayer.LocalPlayer;
+        if (AmongUsLLImpl.TryGetShipStatus(out var ship) && localPlayer != null)
         {
-            var playerPos = localPlayer.transform.position;
+            var playerPos = localPlayer.Position;
             if (ship.AllVents.Count > 0)
             {
-                var vent = ship.AllVents.MinBy(v => v.transform.position.Distance(playerPos));
+                var vent = ship.AllVents.GetFastEnumerator().MinBy(v => v.ModGameObject(false).Position.Distance(playerPos));
                 if (vent)
                 {
-                    var myVentPos = NebulaGameManager.Instance!.WideCamera.ConvertToWideCameraPos(vent!.transform.position);
+                    var myVentPos = NebulaGameManager.Instance!.WideCamera.ConvertToWideCameraPos(vent!.ModGameObject(false).Position);
 
-                    int length = vent.NearbyVents.Length;
+                    int length = vent!.NearbyVents.Length;
                     for (int i = 0; i < length; i++)
                     {
                         var targetVent = vent.NearbyVents[i];
                         if (targetVent)
                         {
-                            var targetVentPos = NebulaGameManager.Instance!.WideCamera.ConvertToWideCameraPos(targetVent.transform.position);
+                            var targetVentPos = NebulaGameManager.Instance!.WideCamera.ConvertToWideCameraPos(targetVent.ModGameObject(false).Position);
 
                             var diff = (targetVentPos - myVentPos).AsVector2().Normalized;
                             diff *= 0.7f + vent.spreadShift;
                             var pos = (myVentPos + diff.AsVector3());
                             pos.z = -10f;
-                            var transform = vent.Buttons[i].transform;
-                            transform.position = pos;
-                            transform.localEulerAngles = new(0f, 0f, Mathn.Atan2(diff.y, diff.x) / Mathn.PI * 180f);
+                            var transform = vent.Buttons[i].ModGameObject(false);
+                            transform.Position = pos;
+                            transform.LocalEulerAngles = new(0f, 0f, Mathn.Atan2(diff.y, diff.x) / Mathn.PI * 180f);
                         }
                     }
                 }
@@ -363,9 +369,7 @@ public class WideCamera : ICustomWideCamera
 
     public void Update()
     {
-        if (myCamera.gameObject.active) {
-            var meshTransform = meshRenderer.transform;
-
+        if (myCameraObj.ActiveSelf) {
             if (customBehviour != null)
             {
                 customBehviour.UpdateCamera(this, out var localPos, out var localScale, out var localAngle);
@@ -374,9 +378,9 @@ public class WideCamera : ICustomWideCamera
                 shadowCamera.orthographicSize = orthographicSize;
                 SubShadowCam.orthographicSize = orthographicSize;
 
-                meshTransform.localEulerAngles = new(0f, 0f, localAngle);
-                meshTransform.localPosition = localPos;
-                meshTransform.localScale = localScale.AsUnityVector3(1f);
+                meshRendererObj.LocalEulerAngles = new(0f, 0f, localAngle);
+                meshRendererObj.LocalPosition = localPos;
+                meshRendererObj.LocalScale = localScale.AsUnityVector3(1f);
                 return;
             }
 
@@ -391,12 +395,12 @@ public class WideCamera : ICustomWideCamera
                 attentionRate = 0f;
             else {
                 attentionRate += ((hasAttention ? 1f : 0f) - attentionRate).Delta(hasAttention ? 12f : 6f, 0.05f);
-                myCamera.transform.localPosition = ((Vector3)attentionCache.center - myHolder.transform.position) * attentionRate;
-                myCamera.transform.localEulerAngles = new(0f, 0f, attentionCache.eulerAngle * attentionRate);
+                myCameraObj.LocalPosition = (attentionCache.center.AsVector3() - myHolder.ModGameObject(false).Position) * attentionRate;
+                myCameraObj.LocalEulerAngles = new(0f, 0f, attentionCache.eulerAngle * attentionRate);
             }
 
             //
-            if (!myCamera.targetTexture.AsBoolFast() || myCamera.targetTexture.width != consideredWidth || myCamera.targetTexture.height != consideredHeight)
+            if (!myCamera.targetTexture.AsBoolFast(out var targetTex) || targetTex.width != consideredWidth || targetTex.height != consideredHeight)
             {
                 //割り切れないときは再設定
                 if(NebulaAPI.AmongUs.ScreenWidth % roughness != 0 || NebulaAPI.AmongUs.ScreenHeight % roughness != 0) Roughness = roughness;
@@ -411,8 +415,8 @@ public class WideCamera : ICustomWideCamera
             while (meshAngleZ - goalRotate < -360f) meshAngleZ += 360f;
             meshAngleZ -= (meshAngleZ - goalRotate).Delta(2.7f, 0.11f);
 
-            meshTransform.localScale -= (meshTransform.localScale - goalScale).Delta(2.4f, 0.003f);
-            meshTransform.localEulerAngles = new(0f, 0f, meshAngleZ);
+            meshRendererObj.LocalScale -= (meshRendererObj.LocalScale - goalScale).Delta(2.4f, 0.003f);
+            meshRendererObj.LocalEulerAngles = new(0f, 0f, meshAngleZ);
 
             float targetRateByEffect = GamePlayer.LocalPlayer?.Unbox().CalcAttributeVal(PlayerAttributes.ScreenSize, true) ?? 1f;
 
@@ -424,7 +428,7 @@ public class WideCamera : ICustomWideCamera
             if (reached)
                 currentOrth = targetOrth;
             else
-                currentOrth -= (currentOrth - targetOrth) * Time.deltaTime * 5f;
+                currentOrth -= (currentOrth - targetOrth) * FastMethods.GetDeltaTimeFast() * 5f;
 
             orthographicCache = currentOrth;
             float attentionViewRate = 3f * (attentionCache?.view ?? 1f);
@@ -434,7 +438,7 @@ public class WideCamera : ICustomWideCamera
             shadowCamera.orthographicSize = actualOrth;
             SubShadowCam.orthographicSize = actualOrth;
             SubShadowCam.aspect = shadowCamera.aspect;
-            myCamera.transform.localScale = new Vector3(actualOrth / 3f, actualOrth / 3f, 1f);
+            myCameraObj.LocalScale = new Vector3(actualOrth / 3f, actualOrth / 3f, 1f);
 
             //コマンドによるモザイクの設定値に変化が生じたら再計算する
             int currentCommandRoughness = Mathn.Max(1, (int?)GamePlayer.LocalPlayer?.Unbox().CalcAttributeVal(PlayerAttributes.Roughening, true) ?? 1);
@@ -448,7 +452,7 @@ public class WideCamera : ICustomWideCamera
             SetSaturation(camUpdateEv?.GetSaturation() ?? 1f);
             SetHue(camUpdateEv?.GetHue() ?? 0f);
             SetBrightness(camUpdateEv?.GetBrightness() ?? 1f);
-            meshRenderer.sharedMaterial.color = camUpdateEv?.Color.ToUnityColor() ?? UnityEngine.Color.white;
+            meshRenderer.sharedMaterial.color = (camUpdateEv?.Color ?? VColor.White).ToUnityColor();
 
             FixVentArrow();
         }

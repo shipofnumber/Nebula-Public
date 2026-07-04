@@ -122,7 +122,7 @@ file static class NoGuideHelpers
             case TaskTypes.UploadData:
                 return GetVanillaLikeText(task, type, task.ShouldYellowText(), false, null);
             case TaskTypes.DivertPower:
-                return GetVanillaLikeText(task, type, task.ShouldYellowText(), false, TranslationController.Instance.GetString(StringNames.AcceptDivertedPower));
+                return GetVanillaLikeText(task, type, task.ShouldYellowText(), false, VanillaTranslationCache.GetString(StringNames.AcceptDivertedPower));
         }
         return null;
     }
@@ -137,7 +137,7 @@ file static class NoGuideHelpers
             var console = allConsoles[i];
             if(IsFakeConsole(task, taskType, allConsoles[i]))
             {
-                list.Add(console.transform.position);
+                list.Add(console.transform.GetPositionFast());
             }
         }
 

@@ -12,7 +12,7 @@ public enum SynchronizeTag
     PostMeeting,
     AeroGuessPreQuiz,
     PaintQuizPreSharing,
-    PaintQuizPreQuiz,
+    PaintQuizCheckAchievement,
 }
 
 [NebulaRPCHolder]

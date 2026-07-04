@@ -151,17 +151,19 @@ public class NebulaSyncStandardObject : NebulaSyncObject
     }
 
     public SpriteRenderer MyRenderer { get; private set; }
+    public Transform MyTransform { get; private set; }
 
-    public NebulaSyncStandardObject(Vector2 pos,ZOption zOrder,bool canSeeInShadow,Sprite sprite,VColor color)
+    public NebulaSyncStandardObject(VVector2 pos,ZOption zOrder,bool canSeeInShadow,Sprite sprite,VColor color)
     {
-        MyRenderer = UnityHelper.CreateObject<SpriteRenderer>("NebulaObject", null, pos, null);
+        MyRenderer = UnityHelper.CreateObject<SpriteRenderer>("NebulaObject", null, pos.AsUnityVector3(pos.y / 1000f), out _, out var myTransform, null);
+        MyTransform = myTransform;
         ZOrder = zOrder;
         CanSeeInShadow = canSeeInShadow;
         Sprite = sprite;
         Color = color;
     }
 
-    public NebulaSyncStandardObject(Vector2 pos, ZOption zOrder, bool canSeeInShadow, Sprite sprite, bool semitransparent = false)
+    public NebulaSyncStandardObject(VVector2 pos, ZOption zOrder, bool canSeeInShadow, Sprite sprite, bool semitransparent = false)
      : this(pos, zOrder, canSeeInShadow, sprite, semitransparent ? new VColor(1f, 1f, 1f, 0.5f) : VColor.White) { }
 
     private ZOption zOrder;
@@ -170,13 +172,13 @@ public class NebulaSyncStandardObject : NebulaSyncObject
         get => zOrder;
         set {
             zOrder = value;
-            Position = MyRenderer.transform.position;
+            Position = MyTransform.GetPositionFast();
         }
     }
 
     public VVector2 Position
     {
-        get => MyRenderer.transform.position; 
+        get => MyTransform.GetPositionFast(); 
         set {
             VVector3 pos = value.AsVector3();
             
@@ -193,7 +195,7 @@ public class NebulaSyncStandardObject : NebulaSyncObject
 
             pos.z = z;
 
-            MyRenderer.transform.position = pos;
+            MyTransform.position = pos;
         }
     }
 
@@ -226,7 +228,7 @@ public class NebulaSyncStandardObject : NebulaSyncObject
 
     public void SetBackRenderer(Sprite sprite)
     {
-        UnityHelper.CreateObject<SpriteRenderer>("back", MyRenderer.transform, new(0f, 0f, 0.0001f)).sprite = sprite;
+        UnityHelper.CreateObject<SpriteRenderer>("back", MyTransform, new(0f, 0f, 0.0001f)).sprite = sprite;
     }
 
     protected static SystemConsole SystemConsolize(GameObject obj, SpriteRenderer? renderer, ImageNames image, Minigame minigamePrefab, float usableDistance = 1f)

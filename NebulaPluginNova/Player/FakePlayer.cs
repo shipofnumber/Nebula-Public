@@ -45,6 +45,7 @@ internal class FakePlayerManager : AbstractModule<Virial.Game.Game>, IGameOperat
 internal class FakePlayerNetTransform : IGameOperator
 {
     Rigidbody2D body;
+    Virial.Compat.ModGameObject bodyObj;
     bool amOwner;
     internal bool enabled = true;
 
@@ -52,11 +53,13 @@ internal class FakePlayerNetTransform : IGameOperator
     public FakePlayerNetTransform(Rigidbody2D body, FakePlayer player, bool amOwner)
     {
         this.body = body;
+        this.bodyObj = body.ModGameObject(true);
         this.player = player;
         this.amOwner = amOwner;
 
-        this.lastPosSent = body.transform.position;
-        this.incomingPosQueue.Enqueue(body.transform.position);
+        var position = bodyObj.Position.AsVector2();
+        this.lastPosSent = position;
+        this.incomingPosQueue.Enqueue(position);
 
         enabled = true;
         isPaused = false;
@@ -70,15 +73,15 @@ internal class FakePlayerNetTransform : IGameOperator
     public void Halt()
     {
         ushort num = (ushort)(lastSequenceId + 1);
-        SnapTo(body.transform.position, num);
+        SnapTo(bodyObj.Position.AsVector2(), num);
     }
 
-    public void RpcSnapTo(Vector2 position) => RpcCallSnapTo.Invoke(((this.player as IPlayerlike).PlayerlikeId, position, lastSequenceId));
+    public void RpcSnapTo(VVector2 position) => RpcCallSnapTo.Invoke(((this.player as IPlayerlike).PlayerlikeId, position, lastSequenceId));
     
 
-    static readonly RemoteProcess<(int playerId, Vector2 position, ushort id)> RpcCallSnapTo = new("FakeSnapTo", (message, calledByMe) => (NebulaGameManager.Instance?.GetPlayerlike(message.playerId) as FakePlayer)?.NetTransform.SnapTo(message.position, (ushort)(message.id + (calledByMe ? 1 : 2))));
+    static readonly RemoteProcess<(int playerId, VVector2 position, ushort id)> RpcCallSnapTo = new("FakeSnapTo", (message, calledByMe) => (NebulaGameManager.Instance?.GetPlayerlike(message.playerId) as FakePlayer)?.NetTransform.SnapTo(message.position, (ushort)(message.id + (calledByMe ? 1 : 2))));
 
-    public void SnapTo(Vector2 position)
+    public void SnapTo(VVector2 position)
     {
         ushort num = (ushort)(lastSequenceId + 2);
         this.SnapTo(position, num);
@@ -100,7 +103,7 @@ internal class FakePlayerNetTransform : IGameOperator
         //return this.player.Animations.IsPlayingEnterVentAnimation() || this.player.walkingToVent;
     }
 
-    private void SnapTo(Vector2 position, ushort minSid)
+    private void SnapTo(VVector2 position, ushort minSid)
     {
         if (!NetHelpers.SidGreaterThan(minSid, lastSequenceId))
         {
@@ -114,9 +117,8 @@ internal class FakePlayerNetTransform : IGameOperator
         ClearPositionQueues();
         lastSequenceId = minSid;
         tempSnapPosition = null;
-        Transform transform = body.transform;
         body.position = position;
-        transform.position = position;
+        bodyObj.Position = position.AsGameWorldUnityVector3();
         body.velocity = Vector2.zero;
     }
 
@@ -243,7 +245,7 @@ internal class FakePlayerNetTransform : IGameOperator
         vector = incomingPosQueue.Peek();
         vector2 = body.position;
         vector3 = vector - vector2;
-        idealSpeed = vector3.magnitude / Time.fixedDeltaTime;
+        idealSpeed = vector3.magnitude / FastMethods.GetFixedDeltaTimeFast();
         Vector2 vector6 = vector3.normalized * idealSpeed * rubberbandModifier;
         vector6 = Vector2.ClampMagnitude(vector6, 10f);
         body.velocity = vector6;
@@ -266,7 +268,7 @@ internal class FakePlayerNetTransform : IGameOperator
         }
         else
         {
-            body.position = this.incomingPosQueue.Dequeue();
+            bodyObj.Position = this.incomingPosQueue.Dequeue();
         }
     }
 
@@ -294,12 +296,12 @@ internal class FakePlayerNetTransform : IGameOperator
                 4 or 5 => 0.9f, 
                 _ => 1.2f
             };
-            rubberbandModifier = Mathn.Lerp(rubberbandModifier, num, Time.fixedDeltaTime * 3f);
+            rubberbandModifier = Mathn.Lerp(rubberbandModifier, num, FastMethods.GetFixedDeltaTimeFast() * 3f);
         }
         else
         {
             float num = ((incomingPosQueue.Count <= QUEUE_THRESHOLD_FOR_SMOOTHING) ? SMOOTHING_BAND_MODIFIER : NEUTRAL_BAND_MODIFIER);
-            rubberbandModifier = Mathn.Lerp(rubberbandModifier, num, Time.fixedDeltaTime * SMOOTHING_LERP_RATE);
+            rubberbandModifier = Mathn.Lerp(rubberbandModifier, num, FastMethods.GetFixedDeltaTimeFast() * SMOOTHING_LERP_RATE);
         }
     }
 
@@ -420,15 +422,16 @@ internal class FakePet : IGameOperator
     {
         if (!vanillaPet.AsBoolFast()) return;
 
-        Vector3 localPosition = vanillaPet.transform.localPosition;
+        var petObj = vanillaPet.ModGameObject(false);
+        var localPosition = petObj.LocalPosition;
         localPosition.z = (localPosition.y + vanillaPet.yOffset) / 1000f + 0.0002f;
-        vanillaPet.transform.localPosition = localPosition;
+        petObj.LocalPosition = localPosition;
     }
 }
 
 
 [NebulaPreprocess(PreprocessPhase.BuildNoSModuleContainer), NebulaRPCHolder]
-internal record FakePlayerParameters(Vector2 position, KillCharacteristics KillCharacteristics, bool CanBeTarget, bool CanWalk, bool InitialFlipX, Vector2? petInitialPos, OutfitCandidate? specialOutfit = null)
+internal record FakePlayerParameters(VVector2 position, KillCharacteristics KillCharacteristics, bool CanBeTarget, bool CanWalk, bool InitialFlipX, VVector2? petInitialPos, OutfitCandidate? specialOutfit = null)
 {
     static FakePlayerParameters()
     {
@@ -464,6 +467,7 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
     }
 
     protected readonly PlayerDisplay displayPlayer;
+    private readonly Virial.Compat.ModGameObject displayPlayerObj;
     protected readonly CosmeticsLayer cosmeticsLayer;
     protected readonly Collider2D collider;
     protected readonly Rigidbody2D body;
@@ -487,12 +491,13 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
     {
         this.id = id;
         this.displayPlayer = VanillaAsset.GetPlayerDisplay(true, true);
-        this.displayPlayer.transform.position = parameters.position.AsVector3(parameters.position.y / 1000f);
+        this.displayPlayerObj = displayPlayer.ModGameObject();
+        this.displayPlayerObj.Position = parameters.position.AsGameWorldUnityVector3();
         this.cosmeticsLayer = displayPlayer.Cosmetics;
         this.cosmeticsLayer.GetComponent<NebulaCosmeticsLayer>().fakePlayerCache = this;
         this.cosmeticsLayer.SetFlipX(parameters.InitialFlipX);
-        this.collider = displayPlayer.GetComponent<Collider2D>();
-        this.body = displayPlayer.GetComponent<Rigidbody2D>();
+        this.collider = displayPlayerObj.GetComponent<Collider2D>();
+        this.body = displayPlayerObj.GetComponent<Rigidbody2D>();
         this.visualPlayer = visualPlayer;
         this.amOwner = amOwner;
         this.NetTransform = new FakePlayerNetTransform(body, this, amOwner).Register(this);
@@ -548,9 +553,9 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
     public KillCharacteristics KillCharacteristics => killCharacteristics;
     public bool CanBeTarget => canBeTarget;
 
-    public Virial.Compat.Vector2 TruePosition => new((Virial.Compat.Vector2)displayPlayer.transform.position + (Virial.Compat.Vector2)collider.offset * collider.transform.localScale);
+    public Virial.Compat.Vector2 TruePosition => displayPlayerObj.Position + (Virial.Compat.Vector2)collider.offset * collider.transform.localScale;
 
-    public Virial.Compat.Vector2 Position => new(displayPlayer.transform.position);
+    public Virial.Compat.Vector2 Position => displayPlayerObj.Position;
 
     public virtual bool IsDeadObject => isDeadObject;
 
@@ -593,7 +598,7 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
             {
                 var gapPlatform = airship.GapPlatform;
 
-                VVector2 vector = (VVector2)gapPlatform!.transform.position - player.Position;
+                VVector2 vector = (VVector2)gapPlatform!.ModGameObject(false).Position - player.Position;
                 
                 bool canUse = !gapPlatform.Target.AsBoolFast() && vector.Magnitude < 3f;
                 if (canUse) gapPlatform.Target = player.RealPlayer.VanillaPlayer;
@@ -653,8 +658,8 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
             this.player = player;
         }
 
-        public UnityEngine.Vector2 Position { get => player.Position; set => player.displayPlayer.transform.position = value.AsVector3(value.y / 1000f); }
-        public UnityEngine.Vector2 TruePosition => player.TruePosition;
+        public VVector2 Position { get => player.Position; set => player.displayPlayerObj.Position = value.AsGameWorldUnityVector3(); }
+        public VVector2 TruePosition => player.TruePosition;
         public Collider2D GroundCollider => player.collider;
 
         public PlayerAnimations Animations => player.displayPlayer.Animations;
@@ -730,7 +735,7 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
             Body.isKinematic = true;
             ClearPositionQueues();
 
-            yield return WalkPlayerTo(ladder.transform.position, 0.0005f, 1f, false);
+            yield return WalkPlayerTo(ladder.transform.GetPositionFast(), 0.0005f, 1f, false);
             yield return Effects.Wait(0.1f);
 
             player.FlipX = false;
@@ -740,7 +745,7 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
             player.cosmeticsLayer.TogglePetVisible(false);
             if (player.cosmeticsLayer.bodyType.GetVisorOptions().HideDuringClimb) player.cosmeticsLayer.ToggleVisor(false);
 
-            yield return WalkPlayerTo(ladder.Destination.transform.position, 0.001f, (float)(ladder.IsTop ? 2 : 1), false);
+            yield return WalkPlayerTo(ladder.Destination.transform.GetPositionFast(), 0.001f, (float)(ladder.IsTop ? 2 : 1), false);
             player.visualPlayer.VanillaCosmetics.SetPetPosition(this.player.Position.ToUnityVector());
             this.ResetAnimState();
             yield return Effects.Wait(0.1f);
@@ -775,26 +780,26 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
 
         private IEnumerator UseZiplineImpl(ZiplineConsole zipline)
         {
-            Transform start;
-            Transform end;
-            Transform landing;
+            Virial.Compat.ModGameObject start;
+            Virial.Compat.ModGameObject end;
+            Virial.Compat.ModGameObject landing;
             ZiplineBehaviour zBehaviour = zipline.zipline;
 
             if (zipline.atTop)
             {
-                start = zBehaviour.handleTop;
-                end = zBehaviour.handleBottom;
-                landing = zBehaviour.landingPositionBottom;
+                start = zBehaviour.handleTop.ModGameObject(false);
+                end = zBehaviour.handleBottom.ModGameObject(false);
+                landing = zBehaviour.landingPositionBottom.ModGameObject(false);
             }
             else
             {
-                start = zBehaviour.handleBottom;
-                end = zBehaviour.handleTop;
-                landing = zBehaviour.landingPositionTop;
+                start = zBehaviour.handleBottom.ModGameObject(false);
+                end = zBehaviour.handleTop.ModGameObject(false);
+                landing = zBehaviour.landingPositionTop.ModGameObject(false);
             }
             bool fromTop = zipline.atTop;
 
-            float nowtime = Time.time;
+            float nowtime = FastMethods.GetTimeFast();
             float ziplineTime = nowtime;
             float totalTime = nowtime;
 
@@ -839,12 +844,12 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
             player.vanilla_inMovingPlat = true;
             //PreparePlayerForZipline ここまで
 
-            yield return WalkPlayerTo(start.position, 0.001f, 1f, true);
+            yield return WalkPlayerTo(start.Position.AsVector2(), 0.001f, 1f, true);
             player.displayPlayer.Cosmetics.TogglePetVisible(false);
             HandZiplinePoolable currentHand = zBehaviour.GetHand();
-            Transform handTransform = currentHand.transform;
+            var handTransform = currentHand.ModGameObject(false);
             currentHand.SetPlayerColor((player as IPlayerlike).RealPlayer!.CurrentOutfit.outfit, PlayerMaterial.MaskType.None, 1f);
-            ZiplinePlaySound(zBehaviour.attachSound, start.position);
+            ZiplinePlaySound(zBehaviour.attachSound, start.Position.AsVector2());
 
             //CoAnimatePlayerJumpingOnToZipline ここから
             player.additionalRenderers.Add(currentHand.handRenderer);
@@ -853,20 +858,20 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
             if (fromTop)
             {
                 currentHand.StartDownAnimation();
-                handTransform.position = zBehaviour.upHandPosition.position;
+                handTransform.Position = zBehaviour.upHandPosition.ModGameObject(false).Position;
                 animationCurve = zBehaviour.jumpZiplineCurve;
             }
             else
             {
                 currentHand.StartUpAnimation();
-                handTransform.position = zBehaviour.downHandPosition.position;
+                handTransform.Position = zBehaviour.downHandPosition.ModGameObject(false).Position;
                 animationCurve = zBehaviour.jumpZiplineCurveBottom;
             }
             player.displayPlayer.Cosmetics.UpdateBounceHatZipline();
             player.displayPlayer.Cosmetics.AnimateSkinJump();
             yield return Effects.All(
-                Effects.CurvePositionY(player.displayPlayer.transform, animationCurve, zBehaviour.timeJump, 0f),
-                Effects.CurvePositionY(handTransform, zBehaviour.jumpZiplineHandCurve, zBehaviour.timeJump, 0f),
+                Effects.CurvePositionY(player.displayPlayerObj.GetUnityTransform(), animationCurve, zBehaviour.timeJump, 0f),
+                Effects.CurvePositionY(handTransform.GetUnityTransform(), zBehaviour.jumpZiplineHandCurve, zBehaviour.timeJump, 0f),
                 player.displayPlayer.Animations.CoPlayJumpAnimation()
             );
             yield return Effects.Wait(0.1f);
@@ -880,17 +885,17 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
             if (fromTop)
             {
                 travelSeconds = zBehaviour.downTravelTime;
-                handleEndPosition = zBehaviour.dropPositionBottom.position;
+                handleEndPosition = zBehaviour.dropPositionBottom.ModGameObject(false).Position;
             }
             else
             {
                 travelSeconds = zBehaviour.upTravelTime;
-                handleEndPosition = zBehaviour.dropPositionTop.position;
+                handleEndPosition = zBehaviour.dropPositionTop.ModGameObject(false).Position;
             }
-            Vector3 vector = Vector3.zero;
-            Vector3 startPos = Position;
-            Vector3 handOffset = handTransform.position - startPos;
-            for (float time = 0f; time < travelSeconds; time += Time.deltaTime)
+            VVector3 vector = VVector3.Zero;
+            VVector3 startPos = Position.AsVector3();
+            VVector3 handOffset = handTransform.Position - startPos;
+            for (float time = 0f; time < travelSeconds; time += FastMethods.GetDeltaTimeFast())
             {
                 float num = time / travelSeconds;
                 vector.x = Mathn.SmoothStep(startPos.x, handleEndPosition.x, num);
@@ -898,23 +903,23 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
                 vector.z = vector.y / 1000f;
                 player.displayPlayer.transform.position = vector;
                 vector += handOffset;
-                vector.z = handTransform.position.z;
-                handTransform.position = vector;
+                vector.z = handTransform.Position.z;
+                handTransform.Position = vector;
                 yield return null;
             }
             //CoAnimateZiplineAndPlayer ここまで
 
             ZiplineStopsound();
-            ZiplinePlaySound(zBehaviour.detachSound, end.position);
+            ZiplinePlaySound(zBehaviour.detachSound, end.Position.AsVector2());
 
             //CoAlightPlayerFromZipline ここから
             //player.MyPhysics.enabled = true;
-            player.additionalRenderers.RemoveAll(r => r && r.GetInstanceID() == currentHand.handRenderer.GetInstanceID());
+            player.additionalRenderers.RemoveAll(r => r && r.GetInstanceIdFast() == currentHand.handRenderer.GetInstanceIdFast());
 
             if (fromTop) currentHand.StartDownOutroAnimation();
             else currentHand.StartUpOutroAnimation();
             
-            yield return WalkPlayerTo(zBehaviour.transform.TransformPoint(landing.position), 0.01f, 1f, false);
+            yield return WalkPlayerTo(zBehaviour.ModGameObject(false).TransformPoint(landing.Position).AsVector2(), 0.01f, 1f, false);
             player.displayPlayer.Cosmetics.SetPetPosition(player.Position.ToUnityVector());
             player.displayPlayer.Cosmetics.TogglePetVisible(true);
             //REMOVE: Petの再表示
@@ -971,8 +976,8 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
             Body.isKinematic = true;
             player.vanilla_inMovingPlat = true;
 
-            var movingPlatformTransform = movingPlatform.transform;
-            var movingPlatformTransformParent = movingPlatformTransform.parent;
+            var movingPlatformTransform = movingPlatform.ModGameObject(false);
+            var movingPlatformTransformParent = movingPlatformTransform.GetParent(false)!;
 
             VVector3 vector = (movingPlatform.IsLeft ? movingPlatform.LeftUsePosition : movingPlatform.RightUsePosition);
             VVector3 vector2 = ((!movingPlatform.IsLeft) ? movingPlatform.LeftUsePosition : movingPlatform.RightUsePosition);
@@ -1020,20 +1025,19 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
                 worldPos -= player.collider.offset;
             }
 
-            Vector2 del = worldPos - Position;
-            while (del.sqrMagnitude > tolerance)
+            VVector2 del = new VVector2(worldPos) - Position;
+            while (del.SqrMagnitude > tolerance)
             {
-                float num = Mathn.Clamp(del.magnitude * 2f, 0.05f, 1f);
-                player.body.velocity = del.normalized * PlayerModInfo.OriginalSpeed * num * speedMul;
+                float num = Mathn.Clamp(del.Magnitude * 2f, 0.05f, 1f);
+                player.body.velocity = del.Normalized * PlayerModInfo.OriginalSpeed * num * speedMul;
                 yield return null;
-                if (player.body.velocity.magnitude < 0.005f && (double)del.sqrMagnitude < 0.1)
+                if (player.body.velocity.magnitude < 0.005f && (double)del.SqrMagnitude < 0.1)
                 {
                     break;
                 }
-                del = worldPos - Position;
+                del = new VVector2(worldPos) - Position;
             }
-            del = default(Vector2);
-            player.body.velocity = Vector2.zero;
+            player.body.velocity = new(0f, 0f);
             yield break;
         }
 
@@ -1077,7 +1081,7 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
         
         if (!GameData.Instance.AsBoolFast()) return;
 
-        body.transform.SetWorldZ(body.transform.position.y / 1000f);
+        body.transform.SetWorldZ(body.transform.GetPositionFast().y / 1000f);
 
         Vector2 velocity = this.body.velocity;
         if (animations.IsPlayingClimbAnimation()) return;
@@ -1167,7 +1171,7 @@ internal class FakePlayer : AbstractModuleContainer, IFakePlayer, ILifespan, IGa
                     int objectMask = Constants.ShipAndAllObjectsMask;
 
                     var light = AmongUsLLImpl.LocalPlayer.lightSource;
-                    VVector2 pos = light.transform.position;
+                    VVector2 pos = light.transform.GetPositionFast();
                     VVector2 myPos = Position;
 
                     var isAcrossWalls = PlayerModInfo.VisibilityCheckVectors.All(v => Helpers.AnyNonTriggersBetween(pos, myPos + v * 0.22f, out _, objectMask));

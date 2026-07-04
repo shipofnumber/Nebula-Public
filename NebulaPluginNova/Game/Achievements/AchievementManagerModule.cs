@@ -56,11 +56,11 @@ internal class AchievementManagerModule : AbstractModule<Virial.Game.Game>, IGam
                             if (
                                 GamePlayer.LocalPlayer.HasAttribute(PlayerAttributes.Accel) &&
                                 myLover.HasAttribute(PlayerAttributes.Accel) &&
-                                GamePlayer.LocalPlayer.VanillaPlayer.MyPhysics.Velocity.magnitude > 0f &&
-                                GamePlayer.LocalPlayer.VanillaPlayer.transform.position.Distance(myLover.VanillaPlayer.transform.position) < 2f
+                                GamePlayer.LocalPlayer.VanillaPhysics.Velocity.magnitude > 0f &&
+                                GamePlayer.LocalPlayer.Position.Distance(myLover.Position) < 2f
                             )
                             {
-                                time += Time.deltaTime;
+                                time += FastMethods.GetDeltaTimeFast();
                                 if (time > 5f)
                                 {
                                     new StaticAchievementToken("koinobori");

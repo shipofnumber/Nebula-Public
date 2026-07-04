@@ -48,10 +48,10 @@ public static class ShowIntroPatch
         switch (introInfo.RevealType)
         {
             case Virial.Assignable.TeamRevealType.OnlyMe:
-                shownPlayers = shownPlayers.Where(p => p.AmOwner || introInfo.ShouldShowAdditionally(p.PlayerId));
+                shownPlayers = shownPlayers.Where(p => p.AmOwner || (introInfo.ShouldShowAdditionally(p.PlayerId) && !introInfo.ShouldNotShow(p.PlayerId)));
                 break;
             case Virial.Assignable.TeamRevealType.Teams:
-                shownPlayers = shownPlayers.Where(p => p.GetModInfo()?.Role.Role.Team == myInfo.Role.Role.Team || introInfo.ShouldShowAdditionally(p.PlayerId));
+                shownPlayers = shownPlayers.Where(p => p.AmOwner || ((p.GetModInfo()?.Role.Role.Team == myInfo.Role.Role.Team || introInfo.ShouldShowAdditionally(p.PlayerId)) && !introInfo.ShouldNotShow(p.PlayerId)));
                 break;
         }
 
@@ -90,7 +90,7 @@ public static class ShowIntroPatch
         Color fromC = introInfo.TeamColor.ToUnityColor();
         Color toC = introInfo.TeamFadeColor?.ToUnityColor() ?? fromC;
 
-        Vector3 position = __instance.BackgroundBar.transform.position;
+        Vector3 position = __instance.BackgroundBar.transform.GetPositionFast();
         position.y -= 0.25f;
         __instance.BackgroundBar.transform.position = position;
         __instance.BackgroundBar.material.SetColor("_Color", fromC);

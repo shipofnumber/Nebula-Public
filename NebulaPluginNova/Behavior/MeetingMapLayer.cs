@@ -419,15 +419,15 @@ public class DiscussionSupport : AbstractModule<Virial.Game.Game>, IGameOperator
     int lineIndex = 0;
     int iconIndex = 0;
 
-    public bool CursorIsOnMeetingLayer => PassiveButtonManager.Instance.currentOver && meetingLayerButton && PassiveButtonManager.Instance.currentOver.GetInstanceID() == meetingLayerButton.GetInstanceID();
+    public bool CursorIsOnMeetingLayer => PassiveButtonManager.Instance.currentOver && meetingLayerButton && PassiveButtonManager.Instance.currentOver.GetInstanceIdFast() == meetingLayerButton.GetInstanceIdFast();
     public bool FindCurrentOver<T>(IEnumerable<T> candidates, Func<T, PassiveUiElement> selector, [MaybeNullWhen(false)] out T found) where T : class
     {
         found = null;
         if (!PassiveButtonManager.Instance.currentOver) return false;
-        var instanceId = PassiveButtonManager.Instance.currentOver.GetInstanceID();
+        var instanceId = PassiveButtonManager.Instance.currentOver.GetInstanceIdFast();
         foreach(var c in candidates)
         {
-            if (selector(c).GetInstanceID() == instanceId)
+            if (selector(c).GetInstanceIdFast() == instanceId)
             {
                 found = c;
                 return true;

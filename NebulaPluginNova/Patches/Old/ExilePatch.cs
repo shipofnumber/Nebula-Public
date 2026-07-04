@@ -43,10 +43,15 @@ public static class NebulaExileWrapUp
             {
                 foreach (var exiled in MeetingHudExtension.ExiledAllModCache!)
                 {
-                    if (exiled.VanillaPlayer) exiled.VanillaPlayer.Exiled();
+                    bool hasVanillaPlayer = exiled.VanillaPlayer.AsBoolFast(out var vanillaPlayer);
+                    
+                    if (hasVanillaPlayer) exiled.VanillaPlayer.Exiled();
+
                     var vanillaInfo = GameData.Instance.GetPlayerById(exiled.PlayerId);
-                    if(vanillaInfo) vanillaInfo.IsDead = true;
-                    if(exiled.VanillaPlayer) PlayerExtension.ResetOnDying(exiled.VanillaPlayer);
+                    if(vanillaInfo.AsBoolFast()) vanillaInfo.IsDead = true;
+                    (exiled as PlayerModInfo)?.UpdateModDead(true);
+
+                    if(hasVanillaPlayer) PlayerExtension.ResetOnDying(vanillaPlayer);
 
                     NebulaGameManager.Instance?.GameStatistics.RecordEvent(new GameStatistics.Event(GameStatistics.EventVariation.Exile, null, 1 << exiled.PlayerId, GameStatisticsGatherTag.Spawn) { RelatedTag = EventDetail.Exiled });
 

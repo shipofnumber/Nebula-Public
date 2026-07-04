@@ -17,7 +17,7 @@ namespace Nebula.Roles.Ghost.Impostor;
 
 public class Clog : DefinedGhostRoleTemplate, DefinedGhostRole
 {
-    public Clog() : base("clog", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, [GhostDurationOption, NumOfGhostsOption, GhostSizeOption]) {
+    public Clog() : base("clog", VColor.ImpostorColor, RoleCategory.ImpostorRole, [GhostDurationOption, NumOfGhostsOption, GhostSizeOption]) {
         MetaAbility.RegisterCircle(new("role.clog.ghostSize", () => GhostSizeOption, () => null, RoleColor));
 
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Clog.png");
@@ -65,7 +65,7 @@ public class Clog : DefinedGhostRoleTemplate, DefinedGhostRole
                 {
                     NebulaGameManager.Instance?.RpcDoGameAction(MyPlayer, MyPlayer.Position, GameActionTypes.ClogInvokingGhostAction);
 
-                    RpcSpawnGhost.Invoke(MyPlayer.VanillaPlayer.transform.position);
+                    RpcSpawnGhost.Invoke(MyPlayer.Position);
                     StatsGhosts.Progress();
 
                     new StaticAchievementToken("clog.common1");

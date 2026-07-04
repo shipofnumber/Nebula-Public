@@ -70,11 +70,11 @@ internal class RoomPointEditor : AbstractModule<Virial.Game.Game>, IGameOperator
 
     void AddEdge(Node node1, Node node2)
     {
-        var pos1 = node1.Renderer.transform.position;
-        var pos2 = node2.Renderer.transform.position;
-        Vector2 diff = pos2 - pos1;
-        var edgeRenderer = UnityHelper.CreateObject<SpriteRenderer>("Edge", GetMapTransform(), ((Vector2)((pos1 + pos2) * 0.5f)).AsVector3(-4f));
-        edgeRenderer.transform.localScale = new(diff.magnitude, 0.05f);
+        VVector2 pos1 = node1.Renderer.transform.GetPositionFast();
+        VVector2 pos2 = node2.Renderer.transform.GetPositionFast();
+        VVector2 diff = pos2 - pos1;
+        var edgeRenderer = UnityHelper.CreateObject<SpriteRenderer>("Edge", GetMapTransform(), ((pos1 + pos2) * 0.5f).AsVector3(-4f));
+        edgeRenderer.transform.localScale = new(diff.Magnitude, 0.05f);
         edgeRenderer.transform.localEulerAngles = new(0f, 0f, Mathn.Atan2(diff.y, diff.x).RadToDeg());
         edgeRenderer.sprite = squareImage.GetSprite();
 

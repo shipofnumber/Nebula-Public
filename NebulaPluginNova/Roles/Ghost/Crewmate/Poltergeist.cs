@@ -55,7 +55,7 @@ public class Poltergeist : DefinedGhostRoleTemplate, DefinedGhostRole
         if (!deadBody.AsBoolFast()) yield break;
 
         float p = 0f;
-        Vector2 beginPos = deadBody.transform.position;
+        Vector2 beginPos = deadBody.transform.GetPositionFast();
 
         while (deadBody.AsBoolFast())
         {

@@ -14,7 +14,7 @@ namespace Nebula.Roles.Impostor;
 [NebulaRPCHolder]
 internal class Cupid : DefinedSingleAbilityRoleTemplate<Cupid.Ability>, DefinedRole, IAssignableDocument
 {
-    private Cupid() : base("cupid", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [
+    private Cupid() : base("cupid", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [
         SelectCooldownOption,
         LaserCooldownOption,
         LaserDelayByCupidOption,
@@ -408,8 +408,8 @@ internal class Cupid : DefinedSingleAbilityRoleTemplate<Cupid.Ability>, DefinedR
                 return new(line1_1.x + cx * t, line1_1.y + cy * t);
             }
 
-            var player1Pos = player1.Position.ToUnityVector();
-            var player2Pos = player2.Position.ToUnityVector();
+            var player1Pos = player1.Position;
+            var player2Pos = player2.Position;
 
             if (isActive)
             {
@@ -424,7 +424,7 @@ internal class Cupid : DefinedSingleAbilityRoleTemplate<Cupid.Ability>, DefinedR
             }
 
 
-            Vector3 center = HudManager.Instance.transform.position;
+            VVector3 center = AmongUsLLImpl.HudManagerBridge.MyTransform.GetPositionFast();
             center.z = -2.4f;
             meshRenderer.transform.position = center;
             center.z = 0f;
@@ -444,17 +444,18 @@ internal class Cupid : DefinedSingleAbilityRoleTemplate<Cupid.Ability>, DefinedR
 
                 Vector2 posDiff = player1Pos - player2Pos;
                 if (center.Distance(player1Pos) < center.Distance(player2Pos)) posDiff = -posDiff;
-                edgeFrontRenderer.transform.position = (player1Pos + player2Pos) * 0.5f;
+                edgeFrontRenderer.transform.position = ((player1Pos + player2Pos) * 0.5f).AsGameWorldUnityVector3();
                 edgeFrontRenderer.transform.SetWorldZ(-2.5f);
                 edgeFrontRenderer.transform.localEulerAngles = new(0f, 0f, Mathn.Atan2(posDiff.y, posDiff.x).RadToDeg());
                 edgeFrontRenderer.size = new(posDiff.magnitude, 0.4f);
                 edgeBackRenderer.size = new(posDiff.magnitude, 0.4f);
 
-                if (edgeLightRenderer)
+                if (edgeLightRenderer.AsBoolFast())
                 {
-                    edgeLightRenderer.transform.position = edgeFrontRenderer.transform.position;
-                    edgeLightRenderer.transform.SetWorldZ(-10f);
-                    edgeLightRenderer.transform.localEulerAngles = edgeFrontRenderer.transform.localEulerAngles;
+                    var elrTransform = edgeLightRenderer.transform;
+                    elrTransform.position = edgeFrontRenderer.transform.GetPositionFast();
+                    elrTransform.SetWorldZ(-10f);
+                    elrTransform.localEulerAngles = edgeFrontRenderer.transform.localEulerAngles;
                     edgeLightRenderer.size = new(posDiff.magnitude + 1.1f, 0.95f);
                 }
             }
@@ -462,13 +463,13 @@ internal class Cupid : DefinedSingleAbilityRoleTemplate<Cupid.Ability>, DefinedR
             int offset = MeshMax - meshLength;
             for (int i = 0; i < meshLength; i++)
             {
-                pos[offset + i] = (Vector3)pos1[(meshBegin + i) % MeshMax] - center;
-                pos[offset + i + MeshMax] = (Vector3)pos2[(meshBegin + i) % MeshMax] - center;
+                pos[offset + i] = pos1[(meshBegin + i) % MeshMax] - center;
+                pos[offset + i + MeshMax] = pos2[(meshBegin + i) % MeshMax] - center;
             }
 
             List<int> triangleList = [];
 
-            Vector2 temp1, temp2, temp3, dir;
+            VVector2 temp1, temp2, temp3, dir;
             float cross;
             for (int i = 0; i < meshLength - 1 - meshTerminal; i++)
             {
@@ -478,7 +479,7 @@ internal class Cupid : DefinedSingleAbilityRoleTemplate<Cupid.Ability>, DefinedR
                 {
                     //線が交差する場合
                     temp3 = GetIntersectionPos(pos1[(meshBegin + i) % MeshMax], pos2[(meshBegin + i) % MeshMax], pos1[(meshBegin + i + 1) % MeshMax], pos2[(meshBegin + i + 1) % MeshMax]);
-                    pos[offset + i + MeshMax + MeshMax] = (Vector3)temp3 - center;
+                    pos[offset + i + MeshMax + MeshMax] = temp3.AsVector3() - center;
 
                     temp1 = pos1[(meshBegin + i) % MeshMax];
                     temp2 = pos1[(meshBegin + i + 1) % MeshMax];
@@ -521,13 +522,13 @@ internal class Cupid : DefinedSingleAbilityRoleTemplate<Cupid.Ability>, DefinedR
             //効果音の位置調整
             if (soundSource.AsBoolFast())
             {
-                Vector2 localPos = (Vector2)HudManager.Instance.transform.position - (Vector2)player1.Position;
+                VVector2 localPos = (VVector2)AmongUsLLImpl.HudManagerBridge.MyTransform.GetPositionFast() - player1.Position;
                 dir = player2.Position - player1.Position;
-                var dirNorm = dir.normalized;
-                var diff = Vector2.Dot(localPos, dirNorm);
-                var mag = dir.magnitude;
+                var dirNorm = dir.Normalized;
+                var diff = VVector2.Dot(localPos, dirNorm);
+                var mag = dir.Magnitude;
                 diff = Mathn.Clamp(diff, 0f, mag);
-                soundSource.transform.position = (Vector3)player1.Position.ToUnityVector() + (Vector3)(dirNorm * diff);
+                soundSource.transform.position = player1.Position.AsVector3() + (dirNorm * diff).AsVector3();
             }
         }
 

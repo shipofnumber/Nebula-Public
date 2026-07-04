@@ -193,12 +193,12 @@ public class NebulaPreSpawnMinigame : Minigame
         var gathering = NebulaGameManager.Instance!.GameStatistics.Gathering[GameStatisticsGatherTag.Spawn];
         NebulaAPI.CurrentGame?.GetModule<Synchronizer>()?.ResetSyncOnlyHistory(SynchronizeTag.PreSpawnMinigame);
 
-        foreach (var p in PlayerControl.AllPlayerControls.GetFastEnumerator())
+        foreach (var p in GamePlayer.AllPlayers)
         {
-            if (p.Data.IsDead) continue;
+            if (p.IsDead) continue;
             if (!gathering.ContainsKey(p.PlayerId)) continue;
 
-            p.NetTransform.SnapTo(gathering[p.PlayerId]);
+            p.VanillaPlayer.NetTransform.SnapTo(gathering[p.PlayerId]);
         }
         AmongUsLLImpl.LocalPlayer.NetTransform.RpcSnapTo(spawnAt);
 

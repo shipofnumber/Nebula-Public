@@ -247,12 +247,13 @@ internal class Spectre : DefinedRoleTemplate, DefinedRole, IAssignableDocument
     [NebulaRPCHolder]
     public class FriesGuageViewer : DependentLifespan, IGameOperator
     {
+        private record GuageRenderer(SpriteRenderer Renderer, ValueObserver<int> Color);
         private class GuageFries
         {
             GameObject partialHolder;
             SpriteRenderer? fullRenderer;
             SpriteRenderer partialRenderer;
-            SpriteRenderer[] guageRenderer;
+            GuageRenderer[] guageRenderer;
             GameObject holder;
 
             int index;
@@ -271,27 +272,27 @@ internal class Spectre : DefinedRoleTemplate, DefinedRole, IAssignableDocument
                     fullRenderer = UnityHelper.CreateObject<SpriteRenderer>("Full", holder.transform, Vector3.zero);
                     fullRenderer.sprite = guageFriesSprite.GetSprite(0);
                     partialRenderer.sprite = guageFriesSprite.GetSprite(4);
-                    guageRenderer = new SpriteRenderer[4];
+                    guageRenderer = new GuageRenderer[4];
                 }
                 else
                 {
                     fullRenderer = null;
                     int num = (int)(((float)MaxSatietyOption - (float)index) * 4f);
                     partialRenderer.sprite = guageFriesSprite.GetSprite(num);
-                    guageRenderer = new SpriteRenderer[num];
+                    guageRenderer = new GuageRenderer[num];
                 }
                 for (int i = 0; i < guageRenderer.Length; i++)
                 {
-                    guageRenderer[i] = UnityHelper.CreateObject<SpriteRenderer>("Guage" + i, partialHolder.transform, Vector3.zero);
-                    guageRenderer[i].sprite = guageFriesSprite.GetSprite(5 + i);
+                    var renderer = UnityHelper.CreateObject<SpriteRenderer>("Guage" + i, partialHolder.transform, Vector3.zero);
+                    renderer.sprite = guageFriesSprite.GetSprite(5 + i);
+                    guageRenderer[i] = new GuageRenderer(renderer, new(0, color => renderer.color = (color switch { 0 => GuageGrayColor, 1 => GuagePurpleColor, _ => VColor.Red }).ToUnityColor(), true));
                 }
 
                 Update(InitialSatietyOption);
             }
 
-            //これらは直接colorプロパティに代入するため、UnityEngine.Colorの方がコストが低い。
-            private static Color GuagePurpleColor = new(202f / 255f, 148f / 255f, 221f / 255f);
-            private static Color GuageGrayColor = UnityEngine.Color.white.RGBMultiplied(0.2f);
+            private static VColor GuagePurpleColor = new(202f / 255f, 148f / 255f, 221f / 255f);
+            private static VColor GuageGrayColor = VColor.White.RGBMultiplied(0.2f);
             public void Update(float currentFoodlevel)
             {
                 if ((float)(index + 1) > currentFoodlevel)
@@ -302,7 +303,7 @@ internal class Spectre : DefinedRoleTemplate, DefinedRole, IAssignableDocument
 
                     for (int i = 0; i < guageRenderer.Length; i++)
                     {
-                        guageRenderer[i].gameObject.SetActive(true);
+                        //guageRenderer[i].Renderer.gameObject.SetActive(true);
 
                         float guageMax = (float)index + 0.25f * (float)(i + 1);
                         float guageMin = (float)index + 0.25f * (float)i;
@@ -318,16 +319,16 @@ internal class Spectre : DefinedRoleTemplate, DefinedRole, IAssignableDocument
                                     active = Mathf.Repeat(Time.time, 0.8f) < 0.5f;
                                 else
                                     active = Mathf.Repeat(Time.time, 0.9f) < 0.65f;
-                                guageRenderer[i].color = (active ? GuageGrayColor : (level < 0.5f ? UnityEngine.Color.red : GuagePurpleColor));
+                                guageRenderer[i].Color.Set(active ? 0 : (level < 0.5f ? 2 : 1));
                             }
                             else
                             {
-                                guageRenderer[i].color = GuageGrayColor;
+                                guageRenderer[i].Color.Set(0);
                             }
                         }
                         else
                         {
-                            guageRenderer[i].color = GuagePurpleColor;
+                            guageRenderer[i].Color.Set(1);
                         }
                     }
                 }
@@ -573,7 +574,7 @@ internal class Spectre : DefinedRoleTemplate, DefinedRole, IAssignableDocument
         {
             if (player.IsImpostor)
             {
-                color = new(Palette.ImpostorRed);
+                color = VColor.ImpostorColor;
                 return true;
             }
             if (player.Role.Role is Sheriff)

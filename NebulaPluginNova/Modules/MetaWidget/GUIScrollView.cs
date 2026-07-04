@@ -201,7 +201,7 @@ internal class ScrollViewInitializer
             {
                 var scroller = info.Scroller;
 
-                var target_y = info.InnerParent.InverseTransformPoint(targetObject.transform.position).y;
+                var target_y = info.InnerParent.InverseTransformPoint(targetObject.transform.GetPositionFast()).y;
 
                 var ideal_scroll_y = info.ViewRange > size.Height ? -target_y : -target_y - (size.Height - info.ViewRange) / 2f;
                 var final_scroll_y = scroller.ContentYBounds.Clamp(ideal_scroll_y);
@@ -215,7 +215,7 @@ internal class ScrollViewInitializer
                 //スクロール実行ここまで
 
                 //強調表示ここから
-                var effectPos = info.InnerParent.InverseTransformPoint(targetObject.transform.position);
+                var effectPos = info.InnerParent.InverseTransformPoint(targetObject.transform.GetPositionFast());
                 effectPos.z = 0.08f;
                 var effectRenderer = UnityHelper.CreateSpriteRenderer("TargetObj", info.InnerParent, effectPos);
                 effectRenderer.sprite = VanillaAsset.FullScreenSprite;

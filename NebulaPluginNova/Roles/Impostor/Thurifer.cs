@@ -277,7 +277,7 @@ public class Thurifer : DefinedSingleAbilityRoleTemplate<Thurifer.Ability>, Defi
         }
     }
 
-    private Thurifer() : base("thurifer", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [NumOfThuribulumsOption, ActivateDurationOption, InhalationSpeedOption, ThuribulumRangeOption, MaxKillDelayOption, ShowBlinkOption, ActivationDelayOption]) {
+    private Thurifer() : base("thurifer", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [NumOfThuribulumsOption, ActivateDurationOption, InhalationSpeedOption, ThuribulumRangeOption, MaxKillDelayOption, ShowBlinkOption, ActivationDelayOption]) {
         GameActionTypes.ThuriferActivateAction = new("thurifer.activate", this, isPlacementAction: true);
         GameActionTypes.ThuriferImputeAction = new("thurifer.impute", null, isPlacementAction: true);
     }
@@ -425,7 +425,7 @@ public class Thurifer : DefinedSingleAbilityRoleTemplate<Thurifer.Ability>, Defi
                     if (ShowBlinkOption || delay < 3f)
                     {
                         //ブリンクを見せる
-                        MyPlayer.VanillaPlayer.NetTransform.RpcSnapTo(gp.VanillaPlayer.transform.position);
+                        MyPlayer.VanillaPlayer.NetTransform.RpcSnapTo(gp.Position);
                     }
 
                     NebulaManager.Instance.StartCoroutine(CoDelayKill().WrapToIl2Cpp());

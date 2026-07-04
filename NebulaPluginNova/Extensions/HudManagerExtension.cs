@@ -10,9 +10,7 @@ public static class HudManagerExtension
     {
         var bridge = AmongUsLLImpl.HudManagerBridge;
 
-        NebulaProfiler.LapTimer("Before UpdateHudContent");
         bridge.UseButton.Refresh();
-        NebulaProfiler.LapTimer("UseButton.Refresh");
 
         var localPlayer = AmongUsLLImpl.LocalPlayer;
         if (!localPlayer.AsBoolFast()) return;
@@ -26,29 +24,19 @@ public static class HudManagerExtension
             return;
         }
 
-        NebulaProfiler.LapTimer("UpdateHudContent.1");
-
         var localData = localPlayer.Data;
         bool flag = localData != null && localData.IsDead;
         GamePlayer? modPlayer = GamePlayer.LocalPlayer;
         RuntimeRole? modRole = modPlayer?.Role;
 
-        NebulaProfiler.LapTimer("UpdateHudContent.2");
-
         bridge.ReportButton.ToggleVisible(!flag && (modRole?.CanReport ?? false) && AmongUsLLImpl.ShipStatusInstance.AsBoolFast());
         bridge.KillButton.ToggleVisible((modPlayer?.ShowKillButton ?? true) && !flag);
         bridge.SabotageButton.ToggleVisible((modRole?.CanInvokeSabotage ?? false));
 
-        NebulaProfiler.LapTimer("UpdateHudContent.3");
-
         var ventState = GameOperatorManager.Instance?.Run(new Virial.Events.Player.PlayerUpdateVentStateLocalEvent(modPlayer));
-
-        NebulaProfiler.LapTimer("UpdateHudContent.4");
 
         bridge.ImpostorVentButton.ToggleVisible(!flag && ((ventState?.ShouldShowVentButton ?? false) || localPlayer.walkingToVent || localPlayer.inVent));
         bridge.MapButtonObj.SetActive(NebulaGameManager.Instance.GameMode?.ShowMap ?? true);
-
-        NebulaProfiler.LapTimer("UpdateHudContent.5");
     }
 
     static public void ShowVanillaKeyGuide(this HudManager manager)

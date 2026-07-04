@@ -308,10 +308,12 @@ internal class Doppelganger : DefinedSingleAbilityRoleTemplate<Doppelganger.Abil
                 
                 var flipX = message.doppelganger.VanillaCosmetics.FlipX;
 
-                message.player.VanillaPlayer.transform.position = doppelPos.ToUnityVector().AsVector3(doppelPos.y / 1000f);
-                message.player.VanillaPlayer.NetTransform.Halt();
-                message.player.VanillaPlayer.cosmetics.SetFlipX(flipX);
-                message.player.VanillaPlayer.cosmetics.SetPetPosition(doppelPetPos ?? doppelPos);
+                var vanillaPlayer = message.player.VanillaPlayer;
+                vanillaPlayer.transform.position = doppelPos.ToUnityVector().AsVector3(doppelPos.y / 1000f);
+                vanillaPlayer.NetTransform.Halt();
+                var vanillaCosmetics = message.player.VanillaCosmetics;
+                vanillaCosmetics.SetFlipX(flipX);
+                vanillaCosmetics.SetPetPosition(doppelPetPos ?? doppelPos);
             }
             );
 

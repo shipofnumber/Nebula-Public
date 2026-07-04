@@ -218,7 +218,7 @@ internal class StringConfigurationImpl : Virial.Configuration.ValueConfiguration
         this.mySelection = selection;
         this.Title = title ?? new TranslateTextComponent(id);
         this.val = new SelectionConfigurationValue(id, defaultIndex, selection.Length);
-        this.editor = new HorizontalWidgetsHolder(GUIAlignment.Left,
+        this.editor = () => new HorizontalWidgetsHolder(GUIAlignment.Left,
             ConfigurationAssets.GetOptionTitle(Title, id),
             new NoSGUIText(GUIAlignment.Center, GUI.API.GetAttribute(Virial.Text.AttributeAsset.OptionsFlexible), new RawTextComponent(":")),
             new NoSGUIMargin(GUIAlignment.Center, new(0.1f,0f)),
@@ -279,19 +279,19 @@ public class EditorConfiguration : IConfiguration
 
 public static class GroupConfigurationColor
 {
-    readonly static public Color ImpostorRed = new(0.7f, 0.2f, 0.2f);
-    readonly static public Color Gray = Color.gray.RGBMultiplied(0.76f);
-    static public Color ToDarkenColor(Color color) => color.RGBMultiplied(0.65f);
+    readonly static public VColor ImpostorRed = new(0.7f, 0.2f, 0.2f);
+    readonly static public VColor Gray = VColor.Gray.RGBMultiplied(0.76f);
+    static public VColor ToDarkenColor(VColor color) => color.RGBMultiplied(0.65f);
 }
 public class GroupConfiguration : IConfiguration
 {
     private Func<bool> predicate;
     private IConfiguration[] innerConfigurations;
     internal TextComponent Title;
-    private Color color;
+    private VColor color;
 
-    public GroupConfiguration(string id, IEnumerable<IConfiguration> configurations, Color color, Func<bool>? predicate = null) : this(new TranslateTextComponent(id), configurations, color, predicate) { }
-    public GroupConfiguration(TextComponent title, IEnumerable<IConfiguration> configurations, Color color, Func<bool>? predicate = null)
+    public GroupConfiguration(string id, IEnumerable<IConfiguration> configurations, VColor color, Func<bool>? predicate = null) : this(new TranslateTextComponent(id), configurations, color, predicate) { }
+    public GroupConfiguration(TextComponent title, IEnumerable<IConfiguration> configurations, VColor color, Func<bool>? predicate = null)
     {
         this.predicate = predicate ?? (() => true);
         this.innerConfigurations = configurations.ToArray();
@@ -301,7 +301,12 @@ public class GroupConfiguration : IConfiguration
 
     bool IConfiguration.IsShown => predicate.Invoke();
 
-    string? IConfiguration.GetDisplayText() => Title.GetString() + (":\n" + string.Join('\n', innerConfigurations.Where(c => c.IsShown).Select(c => c.GetDisplayText()).Where(str => str != null))).Replace("\n", "\n   ");
+    string? IConfiguration.GetDisplayText()
+    {
+        var options = string.Join('\n', innerConfigurations.Where(c => c.IsShown).Select(c => c.GetDisplayText()).Where(str => str != null));
+        if (options.Length == 0) return null;
+        return Title.GetString() + (":\n" + options).Replace("\n", "\n   ");
+    }
 
     GUIWidgetSupplier IConfiguration.GetEditor() => () =>
     {

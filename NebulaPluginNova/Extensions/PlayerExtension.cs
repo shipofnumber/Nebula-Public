@@ -82,17 +82,18 @@ public static class PlayerExtension
     public static void HaltSmoothly(this CustomNetworkTransform netTransform)
     {
         ushort minSid = (ushort)(netTransform.lastSequenceId + 1);
-        netTransform.SnapToSmoothly(netTransform.transform.position);
+        netTransform.SnapToSmoothly(netTransform.ModGameObject(false).Position);
     }
 
-    public static void SnapToSmoothly(this CustomNetworkTransform netTransform, Vector2 position)
+    public static void SnapToSmoothly(this CustomNetworkTransform netTransform, VVector2 position)
     {
         //netTransform.ClearPositionQueues();
 
-        Transform transform = netTransform.transform;
-        netTransform.body.position = position;
-        transform.position = position;
-        netTransform.body.velocity = Vector2.zero;
+        var transform = netTransform.ModGameObject();
+        var body = netTransform.body;
+        body.position = position;
+        transform.Position = position.AsUnityVector3(position.y / 1000f);
+        body.velocity = Vector2.zero;
 
         netTransform.sendQueue.Enqueue(position);
         netTransform.SetDirtyBit(2U);

@@ -45,7 +45,7 @@ public class Ghost : FlexibleLifespan, IGameOperator
     {
         if (commonToken != null && !commonToken.Value && !commonToken.Achievement.IsCleared)
         {
-            if (!Helpers.AnyNonTriggersBetween(AmongUsLLImpl.LocalPlayer.GetTruePosition(), renderer.transform.localPosition, out var vec) && vec.magnitude < 1f)
+            if (!Helpers.AnyNonTriggersBetween(AmongUsLLImpl.LocalPlayer.GetTruePosition(), renderer.transform.localPosition, out var vec) && vec.Magnitude < 1f)
                 commonToken.Value = true;
         }
 
@@ -82,7 +82,7 @@ public class GhostAndFlashAbility : IGameOperator
         if (ev.Player.AmOwner) return;
         if (!ev.Dead.HasAttribute(PlayerAttributes.BuskerEffect))
         {
-            new Ghost(ev.Dead.VanillaPlayer.transform.position, GhostDuration, CommonToken, CanSeeGhostInShadow).RegisterPermanently();
+            new Ghost(ev.Dead.Position, GhostDuration, CommonToken, CanSeeGhostInShadow).RegisterPermanently();
             AmongUsUtil.PlayFlash(FlashColor);
         }
     }

@@ -93,7 +93,7 @@ public class Necromancer : DefinedSingleAbilityRoleTemplate<Necromancer.Ability>
                     if (MyPlayer.HoldingAnyDeadBody && currentTargetRoom.HasValue && !canReviveHere())
                     {
                         myArrow.IsActive = true;
-                        myArrow.TargetPos = fastRooms[currentTargetRoom.Value].roomArea.ClosestPoint(MyPlayer.VanillaPlayer.transform.position);
+                        myArrow.TargetPos = fastRooms[currentTargetRoom.Value].roomArea.ClosestPoint(MyPlayer.VanillaPlayer.transform.GetPositionFast());
                     }
                     else
                     {
@@ -152,7 +152,7 @@ public class Necromancer : DefinedSingleAbilityRoleTemplate<Necromancer.Ability>
 
                         if (currentHolding.Player.IsDead)
                         {
-                            currentHolding.Player.Revive(MyPlayer, new(MyPlayer.VanillaPlayer.transform.position), true);
+                            currentHolding.Player.Revive(MyPlayer, new(MyPlayer.Position), true);
                             NebulaGameManager.Instance?.RpcDoGameAction(MyPlayer, MyPlayer.Position, GameActionTypes.NecromancerRevivingAction);
                         }
                         else

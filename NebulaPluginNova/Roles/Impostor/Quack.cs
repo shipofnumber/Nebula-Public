@@ -17,7 +17,7 @@ namespace Nebula.Roles.Impostor;
 
 internal class Quack : DefinedSingleAbilityRoleTemplate<Quack.Ability>, DefinedRole, IAssignableDocument
 {
-    private Quack() : base("quack", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [])
+    private Quack() : base("quack", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [])
     {
     }
 

@@ -1,4 +1,5 @@
-﻿using Nebula.Roles.Impostor;
+﻿using Epic.OnlineServices.Mods;
+using Nebula.Roles.Impostor;
 using TMPro;
 using Virial.Events.Game;
 using Virial.Events.Player;
@@ -9,14 +10,14 @@ namespace Nebula.Extensions;
 
 public static class KillAnimationExtension
 {
-    public record IPlayerlikePosition(IPlayerlike? Player, Vector2 AlterPosition)
+    public record IPlayerlikePosition(IPlayerlike? Player, VVector2 AlterPosition)
     {
         public bool AmOwner => (Player?.AmOwner ?? false) && Player is GamePlayer;
-        public Vector2 Position => (Player?.IsActive ?? false) ? Player.Position : AlterPosition;
+        public VVector2 Position => (Player?.IsActive ?? false) ? Player.Position : AlterPosition;
     }
-    static public (IEnumerator enumerator, Vector2? deadPos) CoPerformModKill(this KillAnimation killAnim, byte requestSender, int requestId, PlayerControl source, IPlayerlikePosition target, GamePlayer realTarget, KillCharacteristics killCharacteristics, bool blink, bool targetIsUsingUtility, Vector2 deadGoalPos, bool useViperDeadBody, PlayerControl killer, CommunicableTextTag deadState)
+    static public (IEnumerator enumerator, Vector2? deadPos) CoPerformModKill(this KillAnimation killAnim, byte requestSender, int requestId, PlayerControl source, IPlayerlikePosition target, GamePlayer realTarget, KillCharacteristics killCharacteristics, bool blink, bool targetIsUsingUtility, VVector2 deadGoalPos, bool useViperDeadBody, PlayerControl killer, CommunicableTextTag deadState)
     {
-        Vector2? finalDeadPos = null;
+        VVector2? finalDeadPos = null;
         FollowerCamera cam = Camera.main.GetComponent<FollowerCamera>();
         bool isParticipant = source.AmOwner || target.AmOwner;
         PlayerPhysics sourcePhys = source.MyPhysics;
@@ -26,9 +27,9 @@ public static class KillAnimationExtension
         target.Player?.Logic.SetMovement(false);
 
         //既存の死体を探す
-        var existedBodies = Helpers.AllDeadBodies().ToArray();
+        var existedBodies = ModSingleton<DeadBodyManager>.Instance.AllDeadBodies.ToArray();
 
-        DeadBody GenerateDisableDeadBody(int variation, Vector2 position)
+        DeadBody GenerateDisableDeadBody(int variation, VVector2 position)
         {
             finalDeadPos = position;
             DeadBody deadBody = GameObject.Instantiate<DeadBody>(GameManager.Instance.deadBodyPrefab[useViperDeadBody ? 1 : 0]);
@@ -44,10 +45,10 @@ public static class KillAnimationExtension
 
             realTarget.VanillaPlayer.SetPlayerMaterialColors(deadBody.bloodSplatter);
 
-            Vector3 vector = (Vector3)position + killAnim.BodyOffset;
+            VVector2 vector = position + new VVector2(killAnim.BodyOffset);
 
             //至近距離に死体がある場合、死体の位置をずらす
-            if (existedBodies.Any(b => b.transform.position.Distance(vector) < 0.05f))
+            if (existedBodies.Any(b => b.Position.Distance(vector) < 0.05f))
             {
                 void TryShift()
                 {
@@ -55,12 +56,12 @@ public static class KillAnimationExtension
                     {
                         for (int j = 0; j < 4; j++)
                         {
-                            var dir = Vector2.right.Rotate(15 + 45 * i + 90 * j);
-                            var cand = (Vector2)vector + dir * 0.12f;
+                            var dir = VVector2.Right.Rotate(15 + 45 * i + 90 * j);
+                            var cand = vector + dir * 0.12f;
 
                             if (
                                 !Helpers.AnyNonTriggersBetween(vector, cand, out _, Constants.ShipAndAllObjectsMask) &&
-                                !existedBodies.Any(b => b.transform.position.Distance(cand) < 0.05f)
+                                !existedBodies.Any(b => b.Position.Distance(cand) < 0.05f)
                                 )
                             {
                                 vector = cand;
@@ -72,8 +73,7 @@ public static class KillAnimationExtension
                 TryShift();
             }
 
-            vector.z = vector.y / 1000f;
-            deadBody.transform.position = vector;
+            deadBody.transform.position = new(vector.x, vector.y, vector.y / 1000f);
 
             var wrapped = ModSingleton<DeadBodyManager>.Instance.RegisterDeadBody(deadBody, DeadBodyManager.GenerateId(requestSender, requestId, variation), realTarget);
             GameOperatorManager.Instance?.Run(new DeadBodyInstantiateEvent(realTarget, wrapped, killer?.GetModInfo(), deadState));
@@ -87,7 +87,7 @@ public static class KillAnimationExtension
         DeadBody? realDeadbody = null;
         if (killCharacteristics.HasFlag(KillCharacteristics.FlagLeftRealDeadBody) || (targetIsRealPlayer && killCharacteristics.HasFlag(KillCharacteristics.FlagLeftDeadBody)))
         {
-            Vector2 deadBodyPlayerPos = realTarget.Position;
+            VVector2 deadBodyPlayerPos = realTarget.Position;
             if (targetIsUsingUtility) deadBodyPlayerPos = deadGoalPos;
             realDeadbody = GenerateDisableDeadBody(0, deadBodyPlayerPos);
         }
@@ -127,6 +127,7 @@ public static class KillAnimationExtension
         if (realTargetWillDie)
         {
             realTarget.VanillaPlayer.Die(DeathReason.Kill, false);
+            (realTarget as PlayerModInfo)?.UpdateModDead(true);
             PlayerExtension.ResetOnDying(realTarget.VanillaPlayer);
         }
 

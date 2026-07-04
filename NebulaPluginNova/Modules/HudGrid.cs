@@ -91,7 +91,7 @@ public class HudGrid : MonoBehaviour
             bool ShouldBeShown(HudContent c)
             {
                 if (!c.IsActive) return false;
-                if (MeetingHud.Instance.AsBoolFast() && !c.gameObject.active) return false; //会議中はstaticContents以外除外する
+                if (MeetingHud.Instance.AsBoolFast() && !c.ModGameObject(false).ActiveSelf) return false; //会議中はstaticContents以外除外する
                 return true;
             }
             for (int e = 0; e < Contents[i].Count; e++)
@@ -187,7 +187,7 @@ public class HudContent : MonoBehaviour
         ClassInjector.RegisterTypeInIl2Cpp<HudContent>();
     }
 
-    public Vector2 CurrentPos { get; set; }
+    public VVector2 CurrentPos { get; set; }
 
     //Priorityの大きいものから配置される
     public int Priority { get => (OccupiesLine ? 20000 : onKillButtonPos ? 10000 : 0) + priority; }
@@ -205,6 +205,7 @@ public class HudContent : MonoBehaviour
     public Func<bool>? ActiveFunc = null;
     public bool IsActive => ActiveFunc?.Invoke() ?? gameObject.activeSelf;
     public bool IsLeftSide => isLeftSide;
+    Virial.Compat.ModGameObject myTransform;
 
     private static float EdgeY => HudGrid.UseSmallerHud ? 
         -(3.0f / 0.72f - 0.65f) :
@@ -224,14 +225,14 @@ public class HudContent : MonoBehaviour
         }
     }
 
-    public Vector3 ToLocalPos
+    public VVector3 ToLocalPos
     {
         get
         {
-            var pos = new Vector3((EdgeX - CurrentPos.x) * (isLeftSide ? -1 : 1), EdgeY + CurrentPos.y, CurrentPos.x * 0.05f);
+            var pos = new VVector3((EdgeX - CurrentPos.x) * (isLeftSide ? -1 : 1), EdgeY + CurrentPos.y, CurrentPos.x * 0.05f);
 
             var arrangement = ClientOption.AllOptions[ClientOption.ClientOptionType.ButtonArrangement].Value;
-            if (!MeetingHud.Instance && ((arrangement == 1 && isLeftSide) || arrangement == 2)) pos.y += 0.85f;
+            if (!MeetingHud.Instance.AsBoolFast() && ((arrangement == 1 && isLeftSide) || arrangement == 2)) pos.y += 0.85f;
 
             return pos;
         }
@@ -259,13 +260,14 @@ public class HudContent : MonoBehaviour
 
     public void OnDisable()
     {
-        CurrentPos = new Vector2(-1,-1);
+        CurrentPos = new(-1,-1);
         isDirty = true;
     }
 
     public void Start()
     {
-        CurrentPos = new Vector2(-1, -1);
+        CurrentPos = new(-1, -1);
+        myTransform = this.ModGameObject(true);
     }
 
     public void LateUpdate()
@@ -273,13 +275,13 @@ public class HudContent : MonoBehaviour
         if (CurrentPos.x < 0) return;
         if (isDirty)
         {
-            transform.localPosition = ToLocalPos;
+            myTransform.LocalPosition = ToLocalPos;
             isDirty = false;
         }
         else
         {
-            var diff = ToLocalPos - transform.localPosition;
-            transform.localPosition += diff * Time.deltaTime * 5.2f;
+            var diff = ToLocalPos - myTransform.LocalPosition;
+            myTransform.LocalPosition += (diff * FastMethods.GetDeltaTimeFast() * 5.2f);
         }
     }
 
@@ -301,17 +303,18 @@ public class HudContent : MonoBehaviour
         var holder = InstantiateContent(name, isLeftSide, occupiesLine, false, true);
         lifespan.BindGameObject(holder.gameObject);
         var adjust = UnityHelper.CreateObject<ScriptBehaviour>("Adjust", holder.transform, Vector3.zero);
+        var adjustObj = adjust.ModGameObject();
         adjust.UpdateHandler += () =>
         {
             if (MeetingHud.Instance.AsBoolFast())
             {
-                adjust.transform.localScale = new(0.65f, 0.65f, 1f);
-                adjust.transform.localPosition = new(-0.45f, -0.37f, 0f);
+                adjustObj.LocalScale = new(0.65f, 0.65f, 1f);
+                adjustObj.LocalPosition = new(-0.45f, -0.37f, 0f);
             }
             else
             {
-                adjust.transform.localScale = Vector3.one;
-                adjust.transform.localPosition = Vector3.zero;
+                adjustObj.LocalScale = VVector3.One;
+                adjustObj.LocalPosition = VVector3.Zero;
             }
         };
         return adjust.transform;

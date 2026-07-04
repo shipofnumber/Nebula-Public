@@ -131,7 +131,7 @@ public interface ITitleShower
     Transform Transform { get; }
     TMPro.TextMeshPro MainText { get; }
     TMPro.TextMeshPro ShadowText { get; }
-    void SetTextColor(Color color);
+    void SetTextColor(VColor color);
     void SetTextAlpha(float alpha);
 }
 public class TitleShower : AbstractModule<Virial.Game.Game>, IGameOperator, ITitleShower
@@ -142,10 +142,10 @@ public class TitleShower : AbstractModule<Virial.Game.Game>, IGameOperator, ITit
     Transform ITitleShower.Transform =>  textHolder;
     TMPro.TextMeshPro ITitleShower.MainText => mainText;
     TMPro.TextMeshPro ITitleShower.ShadowText => shadowText;
-    void ITitleShower.SetTextColor(Color color)
+    void ITitleShower.SetTextColor(VColor color)
     {
-        mainText.color = color;
-        shadowText.color = color * Color.black.AlphaMultiplied(0.6f);
+        mainText.color = color.ToUnityColor();
+        shadowText.color = (color * VColor.Black.AlphaMultiplied(0.6f)).ToUnityColor();
     }
 
     void ITitleShower.SetTextAlpha(float alpha)
@@ -163,15 +163,15 @@ public class TitleShower : AbstractModule<Virial.Game.Game>, IGameOperator, ITit
         mainText.transform.localPosition = new(0f, 0f, 0f);
         mainText.rectTransform.pivot = new(0.5f, 0.5f);
         mainText.rectTransform.localScale = new(3f, 3f, 1f);
-        mainText.rectTransform.sizeDelta = new(2.4f, 1.8f);
-        mainText.outlineColor = Color.clear;
-        mainText.color = Color.white;
+        mainText.rectTransform.sizeDelta = new(2.4f, 3f);
+        mainText.outlineColor = new Color32(0, 0, 0, 0);
+        mainText.color = new(1f, 1f, 1f);
 
         mainText.text = "";
 
         shadowText = GameObject.Instantiate(mainText, holder.transform);
         shadowText.transform.localPosition = new(0.05f, -0.05f, 1f);
-        shadowText.color = Color.black.AlphaMultiplied(0.6f);
+        shadowText.color = VColor.Black.AlphaMultiplied(0.6f).ToUnityColor();
 
         textHolder = holder.transform;
 
@@ -187,7 +187,7 @@ public class TitleShower : AbstractModule<Virial.Game.Game>, IGameOperator, ITit
         return this;
     }
 
-    public TitleShower SetText(string text, Color color, float duration, bool shake = false)
+    public TitleShower SetText(string text, VColor color, float duration, bool shake = false)
     {
 
         float alpha = 1f;
@@ -195,7 +195,7 @@ public class TitleShower : AbstractModule<Virial.Game.Game>, IGameOperator, ITit
         float shakeTimer = 0f;
         SetText(text, color, new(_ =>
         {
-            var deltaTime = Time.deltaTime;
+            var deltaTime = FastMethods.GetDeltaTimeFast();
             if (shake)
             {
                 shakeTimer -= deltaTime;
@@ -209,7 +209,7 @@ public class TitleShower : AbstractModule<Virial.Game.Game>, IGameOperator, ITit
             }
             else
             {
-                textHolder.localPosition = Vector3.zero;
+                textHolder.localPosition = VVector3.Zero;
             }
 
             if (timer > 0f)
@@ -223,18 +223,18 @@ public class TitleShower : AbstractModule<Virial.Game.Game>, IGameOperator, ITit
             }
             alpha = Mathn.Clamp01(alpha);
 
-            mainText.color = textColor.AlphaMultiplied(alpha);
-            shadowText.color = Color.black.AlphaMultiplied(0.6f * alpha);
+            mainText.color = textColor.AlphaMultiplied(alpha).ToUnityColor();
+            shadowText.color = VColor.Black.AlphaMultiplied(0.6f * alpha).ToUnityColor();
         }));
 
         return this;
     }
 
-    public TitleShower SetText(string text, Color color, TitleTrait trait)
+    public TitleShower SetText(string text, VColor color, TitleTrait trait)
     {
-        textHolder.transform.localScale = Vector3.one;
-        textHolder.transform.localPosition = Vector3.zero;
-        textHolder.transform.localEulerAngles = Vector3.zero;
+        textHolder.transform.localScale = VVector3.One;
+        textHolder.transform.localPosition = VVector3.Zero;
+        textHolder.transform.localEulerAngles = VVector3.Zero;
 
         mainText.text = text;
         shadowText.text = text;
@@ -244,7 +244,7 @@ public class TitleShower : AbstractModule<Virial.Game.Game>, IGameOperator, ITit
         return this;
     }
 
-    Color textColor = Color.white;
+    VColor textColor = VColor.White;
     TitleTrait? trait = null;
 
     void HudUpdate(GameHudUpdateEvent? ev)
@@ -372,6 +372,7 @@ internal class NebulaGameManager : AbstractModuleContainer, IRuntimePropertyHold
         instance = this;
         HudGrid = HudManager.Instance.gameObject.AddComponent<HudGrid>();
 
+        ModSingleton<VanillaTranslationCache>.Instance = new();
 #if PC
         RuntimeAsset = new();
 
@@ -518,7 +519,7 @@ internal class NebulaGameManager : AbstractModuleContainer, IRuntimePropertyHold
     public void OnMeetingStart()
     {
 
-        if (AmongUsLLImpl.LocalPlayer.Data.IsDead) ChangeToSpectator();
+        if (GamePlayer.LocalPlayer?.IsDead ?? false) ChangeToSpectator();
 
         foreach (var p in allModPlayers) p.Value.Unbox().OnMeetingStart();
 
@@ -530,7 +531,7 @@ internal class NebulaGameManager : AbstractModuleContainer, IRuntimePropertyHold
 
     public void OnMeetingEnd(GamePlayer[]? players)
     {
-        if (AmongUsLLImpl.LocalPlayer.Data.IsDead) ChangeToSpectator();
+        if (GamePlayer.LocalPlayer?.IsDead ?? false) ChangeToSpectator();
 
         foreach (var p in PlayerControl.AllPlayerControls.GetFastEnumerator()) p.onLadder = false;
 
@@ -545,18 +546,18 @@ internal class NebulaGameManager : AbstractModuleContainer, IRuntimePropertyHold
 
     public void OnLateUpdate()
     {
-        NebulaProfiler.LapTimer("Before LateUpdateEvent");
         GameEntityManager.Run(GameLateUpdateEvent.Get(this));
-        NebulaProfiler.LapTimer("LateUpdateEvent");
     }
 
     public void OnUpdate() {
-        CurrentTime += Time.deltaTime;
+        var deltaTime = Time.deltaTime;
+
+        CurrentTime += deltaTime;
 
         //WideCamera.Update();
         GameEntityManager.Update();
 
-        GameEntityManager.Run(GameHudUpdateEvent.Get(this, Time.deltaTime, CurrentTime, Time.time));
+        GameEntityManager.Run(GameHudUpdateEvent.Get(this, deltaTime, CurrentTime, Time.time));
 
         var localPlayer = AmongUsLLImpl.LocalPlayer;
         if (!localPlayer.AsBoolFast()) return;
@@ -586,7 +587,7 @@ internal class NebulaGameManager : AbstractModuleContainer, IRuntimePropertyHold
             ventButton.SetCooldownFill(ventPercentage);
             CooldownHelpers.SetCooldownNormalizedUvs(ventButton.graphic);
             ventButton.cooldownTimerText.text = ventText;
-            ventButton.cooldownTimerText.color = inVent ? Color.green : Color.white;
+            ventButton.cooldownTimerText.color = (inVent ? VColor.Green : VColor.White).ToUnityColor();
             
             //サボタージュボタン
 

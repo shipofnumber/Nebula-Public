@@ -10,7 +10,7 @@ namespace Nebula.Player;
 
 internal class VanillaPlayerLogics : IPlayerLogics { 
     PlayerControl player;
-    Transform playerTransform;
+    Virial.Compat.ModGameObject playerTransform;
     Rigidbody2D rigidBody;
     Collider2D myCollider;
     PlayerAnimations animations;
@@ -20,7 +20,7 @@ internal class VanillaPlayerLogics : IPlayerLogics {
     public VanillaPlayerLogics(PlayerControl player, GamePlayer modPlayer)
     {
         this.player = player;
-        this.playerTransform = player.transform;
+        this.playerTransform = player.ModGameObject(true);
         this.modPlayer = modPlayer;
 
         this.physics = player.MyPhysics;
@@ -30,8 +30,8 @@ internal class VanillaPlayerLogics : IPlayerLogics {
         this.netTransform = player.NetTransform;
     }
 
-    public UnityEngine.Vector2 Position { get => playerTransform.position; set => playerTransform.position = value.AsVector3(value.y / 1000f); }
-    public UnityEngine.Vector2 TruePosition => player.GetTruePosition();
+    public VVector2 Position { get => playerTransform.Position; set => playerTransform.Position = value.AsGameWorldUnityVector3(); }
+    public VVector2 TruePosition => player.GetTruePosition();
 
     public Collider2D GroundCollider => this.myCollider;
 
@@ -50,7 +50,7 @@ internal class VanillaPlayerLogics : IPlayerLogics {
 
     public void Halt()
     {
-        Body.velocity = Vector2.zero;
+        Body.velocity = new(0f, 0f);
         ClearPositionQueues();
     }
 

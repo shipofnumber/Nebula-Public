@@ -41,7 +41,7 @@ public static class PolishTeleportStonePatch
 
         //ルビー磨きタスクが実際に終わっていれば、テレポートを実行する
         if (__instance.amClosing == Minigame.CloseState.Closing) return null!;
-        if(ModSingleton<TeleportationSystem>.Instance.TryTeleport(AmongUsLLImpl.LocalPlayer.transform.position)) __instance.Close();
+        if(ModSingleton<TeleportationSystem>.Instance.TryTeleport(GamePlayer.LocalPlayer!.Position)) __instance.Close();
         return null!;
     }
 }
@@ -58,12 +58,12 @@ public static class PolishTeleportStoneStartPatch
 
         if (GeneralConfigurations.NonCrewmateCanUseTeleporterImmediatelyOption && !GamePlayer.LocalPlayer!.FeelBeTrueCrewmate)
         {
-            ModSingleton<TeleportationSystem>.Instance.TryTeleport(AmongUsLLImpl.LocalPlayer.transform.position);
+            ModSingleton<TeleportationSystem>.Instance.TryTeleport(GamePlayer.LocalPlayer!.Position);
             rubyGame!.ForceClose();
             return;
         }
 
-        int kind = ModSingleton<TeleportationSystem>.Instance.GetKind(__instance.transform.position);
+        int kind = ModSingleton<TeleportationSystem>.Instance.GetKind(__instance.ModGameObject(false).Position);
 
         rubyGame!.swipesToClean = 2;
 
@@ -78,16 +78,16 @@ public static class PolishTeleportStoneStartPatch
         SetHue(rubyRenderer);
 
         rubyGame.Buttons.Do(b => SetHue(b.GetComponent<SpriteRenderer>()));
-        rubyGame.Buttons[0].transform.localPosition = new(1.4263f, 0.9409f, -1f);
-        rubyGame.Buttons[1].transform.localPosition = new(-1.2148f, 1.1671f, -1f);
-        rubyGame.Buttons[2].transform.localPosition = new(0.0426f, 2.0312f, -1f);
-        rubyGame.Buttons[3].transform.localPosition = new(-1.5018f, 0.0475f, -1f);
-        rubyGame.Buttons[4].transform.localPosition = new(-0.2493f, 0.8739f, -1f);
-        rubyGame.Buttons[5].transform.localPosition = new(-0.7164f, -0.8277f, -1f);
-        rubyGame.Buttons[6].transform.localPosition = new(0.5165f, -0.4754f, -1f);
+        rubyGame.Buttons[0].ModGameObject(false).Position = new(1.4263f, 0.9409f, -1f);
+        rubyGame.Buttons[1].ModGameObject(false).Position = new(-1.2148f, 1.1671f, -1f);
+        rubyGame.Buttons[2].ModGameObject(false).Position = new(0.0426f, 2.0312f, -1f);
+        rubyGame.Buttons[3].ModGameObject(false).Position = new(-1.5018f, 0.0475f, -1f);
+        rubyGame.Buttons[4].ModGameObject(false).Position = new(-0.2493f, 0.8739f, -1f);
+        rubyGame.Buttons[5].ModGameObject(false).Position = new(-0.7164f, -0.8277f, -1f);
+        rubyGame.Buttons[6].ModGameObject(false).Position = new(0.5165f, -0.4754f, -1f);
 
-        rubyGame.Buttons[2].transform.localEulerAngles = new(0f, 0f, 350f);
-        rubyGame.Buttons[6].transform.localEulerAngles = new(0f, 0f, 270f);
+        rubyGame.Buttons[2].ModGameObject(false).LocalEulerAngles = new(0f, 0f, 350f);
+        rubyGame.Buttons[6].ModGameObject(false).LocalEulerAngles = new(0f, 0f, 270f);
     }
 }
 
@@ -101,14 +101,14 @@ public class TeleportationSystem : AbstractModule<Virial.Game.Game>, IGameOperat
     }
     public TeleportationSystem() => ModSingleton<TeleportationSystem>.Instance = this;
 
-    private record TeleporterPair(int kind, Vector2 pos1, Vector2 pos2);
+    private record TeleporterPair(int kind, VVector2 pos1, VVector2 pos2);
     List<TeleporterPair> Pairs = [];
     public const int MaxTeleporterKind = 4;
     public static readonly float[] TeleportHue = [124, 296, 212, 16];
     public static readonly float[] TeleportSat = [1f, 1f, 1f, 0.5f];
     protected override void OnInjected(Virial.Game.Game container) => this.Register(container);
 
-    public int GetKind(Vector2 pos) => Pairs.MinBy(p => Math.Min(p.pos1.Distance(pos), p.pos2.Distance(pos)))?.kind ?? 0;
+    public int GetKind(VVector2 pos) => Pairs.MinBy(p => Mathn.Min(p.pos1.Distance(pos), p.pos2.Distance(pos)))?.kind ?? 0;
     
     void OnGameStart(GameStartEvent ev)
     {
@@ -126,7 +126,7 @@ public class TeleportationSystem : AbstractModule<Virial.Game.Game>, IGameOperat
             }
         }
     }
-    static private RemoteProcess<(int kind, Vector2 pos1, Vector2 pos2)> RpcSpawnTeleporter = new(
+    static private RemoteProcess<(int kind, VVector2 pos1, VVector2 pos2)> RpcSpawnTeleporter = new(
         "SpawnTelepoter",
         (message, _) =>
         {
@@ -164,7 +164,7 @@ public class TeleportationSystem : AbstractModule<Virial.Game.Game>, IGameOperat
     }
 
     private const string teleporterAttrTag = "nebula::teleporter";
-    static private IEnumerator CoTeleport(GamePlayer player, Vector2 to)
+    static private IEnumerator CoTeleport(GamePlayer player, VVector2 to)
     {
         player.Unbox().IsTeleporting = true;
         SizeModulator sizeModulator = new(VVector2.One, 10000f, false, 100, teleporterAttrTag, false, false);
@@ -199,7 +199,7 @@ public class TeleportationSystem : AbstractModule<Virial.Game.Game>, IGameOperat
         player.Unbox().IsTeleporting = false;
     }
 
-    static private RemoteProcess<(GamePlayer player, Vector2 to)> RpcTeleport = new(
+    static private RemoteProcess<(GamePlayer player, VVector2 to)> RpcTeleport = new(
         "Teleport", 
         (message, _) =>
         {
@@ -233,7 +233,7 @@ public class Teleporter : NebulaSyncStandardObject
 
     void OnUpdate(GameUpdateEvent ev)
     {
-        float num = Mathn.Sin(Time.time);
+        float num = Mathn.Sin(ev.GameTime);
         ConsoleRenderer.transform.localPosition = new Vector3(0f, 0.28f + num * 0.05f, 0.0002f);
         ShadowRenderer.color = new(1f, 1f, 1f, 0.6f - num * 0.4f);
 

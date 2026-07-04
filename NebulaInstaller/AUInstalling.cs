@@ -10,6 +10,12 @@ using System.Threading.Tasks;
 
 namespace NebulaInstaller;
 
+public enum GamePlatform
+{
+    Steam,
+    Epic
+}
+
 static public class AUInstalling
 {
     public static bool IsVanillaAmongUsDirectory(string path)
@@ -57,6 +63,18 @@ static public class AUInstalling
         }
     }
 
+    public static GamePlatform GuessPlatform(string vanillaDirectoryPath)
+    {
+        if (Directory.Exists(vanillaDirectoryPath + Path.DirectorySeparatorChar + ".egstore"))
+            return GamePlatform.Epic;
+        if (vanillaDirectoryPath.Contains("Epic Games", StringComparison.OrdinalIgnoreCase))
+            return GamePlatform.Epic;
+        if (vanillaDirectoryPath.Contains("steamapps", StringComparison.OrdinalIgnoreCase))
+            return GamePlatform.Steam;
+
+        return GamePlatform.Steam;
+    }
+
     public static string? GetModDirectoryPathFromVanilla(string vanillaDirectoryPath)
     {
         var parent = Directory.GetParent(vanillaDirectoryPath)?.FullName;
@@ -72,7 +90,7 @@ static public class AUInstalling
         return path + " " + num;
     }
 
-    static public async Task CoInstall(string vanillaDirectoryPath, string installToDirectoryPath, Action callBack)
+    static public async Task CoInstall(string vanillaDirectoryPath, string installToDirectoryPath, GamePlatform platform, Action callBack)
     {
         void CopyDirectory(string innerPath = "")
         {
@@ -87,11 +105,15 @@ static public class AUInstalling
             }
         }
 
+        string zipResourceName = platform == GamePlatform.Epic
+            ? "NebulaInstaller.Resources.Nebula_Epic.zip"
+            : "NebulaInstaller.Resources.Nebula_Steam.zip";
+
         await Task.Run(() =>
         {
             CopyDirectory();
 
-            using var archive = new ZipArchive(Assembly.GetExecutingAssembly().GetManifestResourceStream("NebulaInstaller.Resources.Nebula.zip")!);
+            using var archive = new ZipArchive(Assembly.GetExecutingAssembly().GetManifestResourceStream(zipResourceName)!);
             archive.ExtractToDirectory(installToDirectoryPath, true);
 
             callBack.Invoke();

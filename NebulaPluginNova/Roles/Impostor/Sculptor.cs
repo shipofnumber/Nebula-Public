@@ -20,7 +20,7 @@ namespace Nebula.Roles.Impostor;
 
 internal class Sculptor : DefinedSingleAbilityRoleTemplate<Sculptor.Ability>, DefinedRole, IAssignableDocument
 {
-    private Sculptor() : base("sculptor", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [SampleCoolDownOption, MaxSamplesOption, CreateCoolDownOption, StayDurationOption, DecoyDetectionRadiusOption]) {
+    private Sculptor() : base("sculptor", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [SampleCoolDownOption, MaxSamplesOption, CreateCoolDownOption, StayDurationOption, DecoyDetectionRadiusOption]) {
         GameActionTypes.SculptorAction = new("sculptor.summon", this, isPlacementAction: true);
     }
 

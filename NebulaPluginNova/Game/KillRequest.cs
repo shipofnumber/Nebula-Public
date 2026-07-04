@@ -157,7 +157,7 @@ internal class KillRequestHandler
         if (inMeetingActually)
         {
             bool isAnimating = inMeeting && meeting.state <= MeetingHud.VoteStates.Animating;
-            if(!isAnimating) killParam |= KillParameter.WithKillSEWidely;
+            if(!isAnimating && !inExile) killParam |= KillParameter.WithKillSEWidely;
         }
         if(inExile) killParam |= KillParameter.WithoutSelfSE;
 
@@ -305,6 +305,8 @@ internal class KillRequestHandler
                    }
 
                    targetInfo.MyControl.Data.IsDead = true;
+                   (targetInfo as PlayerModInfo)?.UpdateModDead(true);
+
                    PlayerExtension.ResetOnDying(targetInfo.MyControl);
 
                    //1ずつ加算するのでこれで十分
@@ -365,6 +367,7 @@ internal class KillRequestHandler
           if (realTargetWillDie)
           {
               target.VanillaPlayer.Die(DeathReason.Exile, false);
+              (target as PlayerModInfo)?.UpdateModDead(true);
               PlayerExtension.ResetOnDying(target.VanillaPlayer);
 
               if (target.AmOwner)

@@ -24,13 +24,13 @@ public class PerkHolder : AbstractModule<Virial.Game.Game>, IGameOperator
     public PerkInstance RegisterPerk(PerkDefinition perk) {
         var instance = new PerkInstance(perk, myHolder.transform);
         instance.RuntimeId = availableId++;
-        instance.RelatedGameObject.transform.localPosition = new(0f, -100f, 0f); //一瞬変な場所に表示されるのを隠す
+        instance.RelatedGameObject.LocalPosition = new(0f, -100f, 0f); //一瞬変な場所に表示されるのを隠す
         myPerks.Add(instance);
 
         return instance;
     }
 
-    private Vector3 ToPerkPos(int index) => new Vector3(-0.25f, 0f, 0f) + new Vector3(2f * index, (float)Math.Sqrt(3) * ((index % 2 == 0) ? -0.4f : 0.4f), (float)index * -0.001f) * 0.6f;
+    private VVector3 ToPerkPos(int index) => new VVector3(-0.25f, 0f, 0f) + new VVector3(2f * index, (float)Math.Sqrt(3) * ((index % 2 == 0) ? -0.4f : 0.4f), (float)index * -0.001f) * 0.6f;
 
     static private Image IconFrameBackSprite = SpriteLoader.FromResource("Nebula.Resources.Perks.FrameBack.png", 100f);
     static private Image IconFrameSprite = SpriteLoader.FromResource("Nebula.Resources.Perks.Frame.png", 100f);

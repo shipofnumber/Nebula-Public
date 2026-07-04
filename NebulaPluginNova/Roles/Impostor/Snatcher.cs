@@ -11,7 +11,7 @@ namespace Nebula.Roles.Impostor;
 
 internal class Snatcher : DefinedSingleAbilityRoleTemplate<Snatcher.Ability>, DefinedRole, DefinedSingleAbilityRole<Snatcher.Ability>, IAssignableDocument
 {
-    private Snatcher() : base("snatcher", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [
+    private Snatcher() : base("snatcher", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [
         new GroupConfiguration("options.role.snatcher.group.snatch", [SnatchMethodOption, SnatchCoolDownOption, ObviousGuessFailureOption, KillCooldownRewindAfterUsurpOption], GroupConfigurationColor.ImpostorRed),
         new GroupConfiguration("options.role.snatcher.group.clock", [ClockCoolDownOption,ClockDurationOption, ClockRatioOption], GroupConfigurationColor.ImpostorRed),
     ])
@@ -129,7 +129,7 @@ internal class Snatcher : DefinedSingleAbilityRoleTemplate<Snatcher.Ability>, De
                 MetaScreen lastWindow = null!;
                 lastWindow = Complex.MeetingRoleSelectWindow.OpenRoleSelectWindow(null, null, true, " ", r =>
                 {
-                    if (AmongUsLLImpl.LocalPlayer.Data.IsDead) return;
+                    if (GamePlayer.LocalPlayer?.IsDead ?? true) return;
 
                     var isMatched = p.Role.CheckGuessAbility(r);
                     UpdateHasTried.RpcSync(MyPlayer, 1);
@@ -154,7 +154,7 @@ internal class Snatcher : DefinedSingleAbilityRoleTemplate<Snatcher.Ability>, De
                     lastWindow = null!;
                 });
             },
-            p => !p.MyPlayer.IsDead && !p.MyPlayer.AmOwner && !HasTried && !AmongUsLLImpl.LocalPlayer.Data.IsDead
+            p => !p.MyPlayer.IsDead && !p.MyPlayer.AmOwner && !HasTried && !(GamePlayer.LocalPlayer?.IsDead ?? false)
             ));
             }
         }

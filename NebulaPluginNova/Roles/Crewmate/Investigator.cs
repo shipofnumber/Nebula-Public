@@ -13,25 +13,26 @@ namespace Nebula.Roles.Crewmate;
 
 public static class FootprintHelpers
 {
-    static public Vector2? GetFootprintPosition(PlayerControl player, bool isLeft, out float? angle)
+    static public VVector2? GetFootprintPosition(GamePlayer player, bool isLeft, out float? angle)
     {
-        if (player.inVent || player.Data.IsDead)
+        if (player.VanillaPlayer.inVent || player.IsDead)
         {
             angle = null;
             return null;
         }
 
-        if (player.MyPhysics.Velocity.magnitude > 0)
+        var vel = new VVector2(player.VanillaPhysics.Velocity);
+        if (vel.Magnitude > 0)
         {
-            var vel = player.MyPhysics.Velocity.normalized;
+            vel = vel.Normalized;
             var vec = vel * 0.08f * (isLeft ? 1f : -1f);
             angle = Mathn.Atan2(vel.y, vel.x).RadToDeg();
-            return player.transform.position + new Vector3(-vec.y, vec.x - 0.22f);
+            return player.Position + new VVector2(-vec.y, vec.x - 0.22f);
         }
         else
         {
             angle = null;
-            return player.transform.position + new Vector3(0f, -0.22f);
+            return player.Position + new VVector2(0f, -0.22f);
         }
     }
 }
@@ -256,7 +257,7 @@ internal class Investigator : DefinedRoleTemplate, DefinedRole, IAssignableDocum
                     
                     if (time > footprintDuration || MeetingHud.Instance) break;
 
-                    var pos = FootprintHelpers.GetFootprintPosition(ev.Murderer.VanillaPlayer, isLeft, out var angle);
+                    var pos = FootprintHelpers.GetFootprintPosition(ev.Murderer, isLeft, out var angle);
                     isLeft = !isLeft;
 
                     if (pos.HasValue) allFootprints.Add(new(pos.Value, (footprintDuration - time) / footprintDuration, killData));

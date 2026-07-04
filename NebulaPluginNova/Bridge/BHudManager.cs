@@ -15,6 +15,7 @@ internal class BHudManager
     public VentButton ImpostorVentButton { get; }
     public PassiveButton MapButton { get; }
 
+    public Transform MyTransform { get; }
     public Transform UseButtonParentTransform { get; }
     public Transform MapButtonTransform { get; }
 
@@ -43,6 +44,7 @@ internal class BHudManager
         this.ImpostorVentButton = hud.ImpostorVentButton;
         this.MapButton = hud.MapButton;
 
+        this.MyTransform = hud.transform;
         this.UseButtonParentTransform = this.UseButton.transform.parent;
         this.MapButtonTransform = this.MapButton.transform;
 

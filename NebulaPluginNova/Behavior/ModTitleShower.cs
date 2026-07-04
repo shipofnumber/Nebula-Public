@@ -56,9 +56,9 @@ public class ModTitleShower : MonoBehaviour
     private PlayerControl player = null!;
     private PoolablePlayer poolablePlayer = null!;
 
-    private TMPro.TextMeshPro OrigText => player ? player.cosmetics.nameText : poolablePlayer.cosmetics.nameText;
-    private bool AmOwner => player ? player.AmOwner : false;
-    private byte PlayerId => player ? player.PlayerId : (byte)poolablePlayer.ColorId;
+    private TMPro.TextMeshPro OrigText => player.AsBoolFast() ? player.cosmetics.nameText : poolablePlayer.cosmetics.nameText;
+    private bool AmOwner => player.AsBoolFast() ? player.AmOwner : false;
+    private byte PlayerId => player.AsBoolFast() ? player.PlayerId : (byte)poolablePlayer.ColorId;
 
     public void Awake()
     {
@@ -126,7 +126,7 @@ public class ModTitleShower : MonoBehaviour
         {
             text.text = title.GetLocalizedText();
             text.ForceMeshUpdate();
-            collider.size = (Vector2)text.bounds.size + new Vector2(0.1f, 0.1f);
+            collider.size = (VVector2)text.bounds.size + new VVector2(0.1f, 0.1f);
             this.achievement = title;
         }
   
@@ -134,7 +134,7 @@ public class ModTitleShower : MonoBehaviour
         {
             text.text = Language.Translate("achievement.ui.unselected");
             text.ForceMeshUpdate();
-            collider.size = (Vector2)text.bounds.size + new Vector2(0.1f, 0.1f);
+            collider.size = (VVector2)text.bounds.size + new VVector2(0.1f, 0.1f);
             text.color = Color.gray;
             this.achievement = null;
             this.time = -1f;

@@ -84,7 +84,7 @@ internal class Meteor : PerkFunctionalInstance
             var player = GamePlayer.LocalPlayer;
             float alertTime = 0f;
 
-            var fullscreen = AmongUsUtil.GenerateFullscreen(new VColor(Palette.ImpostorRed).AlphaMultiplied(0.5f));
+            var fullscreen = AmongUsUtil.GenerateFullscreen(VColor.ImpostorColor.AlphaMultiplied(0.5f));
             fullscreen.gameObject.SetActive(false);
 
             float addition = 3f;
@@ -92,12 +92,13 @@ internal class Meteor : PerkFunctionalInstance
 
             while (duration > 0f)
             {
-                alertTime -= Time.deltaTime;
-                duration -= Time.deltaTime;
+                var deltaTime = Time.deltaTime;
+                alertTime -= deltaTime;
+                duration -= deltaTime;
 
-                if (MeetingHud.Instance) break;
+                if (MeetingHud.Instance.AsBoolFast()) break;
 
-                float currentAlertSize = Mathf.Lerp(1f, 3f, Mathf.Max(0f, duration - addition) / FireDelay) * ExplosionSize;
+                float currentAlertSize = Mathn.Lerp(1f, 3f, Mathn.Max(0f, duration - addition) / FireDelay) * ExplosionSize;
                 bool inAlertArea = positionList.Any(p => player.Position.Distance(p) < currentAlertSize);
                 
                 if (alertTime < 0f && duration > addition + 1f)
@@ -124,7 +125,7 @@ internal class Meteor : PerkFunctionalInstance
             {
                 while (delay > 0.8f)
                 {
-                    var circle = EffectCircle.SpawnEffectCircle(null, pos.AsVector3(-10f), new(Palette.ImpostorRed), ExplosionSize, null, true);
+                    var circle = EffectCircle.SpawnEffectCircle(null, pos.AsVector3(-10f), VColor.ImpostorColor, ExplosionSize, null, true);
                     yield return Effects.Wait(0.8f);
                     circle.Disappear();
                     delay -= 0.8f;
@@ -133,7 +134,7 @@ internal class Meteor : PerkFunctionalInstance
 
             yield return Effects.Wait(delay);
 
-            if (MeetingHud.Instance) yield break;
+            if (MeetingHud.Instance.AsBoolFast()) yield break;
 
             var explosion = UnityHelper.CreateObject<SpriteRenderer>("Explosion", null, pos.AsVector3(-10f));
             for (int i = 0; i < 2; i++)

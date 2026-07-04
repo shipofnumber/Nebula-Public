@@ -272,7 +272,7 @@ public class TextField : MonoBehaviour
             0f : myText.textInfo.lineInfo[lineNum].baseline - myCursor.textInfo.lineInfo[0].baseline, -1f);
         
 
-        VVector2 compoPos = UnityHelper.WorldToScreenPoint(transform.position + new Vector3(GetCursorX(cursor), 0.15f, 0f), LayerExpansion.GetUILayer());
+        VVector2 compoPos = UnityHelper.WorldToScreenPoint(this.ModGameObject(false).Position + new VVector3(GetCursorX(cursor), 0.15f, 0f), LayerExpansion.GetUILayer());
         compoPos.y = NebulaAPI.AmongUs.ScreenHeight - compoPos.y;
         Input.compositionCursorPos = compoPos;
     }

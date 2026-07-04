@@ -24,8 +24,8 @@ internal class NoSRoleSetUp
         Func<bool> roleVisibility = () => GeneralConfigurations.CurrentGameMode.WithRoleSettings;
         //Set Up Tabs
         ConfigurationTab.tabSetting = new ConfigurationTab(0x01, "options.tab.setting", new(0.75f, 0.75f, 0.75f));
-        ConfigurationTab.tabCrewmate = new ConfigurationTab(0x02, "options.tab.crewmate", new(Palette.CrewmateBlue), roleVisibility);
-        ConfigurationTab.tabImpostor = new ConfigurationTab(0x04, "options.tab.impostor", new(Palette.ImpostorRed), roleVisibility);
+        ConfigurationTab.tabCrewmate = new ConfigurationTab(0x02, "options.tab.crewmate", VColor.CrewmateColor, roleVisibility);
+        ConfigurationTab.tabImpostor = new ConfigurationTab(0x04, "options.tab.impostor", VColor.ImpostorColor, roleVisibility);
         ConfigurationTab.tabNeutral = new ConfigurationTab(0x08, "options.tab.neutral", new(244f / 255f, 211f / 255f, 53f / 255f), roleVisibility);
         ConfigurationTab.tabGhost = new ConfigurationTab(0x10, "options.tab.ghost", new(150f / 255f, 150f / 255f, 150f / 255f), roleVisibility);
         ConfigurationTab.tabModifier = new ConfigurationTab(0x20, "options.tab.modifier", new(255f / 255f, 255f / 255f, 243f / 255f), roleVisibility);

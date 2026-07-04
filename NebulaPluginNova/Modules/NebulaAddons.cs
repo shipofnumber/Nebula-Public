@@ -313,7 +313,7 @@ public class NebulaAddon : VariableResourceAllocator, IDisposable, IResourceAllo
             Id = meta.Id ?? Path.GetFileNameWithoutExtension(path);
             AddonName = meta.Name;
             Author = meta.Author;
-            Build = Mathf.Max(0, meta.Build);
+            Build = Mathn.Max(0, meta.Build);
             Description = meta.Description;
             Version = meta.Version;
             IdDependencyCache = meta.Dependency.ToArray();

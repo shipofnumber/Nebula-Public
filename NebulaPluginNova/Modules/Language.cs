@@ -284,11 +284,11 @@ public class Language
         if (translationKey == null) return null;
         string? result;
         if (GuestLanguage?.TryGetText(translationKey, out result) ?? false)
-            return result!;
+            return result;
         if (CurrentLanguage?.TryGetText(translationKey, out result) ?? false)
-            return result!;
+            return result;
         if (DefaultLanguage?.TryGetText(translationKey, out result) ?? false)
-            return result!;
+            return result;
         return null;
     }
 

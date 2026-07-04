@@ -33,11 +33,12 @@ public struct Color
         A = color.a;
     }
 
-    public static implicit operator UnityEngine.Color(Color color) => color.ToUnityColor();
+    public static explicit operator UnityEngine.Color(Color color) => color.ToUnityColor();
+    public static implicit operator Color(UnityEngine.Color color) => new(color);
     internal UnityEngine.Color ToUnityColor() => new UnityEngine.Color(R, G, B, A);
 
-    static public Color ImpostorColor { get; internal set; } = new(global::Palette.ImpostorRed);
-    static public Color CrewmateColor { get; internal set; } = new(global::Palette.CrewmateBlue);
+    static public Color ImpostorColor { get; internal set; } = global::Palette.ImpostorRed;
+    static public Color CrewmateColor { get; internal set; } = global::Palette.CrewmateBlue;
     static public Color Red { get; internal set; } = new(1f,0f,0f,1f);
     static public Color Yellow { get; internal set; } = new(1f, 1f, 0f, 1f);
     static public Color Green { get; internal set; } = new(0f, 1f, 0f, 1f);

@@ -23,7 +23,7 @@ namespace Nebula.Roles.Impostor;
 [NebulaRPCHolder]
 public class Bubblegun : DefinedSingleAbilityRoleTemplate<Bubblegun.Ability>, DefinedRole, IAssignableDocument
 {
-    private Bubblegun() : base("bubblegun", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [BubbleCoolDownOption, bubbleSizeOption, bubbleSpeedOption, bubbleDurationOption, maxBubblesOption, eraseBubblesOnMeeting, canKillImpostorOption, bubblePopWhenHitWallOption])
+    private Bubblegun() : base("bubblegun", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [BubbleCoolDownOption, bubbleSizeOption, bubbleSpeedOption, bubbleDurationOption, maxBubblesOption, eraseBubblesOnMeeting, canKillImpostorOption, bubblePopWhenHitWallOption])
     {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagFunny);
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Bubblegun.png");
@@ -62,6 +62,7 @@ public class Bubblegun : DefinedSingleAbilityRoleTemplate<Bubblegun.Ability>, De
     public class BubblegunBubble : SimpleLifespan, IGameOperator
     {
         private SpriteRenderer renderer;
+        private Transform rendererTransform;
         private float degreeAngle;
         private int index;
         private GamePlayer myPlayer;
@@ -71,10 +72,10 @@ public class Bubblegun : DefinedSingleAbilityRoleTemplate<Bubblegun.Ability>, De
             this.isFake = isFake;
             this.index = index;
             myPlayer = player;
-            renderer = UnityHelper.CreateObject<SpriteRenderer>("Bubble", null, pos, LayerExpansion.GetObjectsLayer());
-            renderer.transform.SetWorldZ(-1f);
+            renderer = UnityHelper.CreateObject<SpriteRenderer>("Bubble", null, pos, out _, out rendererTransform, LayerExpansion.GetObjectsLayer());
+            rendererTransform.SetWorldZ(-1f);
             renderer.sprite = bubbleSprite.GetSprite(8);
-            renderer.transform.localScale = new(bubbleSizeOption / 2f, bubbleSizeOption / 2f, 1f);
+            rendererTransform.localScale = new(bubbleSizeOption / 2f, bubbleSizeOption / 2f, 1f);
             degreeAngle = angle * 180f / Mathn.PI;
         }
 
@@ -94,7 +95,7 @@ public class Bubblegun : DefinedSingleAbilityRoleTemplate<Bubblegun.Ability>, De
             if(updateInterval < 0f)
             {
                 //コマ送りのための動き
-                if (!moving) renderer.gameObject.transform.position += new Vector2(0.4f * bubbleSizeOption, 0f).Rotate(degreeAngle).AsVector3(0f);
+                if (!moving) rendererTransform.position += new Vector2(0.4f * bubbleSizeOption, 0f).Rotate(degreeAngle).AsVector3(0f);
 
                 if (intro)
                 {
@@ -111,7 +112,7 @@ public class Bubblegun : DefinedSingleAbilityRoleTemplate<Bubblegun.Ability>, De
                 }
             }
 
-            if (moving) renderer.gameObject.transform.position += (new Vector2(1f, 0f).Rotate(degreeAngle) * 0.8f * bubbleSpeedOption * Time.deltaTime).AsVector3(0f);
+            if (moving) rendererTransform.position += (new Vector2(1f, 0f).Rotate(degreeAngle) * 0.8f * bubbleSpeedOption * FastMethods.GetDeltaTimeFast()).AsVector3(0f);
 
 
             if (!MeetingHud.Instance.AsBoolFast() && moving && !isFake)
@@ -121,7 +122,7 @@ public class Bubblegun : DefinedSingleAbilityRoleTemplate<Bubblegun.Ability>, De
                 var localPlayer = GamePlayer.LocalPlayer;
                 if (!used && !myPlayer.AmOwner && ObjectTrackers.StandardPredicateIgnoreOwner.Invoke(localPlayer) && (canKillImpostorOption || myPlayer.CanKill(localPlayer)))
                 {
-                    if (localPlayer.Position.Distance((Virial.Compat.Vector2)renderer.transform.position) < bubbleOption)
+                    if (localPlayer.Position.Distance((VVector2)rendererTransform.GetPositionFast()) < bubbleOption)
                     {
                         RpcBubbleKill.Invoke((myPlayer, localPlayer, localPlayer.Position, index));
                         used = true;
@@ -129,7 +130,7 @@ public class Bubblegun : DefinedSingleAbilityRoleTemplate<Bubblegun.Ability>, De
 
                     foreach (var p in GamePlayer.AllOwningFakePlayers)
                     {
-                        if (p.IsActive && p.Position.Distance((Virial.Compat.Vector2)renderer.transform.position) < bubbleOption)
+                        if (p.IsActive && p.Position.Distance((VVector2)rendererTransform.GetPositionFast()) < bubbleOption)
                         {
                             if (!(GameOperatorManager.Instance?.Run(new PlayerInteractPlayerLocalEvent(myPlayer, localPlayer, new(IsKillInteraction: true, ResetCooldownEvenIfFailed: false))).IsCanceled ?? true))
                             {
@@ -147,8 +148,8 @@ public class Bubblegun : DefinedSingleAbilityRoleTemplate<Bubblegun.Ability>, De
             if (time > bubbleDurationOption) this.Release();
 
             if (bubblePopWhenHitWallOption && time > 0.8f && 
-                Helpers.CircleContainsAnyNonTriggers(renderer.transform.position, 0.3f * bubbleSizeOption, Constants.ShipAndAllObjectsMask) &&
-                !Helpers.CircleContainsAnyNonTriggers(renderer.transform.position, 0.3f * bubbleSizeOption, 1 << LayerExpansion.GetRaiderColliderLayer())) this.Release();
+                Helpers.CircleContainsAnyNonTriggers(rendererTransform.GetPositionFast(), 0.3f * bubbleSizeOption, Constants.ShipAndAllObjectsMask) &&
+                !Helpers.CircleContainsAnyNonTriggers(rendererTransform.GetPositionFast(), 0.3f * bubbleSizeOption, 1 << LayerExpansion.GetRaiderColliderLayer())) this.Release();
         }
 
         void IGameOperator.OnReleased()
@@ -372,9 +373,9 @@ public class Bubblegun : DefinedSingleAbilityRoleTemplate<Bubblegun.Ability>, De
             allBubbles.Add(bubbleHolder);
 
             bubbleHolderTransform.localScale = new Vector3(1f, 1f, 0.1f);
-            var bubble = UnityHelper.CreateObject("Sin", bubbleHolderTransform, Vector3.zero);
-            var bubbleRenderer = UnityHelper.CreateObject<SpriteRenderer>("Sprite", bubble.transform, Vector3.zero);
-            bubbleRenderer.transform.localScale = new(0.43f, 0.43f, 1f);
+            var bubble = UnityHelper.CreateObject("Sin", bubbleHolderTransform, Vector3.zero, out var bubbleTransform);
+            var bubbleRenderer = UnityHelper.CreateObject<SpriteRenderer>("Sprite", bubble.transform, Vector3.zero, out _, out var bubbleRendererTransform);
+            bubbleRendererTransform.localScale = new(0.43f, 0.43f, 1f);
             bubbleRenderer.sprite = bubbleSprite.GetSprite(0);
             bubbleRenderer.material = new Material(NebulaAsset.HSVShader);
 
@@ -383,8 +384,9 @@ public class Bubblegun : DefinedSingleAbilityRoleTemplate<Bubblegun.Ability>, De
             var bubbleInner = UnityHelper.CreateObject("Inner", bubble.transform, Vector3.zero);
 
             var deadBody = GameObject.Instantiate(HudManager.Instance.KillOverlay.KillAnims[0].victimParts, bubbleInner.transform);
-            deadBody.transform.localPosition = new Vector3(0.2f, 0.12f, 1f);
-            deadBody.transform.localScale = new(0.36f, 0.36f, 0.5f);
+            var deadBodyTransform = deadBody.transform;
+            deadBodyTransform.localPosition = new Vector3(0.2f, 0.12f, 1f);
+            deadBodyTransform.localScale = new(0.36f, 0.36f, 0.5f);
             deadBody.gameObject.ForEachAllChildren(obj => obj.layer = LayerExpansion.GetDefaultLayer());
             deadBody.UpdateFromPlayerOutfit(player.CurrentOutfit.outfit, PlayerMaterial.MaskType.None, false, false, (System.Action)(() =>
             {
@@ -438,23 +440,23 @@ public class Bubblegun : DefinedSingleAbilityRoleTemplate<Bubblegun.Ability>, De
                 float sin = 0f;
                 while (true)
                 {
-                    var deltaTime = Time.deltaTime;
+                    var deltaTime = FastMethods.GetDeltaTimeFast();
                     angle += deltaTime * 15f;
                     sin += deltaTime * 1f;
                     bubbleInner.transform.localEulerAngles = new(0f, 0f, -angle);
-                    bubble.transform.localPosition = new(0f, Mathn.Sin(sin) * 0.12f, 0f);
+                    bubbleTransform.localPosition = new(0f, Mathn.Sin(sin) * 0.12f, 0f);
                     if (angle > 360f) angle -= 360f;
 
                     allBubbles.Do(b =>
                     {
                         if (!b.AsBoolFast()) return;
                         if (b == bubbleHolder) return;
-                        var distance = b.transform.position.Distance(bubbleHolderTransform.position);
+                        var distance = b.transform.GetPositionFast().Distance(bubbleHolderTransform.GetPositionFast());
                         if (distance < 1.1f)
                         {
-                            var vec = (bubbleHolderTransform.position - b.transform.position).normalized;
-                            var z = bubbleHolderTransform.localPosition.z;
-                            bubbleHolderTransform.position += vec * (1.1f - distance) * deltaTime;
+                            var vec = ((VVector2)bubbleHolderTransform.GetPositionFast() - (VVector2)b.transform.GetPositionFast()).Normalized;
+                            var z = bubbleHolderTransform.GetLocalPositionFast().z;
+                            bubbleHolderTransform.position += (vec * (1.1f - distance) * deltaTime).AsUnityVector3();
                             bubbleHolderTransform.SetLocalZ(z);
 
                         }

@@ -931,8 +931,8 @@ internal class NoSVCRoom
         {
             float hearDistance = HearDistance;
             var localPlayer = GamePlayer.LocalPlayer;
-            var camTarget = HudManager.InstanceExists && HudManager.Instance && HudManager.Instance.PlayerCam ? AmongUsUtil.CurrentCamTarget : null;
-            Vector2? position = camTarget ? camTarget!.transform.position : (localPlayer?.VanillaPlayer ? localPlayer!.Position : null);
+            var camTarget = AmongUsLLImpl.TryGetHudManager(out var hudManager) && hudManager.PlayerCam.AsBoolFast() ? AmongUsUtil.CurrentCamTarget : null;
+            Vector2? position = camTarget.AsBoolFast() ? camTarget!.transform.GetPositionFast() : (localPlayer?.VanillaPlayer ? localPlayer!.Position : null);
             bool canIgnoreWalls = false;
             if (position.HasValue)
             {

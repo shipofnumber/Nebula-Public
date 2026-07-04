@@ -183,17 +183,17 @@ public class ResourceTextureLoader : ITextureLoader
 
     public Texture2D GetTexture()
     {
-        if (!texture) texture = GraphicsHelper.LoadTextureFromResources(address);
+        if (!texture.AsBoolFast()) texture = GraphicsHelper.LoadTextureFromResources(address);
         return texture!;
     }
 
     public System.Collections.IEnumerator LoadAsset()
     {
-        if (!texture)
+        if (!texture.AsBoolFast())
         {
             yield return GraphicsHelper.LoadTextureFromResourcesAsync(address, t =>
             {
-                if (!texture)
+                if (!texture.AsBoolFast())
                 {
                     texture = t;
                 }
@@ -207,7 +207,7 @@ public class ResourceTextureLoader : ITextureLoader
 
     public void UnloadAsset()
     {
-        if (texture) GameObject.Destroy(texture);
+        if (texture.AsBoolFast()) GameObject.Destroy(texture);
     }
 
     public void MarkAsUnloadAsset() { }
@@ -226,7 +226,7 @@ public class DiskTextureLoader : ITextureLoader
 
     public Texture2D GetTexture()
     {
-        if (!texture)
+        if (!texture.AsBoolFast())
         {
             texture = GraphicsHelper.LoadTextureFromDisk(address);
             if (isUnloadAsset) texture.hideFlags |= HideFlags.DontUnloadUnusedAsset | HideFlags.HideAndDontSave;
@@ -236,16 +236,16 @@ public class DiskTextureLoader : ITextureLoader
 
     public void UnloadAsset()
     {
-        if (texture && !isUnloadAsset) GameObject.Destroy(texture);
+        if (texture.AsBoolFast() && !isUnloadAsset) GameObject.Destroy(texture);
     }
 
     public System.Collections.IEnumerator LoadAsset()
     {
-        if (!texture)
+        if (!texture.AsBoolFast())
         {
             yield return GraphicsHelper.LoadTextureFromDiskAsync(address, t =>
             {
-                if (!texture)
+                if (!texture.AsBoolFast())
                 {
                     texture = t;
                     if (isUnloadAsset) texture.hideFlags |= HideFlags.DontUnloadUnusedAsset | HideFlags.HideAndDontSave;
@@ -276,25 +276,25 @@ public class ZipTextureLoader : ITextureLoader
 
     public Texture2D GetTexture()
     {
-        if (!texture)
+        if (!texture.AsBoolFast())
         {
             texture = GraphicsHelper.LoadTextureFromZip(archive, address);
-            if(texture!=null && IsUnloadAsset) texture.hideFlags |= HideFlags.DontUnloadUnusedAsset | HideFlags.HideAndDontSave;
-            if (texture == null) NebulaLogger.Instance.Error($"Image is not found. (path:{address})");
+            if(texture.AsBoolFast() && IsUnloadAsset) texture.hideFlags |= HideFlags.DontUnloadUnusedAsset | HideFlags.HideAndDontSave;
+            if (!texture.AsBoolFast()) NebulaLogger.Instance.Error($"Image is not found. (path:{address})");
         }
         return texture!;
     }
 
     public void UnloadAsset()
     {
-        if (texture && !IsUnloadAsset) GameObject.Destroy(texture);
+        if (texture.AsBoolFast() && !IsUnloadAsset) GameObject.Destroy(texture);
     }
 
     public System.Collections.IEnumerator LoadAsset()
     {
         yield return GraphicsHelper.LoadTextureFromZipAsync(archive, address, t =>
         {
-            if (!texture)
+            if (!texture.AsBoolFast())
             {
                 texture = t;
                 if (IsUnloadAsset) texture.hideFlags |= HideFlags.DontUnloadUnusedAsset | HideFlags.HideAndDontSave;
@@ -321,7 +321,7 @@ public class StreamTextureLoader : ITextureLoader
 
     public Texture2D GetTexture()
     {
-        if (!texture)
+        if (!texture.AsBoolFast())
         {
             var bytes = stream.Invoke()?.ReadBytes();
 
@@ -340,7 +340,7 @@ public class StreamTextureLoader : ITextureLoader
     }
 
     public void UnloadAsset(){
-        if (texture && !isUnloadTexture)
+        if (texture.AsBoolFast() && !isUnloadTexture)
         {
             GameObject.Destroy(texture);
             texture = null!;
@@ -427,7 +427,7 @@ public class AssetTextureLoader : ITextureLoader
 
     public Texture2D GetTexture()
     {
-        if (!texture) texture = NebulaAsset.LoadAsset<Texture2D>(address);
+        if (!texture.AsBoolFast()) texture = NebulaAsset.LoadAsset<Texture2D>(address);
         return texture;
     }
 
@@ -451,7 +451,7 @@ public class SpriteLoader : Image
 
     public Sprite GetSprite()
     {
-        if (!sprite) sprite = textureLoader.GetTexture().ToSprite(Pivot, pixelsPerUnit);
+        if (!sprite.AsBoolFast()) sprite = textureLoader.GetTexture().ToSprite(Pivot, pixelsPerUnit);
         sprite.hideFlags = textureLoader.GetTexture().hideFlags;
         return sprite;
     }
@@ -466,7 +466,7 @@ public class SpriteLoader : Image
 
     public void UnloadAsset()
     {
-        if (sprite)
+        if (sprite.AsBoolFast())
         {
             GameObject.Destroy(sprite);
             sprite = null!;
@@ -538,9 +538,9 @@ public class ResourceExpandableSpriteLoader : Image
 
     public Sprite GetSprite()
     {
-        if (!sprite)
+        if (!sprite.AsBoolFast())
         {
-            if (!texture) texture = GraphicsHelper.LoadTextureFromResources(address);
+            if (!texture.AsBoolFast()) texture = GraphicsHelper.LoadTextureFromResources(address);
             sprite = texture.ToExpandableSprite(pixelsPerUnit, x, y);
         }
         return sprite;
@@ -548,15 +548,15 @@ public class ResourceExpandableSpriteLoader : Image
 
     public void UnloadAsset()
     {
-        if (sprite) GameObject.Destroy(sprite);
-        if(texture) GameObject.Destroy(texture);
+        if (sprite.AsBoolFast()) GameObject.Destroy(sprite);
+        if(texture.AsBoolFast()) GameObject.Destroy(texture);
     }
 
     public System.Collections.IEnumerator LoadAsset()
     {
-        if (!sprite)
+        if (!sprite.AsBoolFast())
         {
-            if (!texture)
+            if (!texture.AsBoolFast())
             {
                 yield return GraphicsHelper.LoadTextureFromResourcesAsync(address, t =>
                 {
@@ -614,7 +614,7 @@ public class DividedSpriteLoader : Virial.Media.MultiImage, Image, IDividedSprit
         {
             var texture2D = texture?.GetTexture();
 
-            if (texture2D)
+            if (texture2D.AsBoolFast())
             {
                 if (size == null)
                     size = new(texture2D!.width / division!.Item1, texture2D.height / division!.Item2);
@@ -632,7 +632,7 @@ public class DividedSpriteLoader : Virial.Media.MultiImage, Image, IDividedSprit
 
         index %= sprites.Length;
 
-        if (!sprites[index])
+        if (!sprites[index].AsBoolFast())
         {
             var texture2D = texture!.GetTexture();
             int _x = index % division!.Item1;
@@ -714,7 +714,7 @@ public class XOnlyDividedSpriteLoader : Image, IDividedSpriteLoader
             sprites = new Sprite[division!.Value];
         }
 
-        if (!sprites[index])
+        if (!sprites[index].AsBoolFast())
         {
             var texture2D = texture.GetTexture();
             sprites[index] = texture2D.ToSprite(new Rect(index * size!.Value, 0, size!.Value, texture2D.height), Pivot, pixelsPerUnit);
@@ -800,7 +800,7 @@ public class DividedExpandableSpriteLoader : Virial.Media.MultiImage, Image, IDi
 
         index %= sprites.Length;
 
-        if (!sprites[index])
+        if (!sprites[index].AsBoolFast())
         {
             var texture2D = texture.GetTexture();
             int _x = index % division!.Item1;
@@ -881,7 +881,7 @@ public class CacheSpriteLoader : Image
 
     public Sprite GetSprite()
     {
-        if (!cache) cache = supplier.Invoke();
+        if (!cache.AsBoolFast()) cache = supplier.Invoke();
         return cache;
     }
 

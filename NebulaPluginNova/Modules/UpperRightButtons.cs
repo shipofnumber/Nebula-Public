@@ -122,7 +122,7 @@ internal class UpperRightButtons : AbstractModule<Virial.Game.Game>, IGameOperat
     {
         allContents.Add(content);
     }
-    public Vector3 HolderLocalPosToWorldPos(VVector3 localPos) => buttonsHolder.transform.TransformPoint(localPos);
+    public Vector3 HolderLocalPosToWorldPos(VVector3 localPos) => buttonsHolder.transform.TransformPointFast(localPos);
     protected override void OnInjected(Virial.Game.Game container)
     {
         SetUp();

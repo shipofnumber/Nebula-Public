@@ -27,7 +27,7 @@ namespace Nebula.Roles.Impostor;
 
 internal class Graffiti : DefinedSingleAbilityRoleTemplate<Graffiti.Ability>, DefinedRole, IAssignableDocument
 {
-    public Graffiti() : base("graffiti", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [NumOfDrawingOption])
+    public Graffiti() : base("graffiti", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [NumOfDrawingOption])
     {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagFunny);
     }

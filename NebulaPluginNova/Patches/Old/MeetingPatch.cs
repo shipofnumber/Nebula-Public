@@ -91,7 +91,7 @@ public static class MeetingModRpc
             meetingHud.ResetPlayerState();
 
             MeetingHudExtension.VotingTimer = message.votingTime;
-            meetingHud.lastSecond = Mathf.Min(11, (int)message.votingTime);
+            meetingHud.lastSecond = Mathn.Min(11, (int)message.votingTime);
         }
         );
 
@@ -787,7 +787,7 @@ class CastVotePatch
 {
     public static bool Prefix(MeetingHud __instance, [HarmonyArgument(0)] byte suspectStateIdx)
     {
-        if (AmongUsLLImpl.LocalPlayer.Data.IsDead) return false;
+        if (GamePlayer.LocalPlayer?.IsDead ?? true) return false;
 
         foreach (var state in __instance.playerStates)
         {
@@ -1055,7 +1055,7 @@ class PopulateResultPatch
 
         GameOperatorManager.Instance?.Run(new MeetingVoteEndEvent(states.ToArray()));
 
-        __instance.TitleText.text = DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.MeetingVotingResults);
+        __instance.TitleText.text = VanillaTranslationCache.GetString(StringNames.MeetingVotingResults);
         foreach (var voteArea in __instance.playerStates)
         {
             voteArea.ClearForResults();

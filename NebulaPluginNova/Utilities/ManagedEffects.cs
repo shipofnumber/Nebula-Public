@@ -196,7 +196,7 @@ public static class ManagedEffects
         return CoPlayEffect(layer, "Smoke", smokeSprite, parent, pos, velocity, angVel, scale, Color.white, 0.4f, 0f, 0.35f);
     }
 
-    public static IEnumerator CoDisappearEffect(int layer, Transform? parent, Vector3 pos, float scale = 1f)
+    public static IEnumerator CoDisappearEffect(int layer, Transform? parent, VVector3 pos, float scale = 1f)
     {
         var obj = new GameObject("DisappearEffect");
         if (parent != null) obj.transform.SetParent(parent);
@@ -266,6 +266,6 @@ public static class ManagedEffects
     static public void StartOnProcess(this Il2CppSystem.Collections.IEnumerator coroutine) => ModSingleton<ResidentBehaviour>.Instance.StartCoroutine(coroutine);
     static public void StartOn(this Il2CppSystem.Collections.IEnumerator coroutine, MonoBehaviour behaviour) => behaviour.StartCoroutine(coroutine);
 
-    static public RemoteProcess<(Vector3 pos, int layer)> RpcDisappearEffect = new("DisappearEffect", (message, _) => NebulaManager.Instance.StartCoroutine(ManagedEffects.CoDisappearEffect(message.layer, null, message.pos, 1f).WrapToIl2Cpp()));
+    static public RemoteProcess<(VVector3 pos, int layer)> RpcDisappearEffect = new("DisappearEffect", (message, _) => NebulaManager.Instance.StartCoroutine(ManagedEffects.CoDisappearEffect(message.layer, null, message.pos, 1f).WrapToIl2Cpp()));
     static public RemoteProcess<GamePlayer> RpcPlayerDisappearEffect = new("PlayerDisappearEffect", (player, _) => NebulaManager.Instance.StartCoroutine(ManagedEffects.CoDisappearEffect(LayerExpansion.GetPlayersLayer(), null, player.Position.AsVector3(-1f), 1f).WrapToIl2Cpp()));
 }

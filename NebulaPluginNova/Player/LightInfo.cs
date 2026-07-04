@@ -26,7 +26,7 @@ internal class LightInfo
 
     public bool CheckPoint(VVector2 point)
     {
-        var vec = point - (VVector2)lightTransform.position;
+        var vec = point - (VVector2)lightTransform.GetPositionFast();
         var size = Size;
         return Mathn.Sign(vec.x) < size.x && Mathn.Sign(vec.y) < size.y;
     }

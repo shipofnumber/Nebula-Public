@@ -147,8 +147,8 @@ class PlanetSurveillanceMinigameNextCameraPatch
         __instance.currentCamera = (__instance.currentCamera + direction).Wrap(__instance.survCameras.Length);
         __instance.Dots[__instance.currentCamera].sprite = __instance.DotEnabled;
         SurvCamera survCamera = __instance.survCameras[__instance.currentCamera];
-        __instance.Camera.transform.position = survCamera.transform.position + __instance.survCameras[__instance.currentCamera].Offset;
-        __instance.LocationName.text = ((survCamera.NewName > StringNames.None) ? DestroyableSingleton<TranslationController>.Instance.GetString(survCamera.NewName) : survCamera.CamName);
+        __instance.Camera.transform.position = survCamera.transform.GetPositionFast() + __instance.survCameras[__instance.currentCamera].Offset;
+        __instance.LocationName.text = ((survCamera.NewName > StringNames.None) ? VanillaTranslationCache.GetString(survCamera.NewName) : survCamera.CamName);
         
         return false;
     }

@@ -16,6 +16,7 @@ public enum GameStatsCategory
     Roles,
     Perks,
     AeroGuesser,
+    PaintQuiz,
 }
 
 public interface GameStatsEntry
@@ -26,4 +27,5 @@ public interface GameStatsEntry
     GameStatsCategory Category { get; }
     DefinedAssignable? RelatedAssignable { get; }
     internal int InnerPriority { get; }
+    string DisplayValue { get; }
 }

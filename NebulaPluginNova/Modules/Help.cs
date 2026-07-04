@@ -280,15 +280,15 @@ public static class HelpScreen
     private static IMetaWidgetOld ShowAssignableScreen()
     {
         (IEnumerable<DefinedAssignable> roles, TextComponent label)[] assignables = [
-            (Roles.Roles.AllRoles.Where(r => r.Category == RoleCategory.ImpostorRole && (r as DefinedAssignable).ShowOnHelpScreen), GUI.API.TextComponent(new(Palette.ImpostorRed), "role.category.impostor")),
+            (Roles.Roles.AllRoles.Where(r => r.Category == RoleCategory.ImpostorRole && (r as DefinedAssignable).ShowOnHelpScreen), GUI.API.TextComponent(VColor.ImpostorColor, "role.category.impostor")),
             (Roles.Roles.AllRoles.Where(r => r.Category == RoleCategory.NeutralRole && (r as DefinedAssignable).ShowOnHelpScreen), GUI.API.TextComponent(new(1f, 0.7f, 0f), "role.category.neutral")),
-            (Roles.Roles.AllRoles.Where(r => r.Category == RoleCategory.CrewmateRole && (r as DefinedAssignable).ShowOnHelpScreen), GUI.API.TextComponent(new(Palette.CrewmateBlue), "role.category.crewmate")),
-            (Roles.Roles.AllGhostRoles.Where(r => (r as DefinedAssignable).ShowOnHelpScreen),  GUI.API.TextComponent(new(Color.gray), "role.category.ghost")),
-            (Roles.Roles.AllModifiers.Where(r => (r as DefinedAssignable).ShowOnHelpScreen), GUI.API.TextComponent(new(Palette.White), "role.category.modifier")),
+            (Roles.Roles.AllRoles.Where(r => r.Category == RoleCategory.CrewmateRole && (r as DefinedAssignable).ShowOnHelpScreen), GUI.API.TextComponent(VColor.CrewmateColor, "role.category.crewmate")),
+            (Roles.Roles.AllGhostRoles.Where(r => (r as DefinedAssignable).ShowOnHelpScreen),  GUI.API.TextComponent(VColor.Gray, "role.category.ghost")),
+            (Roles.Roles.AllModifiers.Where(r => (r as DefinedAssignable).ShowOnHelpScreen), GUI.API.TextComponent(VColor.White, "role.category.modifier")),
             ];
         (IEnumerable<PerkFunctionalDefinition> perks, TextComponent label)[] perks = [
-            (Roles.Roles.AllPerks.Where(p => p.PerkCategory == PerkFunctionalDefinition.Category.Standard), GUI.API.TextComponent(new(Color.white), "game.metaAbility.perks.standard")),
-            (Roles.Roles.AllPerks.Where(p => p.PerkCategory == PerkFunctionalDefinition.Category.NoncrewmateOnly), GUI.API.TextComponent(new(Color.white), "game.metaAbility.perks.noncrewmateOnly")),
+            (Roles.Roles.AllPerks.Where(p => p.PerkCategory == PerkFunctionalDefinition.Category.Standard), GUI.API.TextComponent(VColor.White, "game.metaAbility.perks.standard")),
+            (Roles.Roles.AllPerks.Where(p => p.PerkCategory == PerkFunctionalDefinition.Category.NoncrewmateOnly), GUI.API.TextComponent(VColor.White, "game.metaAbility.perks.noncrewmateOnly")),
             ];
 
         MetaWidgetOld inner = new();
@@ -417,7 +417,7 @@ public static class HelpScreen
 
         //バニラオプション
         var vanillaOptions = AmongUsUtil.GetCurrentNormalOption();
-        var translator = TranslationController.Instance;
+        //var translator = TranslationController.Instance;
 
         void AddHeader(string header)
         {
@@ -427,7 +427,7 @@ public static class HelpScreen
         void AddOption(StringNames option, string value)
         {
             builder.Append("\n    ");
-            builder.Append(translator.GetString(option));
+            builder.Append(VanillaTranslationCache.GetString(option));
             builder.Append(": ");
             builder.Append(value);
         }
@@ -437,7 +437,7 @@ public static class HelpScreen
         AddOption(StringNames.GameNumImpostors, vanillaOptions.NumImpostors.ToString());
         AddOption(StringNames.GameKillCooldown, vanillaOptions.KillCooldown.ToString() + Language.Translate("options.sec"));
         AddOption(StringNames.GameImpostorLight, vanillaOptions.ImpostorLightMod.ToString() + Language.Translate("options.cross"));
-        AddOption(StringNames.GameKillDistance, translator.GetString(vanillaOptions.KillDistance switch { 0 => StringNames.SettingShort, 1 => StringNames.SettingMedium , _ => StringNames.SettingLong }));
+        AddOption(StringNames.GameKillDistance, VanillaTranslationCache.GetString(vanillaOptions.KillDistance switch { 0 => StringNames.SettingShort, 1 => StringNames.SettingMedium , _ => StringNames.SettingLong }));
         AddHeader("options.vanilla.header.crewmate");
         AddOption(StringNames.GamePlayerSpeed, vanillaOptions.PlayerSpeedMod.ToString() + Language.Translate("options.cross"));
         AddOption(StringNames.GameCrewLight, vanillaOptions.CrewLightMod.ToString() + Language.Translate("options.cross"));
@@ -449,7 +449,7 @@ public static class HelpScreen
         AddOption(StringNames.GameAnonymousVotes, BoolConfigurationImpl.GetDisplayValue(vanillaOptions.AnonymousVotes));
         AddOption(StringNames.GameConfirmImpostor, BoolConfigurationImpl.GetDisplayValue(vanillaOptions.ConfirmImpostor));
         AddHeader("options.vanilla.header.task");
-        AddOption(StringNames.GameTaskBarMode, translator.GetString(vanillaOptions.TaskBarMode switch { AmongUs.GameOptions.TaskBarMode.Normal => StringNames.SettingNormalTaskMode , AmongUs.GameOptions.TaskBarMode.MeetingOnly => StringNames.SettingMeetingTaskMode, _ => StringNames.SettingInvisibleTaskMode }));
+        AddOption(StringNames.GameTaskBarMode, VanillaTranslationCache.GetString(vanillaOptions.TaskBarMode switch { AmongUs.GameOptions.TaskBarMode.Normal => StringNames.SettingNormalTaskMode , AmongUs.GameOptions.TaskBarMode.MeetingOnly => StringNames.SettingMeetingTaskMode, _ => StringNames.SettingInvisibleTaskMode }));
         AddOption(StringNames.GameCommonTasks, vanillaOptions.NumCommonTasks.ToString());
         AddOption(StringNames.GameLongTasks, vanillaOptions.NumLongTasks.ToString());
         AddOption(StringNames.GameShortTasks, vanillaOptions.NumShortTasks.ToString());
@@ -1120,8 +1120,10 @@ public class HintManager
     {
         yield return Effects.Wait(delay);
 
-        var overlay = GameObject.Instantiate(TransitionFade.Instance.overlay, null);
-        overlay.transform.position = TransitionFade.Instance.overlay.transform.position + new Vector3(0, 0, -100f);
+        var origOverlay =TransitionFade.Instance.overlay;
+        var overlay = GameObject.Instantiate(origOverlay, null);
+        var overlayModObj = overlay.ModGameObject();
+        overlayModObj.Position = origOverlay.ModGameObject(false).Position + new VVector3(0, 0, -100f);
         overlay.color = Color.black;
         overlay.gameObject.layer = LayerExpansion.GetUILayer();
         overlay.gameObject.AddComponent<SortingGroup>().sortingOrder = 150;

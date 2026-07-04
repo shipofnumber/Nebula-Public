@@ -57,6 +57,7 @@ public enum NebulaAudioClip {
     AeroGuesserBell,
     AeroGuesserQuizEnd,
     AeroGuesserQuizStart,
+    QuizScore,
 }
 
 public static class SoundManagerHelper
@@ -179,6 +180,7 @@ public static class NebulaAsset
         audioMap[NebulaAudioClip.AeroGuesserBell] = Load<AudioClip>("AeroBellRinging.ogg");
         audioMap[NebulaAudioClip.AeroGuesserQuizEnd] = Load<AudioClip>("AeroQuizEnd.ogg");
         audioMap[NebulaAudioClip.AeroGuesserQuizStart] = Load<AudioClip>("AeroQuizStart.ogg");
+        audioMap[NebulaAudioClip.QuizScore] = Load<AudioClip>("QuizScore.ogg");
         BrokenShaderMat = Load<Material>("BrokenShaderMat");
 
         PaparazzoShot = Load<GameObject>("PhotoObject");
@@ -352,12 +354,14 @@ public static class NebulaAsset
         IEnumerator CoPlay()
         {
             Camera.main.gameObject.TryGetComponent<AudioListener>(out var listener);
+            var listenerTransform = listener.transform;
+            var audioSourceTransform = audioSource.transform;
             while (audioSource && audioSource.isPlaying)
             {
                 if (listener)
                 {
                     //至近距離の音は指向性を無くす
-                    float distance = listener.transform.position.Distance(audioSource.transform.position);
+                    float distance = listenerTransform.GetPositionFast().Distance(audioSourceTransform.GetPositionFast());
                     audioSource.spatialBlend = distance < 0.5f ? 0f : distance < 1.5f ? distance - 0.5f : 1f;
                 }
                 yield return null;

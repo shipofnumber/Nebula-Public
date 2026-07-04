@@ -222,7 +222,14 @@ internal class AirshipMultipleExilePatch
         }, p =>
         {
             MultipleExileHelper.SetExiledStampShower(p, false, new(0.6f, 0.18f));
-            p.cosmetics.GetComponent<NebulaCosmeticsLayer>().IsExileCut = true;
+            var cosmetics = p.cosmetics;
+            cosmetics.GetComponent<NebulaCosmeticsLayer>().IsExileCut = true;
+
+            HatParent hp = cosmetics.hat;
+            if (!hp.Hat.AsBoolFast()) return;
+
+            if (MoreCosmic.AllHats.TryGetValue(hp.Hat.ProductId, out var modHat) && modHat.HideHands)
+                p.gameObject.transform.FindChild("HandSlot").gameObject.SetActive(false);
         });
     }
 }

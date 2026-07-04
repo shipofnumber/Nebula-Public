@@ -58,11 +58,10 @@ public class PaparazzoShot : MonoBehaviour
         if (focus)
         {
             var mouseInfo = PlayerModInfo.LocalMouseInfo;
-            var dis = Mathf.Min(mouseInfo.distance, 2.4f + Mathf.Abs(Mathf.Cos(mouseInfo.angle)) * 1.7f);
-            var targetPos = AmongUsLLImpl.LocalPlayer.transform.localPosition + new Vector3(Mathf.Cos(mouseInfo.angle), Mathf.Sin(mouseInfo.angle)) * dis;
-            targetPos.z = -10f;
+            var dis = Mathn.Min(mouseInfo.distance, 2.4f + Mathn.Abs(Mathn.Cos(mouseInfo.angle)) * 1.7f);
+            var targetPos = (GamePlayer.LocalPlayer?.Position ?? VVector2.Zero) + new VVector2(Mathn.Cos(mouseInfo.angle), Mathn.Sin(mouseInfo.angle)) * dis;
 
-            transform.localPosition -= (transform.localPosition - targetPos) * Time.deltaTime * 8.6f;
+            transform.localPosition -= (transform.localPosition - targetPos.AsUnityVector3(-10f)) * Time.deltaTime * 8.6f;
             var scale = transform.localScale.x;
             //var targetScale = Mathf.Clamp((4.1f - dis) * 0.25f + 0.5f, 0.65f, 1f);
 
@@ -72,13 +71,13 @@ public class PaparazzoShot : MonoBehaviour
                 > 3.5f => 1f,
                 _ => (dis - 2.1f) / (3.5f - 2.1f)
             };
-            float targetScale = Mathf.Lerp(Paparazzo.WideAngleFinderSizeOption, Paparazzo.TelephotoFinderSizeOption, targetP);
+            float targetScale = Mathn.Lerp(Paparazzo.WideAngleFinderSizeOption, Paparazzo.TelephotoFinderSizeOption, targetP);
 
             scale -= (scale - targetScale) * Time.deltaTime * 5.4f;
-            transform.localScale = Vector3.one * scale;
+            transform.localScale = new(scale, scale, 1f);
 
             if(!Input.GetMouseButton(1))
-                transform.eulerAngles = new Vector3(0, 0, mouseInfo.angle * 180f / Mathf.PI + (IsVert ? 90f : 0f));
+                transform.eulerAngles = new Vector3(0, 0, mouseInfo.angle * 180f / Mathn.PI + (IsVert ? 90f : 0f));
         }
     }
 
@@ -95,7 +94,7 @@ public class PaparazzoShot : MonoBehaviour
         camObj.transform.localEulerAngles = new Vector3(0, 0, 0);
         
         //zを名前テキストより奥へ
-        var pos = camObj.transform.position;
+        var pos = camObj.transform.GetPositionFast();
         pos.z = -0.4f;
         camObj.transform.position = pos;
         centerRenderer.gameObject.SetActive(false);
@@ -126,8 +125,8 @@ public class PaparazzoShot : MonoBehaviour
         if(ClientOption.GetValue(ClientOption.ClientOptionType.OutputPaparazzoPhoto) == 1){
             File.WriteAllBytesAsync(NebulaManager.GetPicturePath("_Original", out _), texture2D.EncodeToPNG());
             Vector2 vec1 = new Vector2(rt.width, rt.height).Rotate(transform.localEulerAngles.z), vec2 = new Vector2(rt.width, -rt.height).Rotate(transform.localEulerAngles.z);
-            var rotatedWidth = (int)(Math.Max(Math.Abs(vec1.x), Math.Abs(vec2.x)) + 0.8f);
-            var rotatedHeight = (int)(Math.Max(Math.Abs(vec1.y), Math.Abs(vec2.y)) + 0.8f);
+            var rotatedWidth = (int)(Mathn.Max(Mathn.Abs(vec1.x), Mathn.Abs(vec2.x)) + 0.8f);
+            var rotatedHeight = (int)(Mathn.Max(Mathn.Abs(vec1.y), Mathn.Abs(vec2.y)) + 0.8f);
             var renderer = UnityHelper.CreateSpriteRenderer("TempImage", null, Vector3.zero, 30);
             renderer.sprite = texture2D.ToSprite(100f);
             renderer.transform.localEulerAngles = transform.localEulerAngles;
@@ -156,30 +155,30 @@ public class PaparazzoShot : MonoBehaviour
         //映っているプレイヤーを調べる
         int playerMask = 0;
         int playerNum = 0;
-        foreach (var p in PlayerControl.AllPlayerControls.GetFastEnumerator())
+        foreach (var p in GamePlayer.AllPlayers)
         {
-            if (p.Data.IsDead || !p.Visible || (p.GetModInfo()?.IsInvisible ?? false)) continue;
+            if (p.IsDead || !p.VanillaPlayer.Visible || p.IsInvisible) continue;
             if (p.AmOwner) continue;
 
-            if (collider.OverlapPoint(p.transform.position))
+            if (collider.OverlapPoint(p.Position))
             {
                 playerMask |= 1 << p.PlayerId;
                 playerNum++;
 
-                var anim = p.MyPhysics.Animations.Animator.m_currAnim;
-                if (anim == p.MyPhysics.Animations.group.EnterVentAnim || anim == p.MyPhysics.Animations.group.ExitVentAnim)
+                var animations = p.VanillaAnimations;
+                var anim = animations.Animator.m_currAnim;
+                if (anim == animations.group.EnterVentAnim || anim == animations.group.ExitVentAnim)
                     new StaticAchievementToken("paparazzo.common3");
             }
         }
 
         Paparazzo.StatsPlayers.Progress(playerNum);
 
-        foreach (var body in Helpers.AllDeadBodies())
+        foreach (var body in ModSingleton<DeadBodyManager>.Instance.AllDeadBodies)
         {
-            if (collider.OverlapPoint(body.transform.position))
+            if (collider.OverlapPoint(body.Position))
             {
-                var info = NebulaGameManager.Instance!.GetPlayer(body.ParentId);
-                if (info?.MyKiller != null && (playerMask & (1 << info.MyKiller.PlayerId)) != 0)
+                if (body.Player.MyKiller != null && (playerMask & (1 << body.Player.PlayerId)) != 0)
                 {
                     //死体とそのキラーが映っているならば
                     new StaticAchievementToken("paparazzo.common4");
@@ -190,10 +189,11 @@ public class PaparazzoShot : MonoBehaviour
         //UIレイヤー上の表示に変換
         SetLayer(LayerExpansion.GetUILayer());
 
-        var pictureScaler = UnityHelper.CreateObject("PictureScaler", HudManager.Instance.transform, Vector3.zero);
+        var pictureScaler = UnityHelper.CreateObject("PictureScaler", AmongUsLLImpl.HudManagerBridge.MyTransform, Vector3.zero);
         transform.SetParent(pictureScaler.transform, true);
-        pictureScaler.transform.localScale = NebulaGameManager.Instance!.WideCamera.ViewerTransform.localScale;
-        pictureScaler.transform.localEulerAngles = NebulaGameManager.Instance!.WideCamera.ViewerTransform.localEulerAngles;
+        var pictureScalerObj = pictureScaler.ModGameObject();
+        pictureScalerObj.LocalScale = NebulaGameManager.Instance!.WideCamera.ViewerTransform.LocalScale;
+        pictureScalerObj.LocalEulerAngles = NebulaGameManager.Instance!.WideCamera.ViewerTransform.LocalEulerAngles;
 
         //UI変換後のスケーラ
         IEnumerator CoScale()
@@ -201,8 +201,8 @@ public class PaparazzoShot : MonoBehaviour
             float t = 5f;
             while (t > 0f)
             {
-                pictureScaler.transform.localScale -= (pictureScaler.transform.localScale - Vector3.one).Delta(2f, 0.02f);
-                pictureScaler.transform.localEulerAngles -= (pictureScaler.transform.localEulerAngles - Vector3.zero).Delta(2f, 0.2f);
+                pictureScalerObj.LocalScale -= (pictureScalerObj.LocalScale - VVector3.One).Delta(2f, 0.02f);
+                pictureScalerObj.LocalEulerAngles -= (pictureScalerObj.LocalEulerAngles - VVector3.Zero).Delta(2f, 0.2f);
                 transform.localPosition -= (transform.localPosition - new Vector3(0f, 0f, -10f)).Delta(8f, 0.2f);
                 t -= Time.deltaTime;
                 yield return null;
@@ -216,7 +216,7 @@ public class PaparazzoShot : MonoBehaviour
             while (a > 0f)
             {
                 a -= Time.deltaTime * 1.4f;
-                a = Mathf.Clamp01(a);
+                a = Mathn.Clamp01(a);
                 flashRenderer.color = Color.white.AlphaMultiplied(a);
                 yield return null;
             }
@@ -474,7 +474,7 @@ public class Paparazzo : DefinedRoleTemplate, DefinedRole, IAssignableDocument
                     shot.shot.transform.localScale = new(scale, scale, 1f);
 
                     var diffPos = shot.holder.transform.localPosition - new Vector3(-0.3f + 0.6f * (float)num, -0.25f, -10f - (float)num * 0.6f);
-                    shot.holder.transform.localPosition -= diffPos * Mathf.Min(1f, Time.deltaTime) * 6.4f;
+                    shot.holder.transform.localPosition -= diffPos * Mathn.Min(1f, Time.deltaTime) * 6.4f;
 
                     num++;
                 }

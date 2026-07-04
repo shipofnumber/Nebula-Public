@@ -14,7 +14,7 @@
 # Options
 
 "options.map.spawnMethod" : "スポーンメソッド"
-"options.map.spawnMethod.detail" : "プレイヤーがスポーンする際のスポーン方法を設定できます。<br> -<b>標準</b>: マップそれぞれの従来のスポーン方法です。<br> -<b>選択式</b>: Airshipのように複数のスポーン場所からスポーン先を選びます。<br> -<b>ランダム</b>: 各プレイヤーはそれぞれに選ばれたランダムな場所でスポーンします。"
+"options.map.spawnMethod.detail" : "プレイヤーがスポーンする際のスポーン方法を設定できます。<br>・<b>標準</b>: マップそれぞれの従来のスポーン方法です。<br>・<b>選択式</b>: Airshipのように複数のスポーン場所からスポーン先を選びます。<br>・<b>ランダム</b>: 各プレイヤーはそれぞれに選ばれたランダムな場所でスポーンします。"
 "options.map.spawnMethod.default" : "標準"
 "options.map.spawnMethod.selective" : "選択式"
 "options.map.spawnMethod.random" : "ランダム"

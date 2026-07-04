@@ -89,20 +89,14 @@ public static class HudManagerUpdatePatch
 {
     static void Postfix(HudManager __instance)
     {
-        NebulaProfiler.LapTimer("Before HudManager.FixedUpdate", 150);
         __instance.UpdateHudContent();
-        NebulaProfiler.LapTimer("UpdateHudContent");
         NebulaGameManager.Instance?.OnUpdate();
-        NebulaProfiler.LapTimer("NebulaGameManager.OnUpdate");
         NebulaGameManager.Instance?.AllPlayerInfo.Do(p => p.Unbox().HudUpdate());
-        NebulaProfiler.LapTimer("NebulaGameManager.OnHudUpdate");
 
         if ((NebulaGameManager.Instance?.GameMode?.CanOpenHelpScreen ?? true) && !TextField.AnyoneValid &&  NebulaInput.GetInput(Virial.Compat.VirtualKeyInput.Help).KeyDownForAction && !IntroCutscene.Instance.AsBoolFast() && !Minigame.Instance.AsBoolFast() && !ExileController.Instance.AsBoolFast())
         {
             HelpScreen.TryOpenHelpScreen(0);
         }
-        NebulaProfiler.LapTimer("NebulaGameManager.HelpScreen");
-
     }
 }
 

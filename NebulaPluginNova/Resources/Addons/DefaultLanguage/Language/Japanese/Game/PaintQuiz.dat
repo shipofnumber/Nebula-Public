@@ -1,0 +1,35 @@
+# UI
+
+"paintQuiz.ui.canvas.clear" : "クリア"
+"paintQuiz.ui.canvas.submit" : "回答"
+"paintQuiz.ui.done" : "回答済み"
+"paintQuiz.ui.waitScoring" : "ホストが採点中"
+
+# Quiz
+
+"paintQuiz.category.blurbToRole.quiz" : "「%BLURB%」といえば何？"
+"paintQuiz.category.roleToBlurb.quiz" : "%ROLE%のフレーバーテキストは？"
+"paintQuiz.category.titleToRole.quiz" : "「%TITLE%」は何の称号？"
+"paintQuiz.category.roleToChallenge.quiz" : "%ROLE%のチャレンジ称号は？"
+"paintQuiz.hint.title" : "%PLAYERS%が獲得済み"
+"paintQuiz.hint.title.moreThan2" : "%PLAYERS%、ほか%OTHERS%人が獲得済み"
+"paintQuiz.hint.role" : "%PLAYERS%が最近プレイ！"
+"paintQuiz.hint.role.moreThan2" : "%PLAYERS%、ほか%OTHERS%人が最近プレイ！"
+"paintQuiz.hint.comma" : "、"
+
+"paintQuiz.category.hint" : "～今回のルール～"
+"paintQuiz.category.blurbToRole.hint" : "フレーバーテキストが出題されます。<br>役職を当てよう！"
+"paintQuiz.category.titleToRole.hint" : "称号が出題されます。<br>関連する役職を当てよう！"
+"paintQuiz.category.challengeToRole.hint" : "チャレンジ称号が出題されます。<br>関連する役職を当てよう！"
+"paintQuiz.category.roleToBlurb.hint" : "役職が出題されます。<br>フレーバーテキストを当てよう！"
+"paintQuiz.category.roleToChallenge.hint" : "役職が出題されます。<br>チャレンジ称号を当てよう！"
+
+# ForHost
+
+"paintQuiz.ui.proceed" : "次へ"
+"paintQuiz.ui.noScore" : "点数なし"
+"paintQuiz.ui.answer" : "正答"
+"paintQuiz.ui.hint.leftClick" : "点数を指定して採点"
+"paintQuiz.ui.hint.rightClick" : "同じ点数で採点"
+"paintQuiz.ui.finishReview" : "採点終了"
+"paintQuiz.ui.resetToDefault" : "<b>出題できる問題が無い</b>ため、<br>出題範囲を拡大してリセットしました。"

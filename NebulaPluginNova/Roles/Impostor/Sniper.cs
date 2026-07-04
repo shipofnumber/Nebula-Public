@@ -18,7 +18,7 @@ namespace Nebula.Roles.Impostor;
 [NebulaRPCHolder]
 public class Sniper : DefinedSingleAbilityRoleTemplate<Sniper.Ability>, HasCitation, DefinedRole, IAssignableDocument
 {
-    private Sniper() : base("sniper", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [SnipeCoolDownOption, ShotSizeOption,ShotEffectiveRangeOption,ShotNoticeRangeOption,StoreRifleOnFireOption,StoreRifleOnUsingUtilityOption,CanSeeRifleInShadowOption,CanKillHidingPlayerOption,AimAssistOption,DelayInAimAssistOption, CanKillImpostorOption]) {
+    private Sniper() : base("sniper", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [SnipeCoolDownOption, ShotSizeOption,ShotEffectiveRangeOption,ShotNoticeRangeOption,StoreRifleOnFireOption,StoreRifleOnUsingUtilityOption,CanSeeRifleInShadowOption,CanKillHidingPlayerOption,AimAssistOption,DelayInAimAssistOption, CanKillImpostorOption]) {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagFunny, ConfigurationTags.TagDifficult);
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Sniper.png");
 
@@ -79,7 +79,8 @@ public class Sniper : DefinedSingleAbilityRoleTemplate<Sniper.Ability>, HasCitat
             float minLength = maxLength;
             IPlayerlike? result = null;
 
-            foreach(var p in GamePlayer.AllPlayerlikes)
+            var rendererTransform = Renderer.transform;
+            foreach (var p in GamePlayer.AllPlayerlikes)
             {
                 if (p.IsDead || p.AmOwner || ((!CanKillHidingPlayerOption) && p.Logic.InVent || p.IsDived)) continue;
 
@@ -91,13 +92,13 @@ public class Sniper : DefinedSingleAbilityRoleTemplate<Sniper.Ability>, HasCitat
                 //不可視なプレイヤーは無視
                 if (p.IsInvisible || p.WillDie) continue;
 
-                var pos = p.TruePosition.ToUnityVector();
-                Vector2 diff = pos - (Vector2)Renderer.transform.position;
+                var pos = p.TruePosition;
+                VVector2 diff = pos - (VVector2)rendererTransform.GetPositionFast();
 
                 //移動と回転を施したベクトル
-                var vec = diff.Rotate(-Renderer.transform.eulerAngles.z);
+                var vec = diff.Rotate(-rendererTransform.eulerAngles.z);
 
-                if(vec.x>0 && vec.x< minLength && Mathf.Abs(vec.y) < width * 0.5f)
+                if(vec.x>0 && vec.x< minLength && Mathn.Abs(vec.y) < width * 0.5f)
                 {
                     result = p;
                     minLength= vec.x;
@@ -160,7 +161,7 @@ public class Sniper : DefinedSingleAbilityRoleTemplate<Sniper.Ability>, HasCitat
 
                     if(MyRifle != null)
                     {
-                        var circle = EffectCircle.SpawnEffectCircle(AmongUsLLImpl.LocalPlayer.transform, VVector3.Zero, new(Palette.ImpostorRed), ShotNoticeRangeOption, null, true);
+                        var circle = EffectCircle.SpawnEffectCircle(AmongUsLLImpl.LocalPlayer.transform, VVector3.Zero, VColor.ImpostorColor, ShotNoticeRangeOption, null, true);
                         var script = circle.gameObject.AddComponent<ScriptBehaviour>();
                         script.UpdateHandler += () =>
                         {
@@ -252,9 +253,9 @@ public class Sniper : DefinedSingleAbilityRoleTemplate<Sniper.Ability>, HasCitat
 
         IEnumerator CoShowAimAssist()
         {
-            IEnumerator CoUpdateAimAssistArrow(PlayerControl player)
+            IEnumerator CoUpdateAimAssistArrow(GamePlayer player)
             {
-                DeadBody? deadBody = null;
+                Virial.Game.DeadBody? deadBody = null;
                 VVector2 pos = VVector2.Zero;
                 VVector2 dir = VVector2.Zero;
                 VVector2 tempDir = VVector2.Zero;
@@ -269,19 +270,18 @@ public class Sniper : DefinedSingleAbilityRoleTemplate<Sniper.Ability>, HasCitat
                 {
                     if (MeetingHud.Instance.AsBoolFast() || MyPlayer.IsDead || MyRifle == null || IsDeadObject) break;
 
-                    if (player.Data.IsDead && !deadBody.AsBoolFast()) deadBody = Helpers.GetDeadBody(player.PlayerId);
-
-                    //死亡して、死体も存在しなければ追跡を終了
-                    if (player.Data.IsDead && !deadBody.AsBoolFast()) break;
+                    //既に死亡していて、死体もないならば何もしない
+                    if (player.IsDead && !ModSingleton<DeadBodyManager>.Instance.AllDeadBodies.Find(d => d.Player.PlayerId == player.PlayerId, out deadBody)) break;
+                    
 
                     if(!renderer.AsBoolFast())
                     {
-                        renderer = UnityHelper.CreateObject<SpriteRenderer>("AimAssist", HudManager.Instance.transform, Vector3.zero);
+                        renderer = UnityHelper.CreateObject<SpriteRenderer>("AimAssist", AmongUsLLImpl.HudManagerBridge.MyTransform, Vector3.zero);
                         renderer.sprite = aimAssistSprite.GetSprite();
                     }
 
-                    pos = player.Data.IsDead ? deadBody!.transform.position : player.transform.position;
-                    tempDir = (pos - (VVector2)AmongUsLLImpl.LocalPlayer.transform.position).Normalized;
+                    pos = player.IsDead ? deadBody!.Position : player.Position;
+                    tempDir = (pos - (GamePlayer.LocalPlayer?.Position ?? new(0f,0f))).Normalized;
 
                     NebulaGameManager.Instance!.WideCamera.CheckPlayerState(out var localScale, out var localRotateZ);
                     tempDir.x *= localScale.x;
@@ -325,7 +325,7 @@ public class Sniper : DefinedSingleAbilityRoleTemplate<Sniper.Ability>, HasCitat
 
             yield return new WaitForSeconds(DelayInAimAssistOption);
 
-            foreach (var p in PlayerControl.AllPlayerControls.GetFastEnumerator())
+            foreach (var p in GamePlayer.AllPlayers)
             {
                 if (!p.AmOwner) NebulaManager.Instance.StartCoroutine(CoUpdateAimAssistArrow(p).WrapToIl2Cpp());
             }
@@ -362,11 +362,11 @@ public class Sniper : DefinedSingleAbilityRoleTemplate<Sniper.Ability>, HasCitat
     }
 
     private static SpriteLoader snipeNoticeSprite = SpriteLoader.FromResource("Nebula.Resources.SniperRifleArrow.png", 200f);
-    public static RemoteProcess<Vector2> RpcShowNotice = new(
+    public static RemoteProcess<VVector2> RpcShowNotice = new(
         "ShowSnipeNotice",
         (message, _) =>
         {
-            if ((message - (Vector2)AmongUsLLImpl.LocalPlayer.transform.position).magnitude < ShotNoticeRangeOption)
+            if ((message - GamePlayer.LocalPlayer.Position).Magnitude < ShotNoticeRangeOption)
             {
                 var arrow = new Arrow(snipeNoticeSprite.GetSprite(), false) { IsSmallenNearPlayer = false, IsAffectedByComms = false, FixedAngle = true, OnJustPoint = true };
                 arrow.Register(arrow);

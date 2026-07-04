@@ -31,7 +31,7 @@ public class DestroyerAssets
 
 public class Destroyer : DefinedSingleAbilityRoleTemplate<Destroyer.Ability>, DefinedRole, IAssignableDocument
 {
-    private Destroyer() : base("destroyer", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [KillCoolDownOption, PhasesOfDestroyingOption, KillSEStrengthOption,LeaveKillEvidenceOption, CanReportKillSceneOption]) {
+    private Destroyer() : base("destroyer", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [KillCoolDownOption, PhasesOfDestroyingOption, KillSEStrengthOption,LeaveKillEvidenceOption, CanReportKillSceneOption]) {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagFunny, ConfigurationTags.TagBeginner);
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Destroyer.png");
     }
@@ -96,7 +96,7 @@ public class Destroyer : DefinedSingleAbilityRoleTemplate<Destroyer.Ability>, De
                        achChallengeToken.Value++;
 
                        NebulaAPI.CurrentGame?.KillButtonLikeHandler.StartCooldown();
-                   }, filterHeavier: p => CheckDestroyKill(MyPlayer.VanillaPlayer, MyPlayer.Position, p.RealPlayer.VanillaPlayer.transform.position))
+                   }, filterHeavier: p => CheckDestroyKill(MyPlayer.VanillaPlayer, MyPlayer.Position, p.RealPlayer.Position))
                     .SetAsUsurpableButton(this);
                 destroyButton.OnBroken = _ => Snatcher.RewindKillCooldown();
                 NebulaAPI.CurrentGame?.KillButtonLikeHandler.Register(destroyButton.GetKillButtonLike());
@@ -107,7 +107,7 @@ public class Destroyer : DefinedSingleAbilityRoleTemplate<Destroyer.Ability>, De
         static private bool CheckCanMove(PlayerControl myPlayer, VVector2 myPlayerPosition, VVector2 position, out float distance)
         {
             distance = myPlayerPosition.Distance(position);
-            return !PhysicsHelpers.AnythingBetween(myPlayer.Collider, myPlayer.Collider.transform.position, position, Constants.ShipAndAllObjectsMask, false);
+            return !PhysicsHelpers.AnythingBetween(myPlayer.Collider, myPlayer.Collider.transform.GetPositionFast(), position, Constants.ShipAndAllObjectsMask, false);
         }
         static private VVector2 GetDestroyKillPosition(VVector2 target, bool left)
         {
@@ -220,7 +220,7 @@ public class Destroyer : DefinedSingleAbilityRoleTemplate<Destroyer.Ability>, De
             target.SetPlayerMaterialColors(deadBody.bloodSplatter);
             splatter.gameObject.SetActive(false);
 
-            var modSplatterRenderer = UnityHelper.CreateObject<SpriteRenderer>("ModSplatter", null, target.transform.position, splatter.gameObject.layer);
+            var modSplatterRenderer = UnityHelper.CreateObject<SpriteRenderer>("ModSplatter", null, target.transform.GetPositionFast(), splatter.gameObject.layer);
             modSplatterRenderer.sharedMaterial = splatter.sharedMaterial;
             var modSplatter = modSplatterRenderer.gameObject.AddComponent<ModAnimator>();
 
@@ -243,7 +243,7 @@ public class Destroyer : DefinedSingleAbilityRoleTemplate<Destroyer.Ability>, De
                 float randomX = 0f;
                 float randomTimer = 0f;
 
-                if (!MeetingHud.Instance.AsBoolFast()) NebulaAsset.PlaySE(audioClip, target.transform.position, 0.8f, KillSEStrengthOption, 1f);
+                if (!MeetingHud.Instance.AsBoolFast()) NebulaAsset.PlaySE(audioClip, target.transform.GetPositionFast(), 0.8f, KillSEStrengthOption, 1f);
 
                 int sePhase = 0;
                 float[] seTime = [0.45f, 0.62f, 0.98f];
@@ -277,7 +277,7 @@ public class Destroyer : DefinedSingleAbilityRoleTemplate<Destroyer.Ability>, De
                                 modSplatter.PlayOneShot(spriteModBlood, 12f, true);
                             }
 
-                            NebulaAsset.PlaySE(target.KillSfx, target.transform.position + new Vector3(((float)System.Random.Shared.NextDouble() - 0.5f) * 0.05f, ((float)System.Random.Shared.NextDouble() - 0.5f) * 0.05f, 0f), 0.6f, 1.4f, 1f);
+                            NebulaAsset.PlaySE(target.KillSfx, target.transform.GetPositionFast() + new Vector3(((float)System.Random.Shared.NextDouble() - 0.5f) * 0.05f, ((float)System.Random.Shared.NextDouble() - 0.5f) * 0.05f, 0f), 0.6f, 1.4f, 1f);
                             sePhase++;
                         }
                     }

@@ -34,14 +34,14 @@ public class MetaAbility : DependentLifespan, IGameOperator, IModule
         var reviveButton = NebulaAPI.Modules.AbilityButton(this, true, false, 98)
             .SetImage(reviveSprite).SetLabel("revive");
         reviveButton.Availability = (button) => true;
-        reviveButton.Visibility = (button) => AmongUsLLImpl.LocalPlayer.Data.IsDead;
-        reviveButton.OnClick = (button) => NebulaManager.Instance.ScheduleDelayAction(() => GamePlayer.LocalPlayer!.Revive(null, new(AmongUsLLImpl.LocalPlayer.transform.position), true, false));
+        reviveButton.Visibility = (button) => GamePlayer.LocalPlayer?.IsDead ?? false;
+        reviveButton.OnClick = (button) => NebulaManager.Instance.ScheduleDelayAction(() => GamePlayer.LocalPlayer!.Revive(null, new(GamePlayer.LocalPlayer.Position), true, false));
 
 
         var suicideButton = NebulaAPI.Modules.AbilityButton(this, true, false, 98)
             .SetLabel("suicide");
         suicideButton.Availability = (button) => true;
-        suicideButton.Visibility = (button) => !AmongUsLLImpl.LocalPlayer.Data.IsDead;
+        suicideButton.Visibility = (button) => !(GamePlayer.LocalPlayer?.IsDead ?? false);
         suicideButton.OnClick = (button) => NebulaManager.Instance.ScheduleDelayAction(()=> GamePlayer.LocalPlayer!.Suicide(PlayerState.Suicide, null, KillParameter.WithDeadBody));
         
 

@@ -118,7 +118,7 @@ public class CustomConsole : MonoBehaviour
         float num = float.MaxValue;
         PlayerControl @object = pc.Object;
         VVector2 truePosition = @object.GetTruePosition();
-        VVector2 position = base.transform.position;
+        VVector2 position = this.ModGameObject(false).Position;
         couldUse = Property?.CanUse?.Invoke(position) ?? true && !GamePlayer.LocalPlayer!.AllAbilities.All(a => a.BlockUsingUtility);
         canUse = couldUse;
         if (canUse)

@@ -155,7 +155,7 @@ public class SpectatorsAbility : IGameOperator
     {
         if(currentTarget == ev.Player)
         {
-            var nearest = AvailableTargets.OrderBy(p => p.VanillaPlayer.transform.position.Distance(ev.Player.VanillaPlayer.transform.position));
+            var nearest = AvailableTargets.OrderBy(p => p.Position.Distance(ev.Player.Position));
             currentTarget = nearest.FirstOrDefault();
             OnChangeTarget();
         }

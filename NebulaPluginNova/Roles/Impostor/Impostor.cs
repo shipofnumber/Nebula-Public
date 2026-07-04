@@ -13,9 +13,9 @@ namespace Nebula.Roles.Impostor;
 
 public class Impostor : DefinedRoleTemplate, DefinedRole
 {
-    static readonly public RoleTeam MyTeam = NebulaAPI.Preprocessor!.CreateTeam("teams.impostor", new(Palette.ImpostorRed), TeamRevealType.Teams);
+    static readonly public RoleTeam MyTeam = NebulaAPI.Preprocessor!.CreateTeam("teams.impostor", VColor.ImpostorColor.ToUnityColor(), TeamRevealType.Teams);
     
-    private Impostor():base("impostor", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, MyTeam, [CanKillHidingPlayerOption]) {
+    private Impostor():base("impostor", VColor.ImpostorColor, RoleCategory.ImpostorRole, MyTeam, [CanKillHidingPlayerOption]) {
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Impostor.png");
     }
 
@@ -49,7 +49,7 @@ public class ImpostorGameRule : AbstractModule<IGameModeStandard>, IGameOperator
     void DecoratePlayerColor(PlayerDecorateNameEvent ev)
     {
         if (GamePlayer.LocalPlayer?.IsImpostor ?? false) {
-            if (ev.Player.IsImpostorlike) ev.Color = new(Palette.ImpostorRed);
+            if (ev.Player.IsImpostorlike) ev.Color = VColor.ImpostorColor;
         }
     }
 
@@ -118,7 +118,7 @@ public class ImpostorBasicRuleOperator : AbstractModule<Virial.Game.Game>, IGame
     {
         if (GeneralConfigurations.ImpostorsRadioOption && ev.Role.Role.Category == RoleCategory.ImpostorRole)
         {
-            ModSingleton<NoSVCRoom>.Instance?.RegisterRadioChannel(Language.Translate("voiceChat.info.impostorRadio"), 0, p => p.Role.Role.Category == RoleCategory.ImpostorRole, ev.Role, new(Palette.ImpostorRed));
+            ModSingleton<NoSVCRoom>.Instance?.RegisterRadioChannel(Language.Translate("voiceChat.info.impostorRadio"), 0, p => p.Role.Role.Category == RoleCategory.ImpostorRole, ev.Role, VColor.ImpostorColor);
         }
     }
 

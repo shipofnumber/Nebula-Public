@@ -391,7 +391,7 @@ internal static class LobbyStampShower
         {
             while (myShown && player)
             {
-                var pos = NebulaGameManager.Instance!.WideCamera.ConvertToWideCameraPos(player.transform.position);
+                var pos = NebulaGameManager.Instance!.WideCamera.ConvertToWideCameraPos(player.transform.GetPositionFast());
                 myShown.transform.localPosition = pos + ArrowStampShower.ArrowDiff;
                 myShown.transform.SetLocalZ(-5f);
                 yield return null;

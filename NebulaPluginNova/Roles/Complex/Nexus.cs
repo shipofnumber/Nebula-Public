@@ -24,7 +24,7 @@ public class Nexus : DefinedSingleAbilityRoleTemplate<IUsurpableAbility>, Define
 {
     private Nexus(bool isEvil) : base(
         isEvil ? "evilNexus" : "niceNexus",
-        isEvil ? new(Palette.ImpostorRed) : new(229, 158, 255),
+        isEvil ? VColor.ImpostorColor : new(229, 158, 255),
         isEvil ? RoleCategory.ImpostorRole : RoleCategory.CrewmateRole,
         isEvil ? Impostor.Impostor.MyTeam : Crewmate.Crewmate.MyTeam,
         [])//[NumOfChargesOption, isEvil ? CostOfKillTrapOption : CostOfCommTrapOption, PlaceCoolDownOption, PlaceDurationOption, SpeedTrapSizeOption, isEvil ? KillTrapSizeOption : CommTrapSizeOption, SpeedTrapDurationOption, AccelRateOption, DecelRateOption])

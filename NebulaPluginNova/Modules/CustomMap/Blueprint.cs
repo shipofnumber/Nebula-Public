@@ -4,8 +4,8 @@ public record FloatVectorRange
 {
     public FloatVectorRange(Vector2 from, Vector2 to)
     {
-        Min = new Vector2(Mathf.Min(from.x, to.x), Mathf.Min(from.y, to.y));
-        Max = new Vector2(Mathf.Max(from.x, to.x), Mathf.Max(from.y, to.y));
+        Min = new Vector2(Mathn.Min(from.x, to.x), Mathn.Min(from.y, to.y));
+        Max = new Vector2(Mathn.Max(from.x, to.x), Mathn.Max(from.y, to.y));
     }
     public Vector2 Min { get; private init; }
     public Vector2 Max { get; private init; }

@@ -144,8 +144,10 @@ static file class GuesserSystem
                 var p = state.MyPlayer;
                 LastGuesserWindow = OpenGuessWindow(leftGuessPerMeeting, leftGuess, (r) =>
                 {
-                    if (AmongUsLLImpl.LocalPlayer.Data.IsDead) return;
-                    if (!(MeetingHud.Instance.state == MeetingHud.VoteStates.Voted || MeetingHud.Instance.state == MeetingHud.VoteStates.NotVoted)) return;
+                    if (GamePlayer.LocalPlayer?.IsDead ?? false) return;
+                    var meetingHud = MeetingHud.Instance;
+                    var meetingState = meetingHud.state;
+                    if (!(meetingState == MeetingHud.VoteStates.Voted || meetingState == MeetingHud.VoteStates.NotVoted)) return;
                     if (!MeetingHudExtension.CanUseAbilityFor(p, true)) return;
 
                     if (guessIf?.Invoke() ?? true)
@@ -177,7 +179,7 @@ static file class GuesserSystem
                     LastGuesserWindow = null!;
                 });
             },
-            p => !awareOfUsurpation && !p.MyPlayer.IsDead && !p.MyPlayer.AmOwner && leftGuess > 0 && leftGuessPerMeeting > 0 && !AmongUsLLImpl.LocalPlayer.Data.IsDead && GameOperatorManager.Instance!.Run(new PlayerCanGuessPlayerLocalEvent(NebulaAPI.CurrentGame!.LocalPlayer, p.MyPlayer, true)).CanGuess
+            p => !awareOfUsurpation && !p.MyPlayer.IsDead && !p.MyPlayer.AmOwner && leftGuess > 0 && leftGuessPerMeeting > 0 && !(GamePlayer.LocalPlayer?.IsDead ?? true) && GameOperatorManager.Instance!.Run(new PlayerCanGuessPlayerLocalEvent(GamePlayer.LocalPlayer, p.MyPlayer, true)).CanGuess
             ));
         
         /*
@@ -270,7 +272,7 @@ public class Guesser : DefinedSingleAbilityRoleTemplate<Guesser.Ability>, HasCit
     
     public Guesser(bool isEvil) : base(
         isEvil ? "evilGuesser" : "niceGuesser", 
-        isEvil ? new(Palette.ImpostorRed) : new(1f, 1f, 0f), 
+        isEvil ? VColor.ImpostorColor : new(1f, 1f, 0f), 
         isEvil ? RoleCategory.ImpostorRole : RoleCategory.CrewmateRole,
         isEvil ? Impostor.Impostor.MyTeam : Crewmate.Crewmate.MyTeam,
         [NumOfGuessOption, NumOfGuessPerMeetingOption, CanCallEmergencyMeetingOption, GuessableFilterEditorOption])

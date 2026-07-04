@@ -1,4 +1,5 @@
-﻿using Nebula.Modules.GUIWidget;
+﻿using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Nebula.Modules.GUIWidget;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -41,7 +42,7 @@ public static class Helpers
 
     public static float Delta(this float val, float speed, float threshold)
     {
-        var smooth = val* Mathn.Clamp01(Time.deltaTime * speed);
+        var smooth = val* Mathn.Clamp01(FastMethods.GetDeltaTimeFast() * speed);
 
         if (val < 0f)
             return smooth < -threshold ? smooth : Mathn.Max(val, -threshold);
@@ -324,33 +325,35 @@ public static class Helpers
         return queue.Dequeue();
     }
 
-    static public bool CircleContainsAnyNonTriggers(Vector2 pos, float radious, int? layerMask = null)
+    static public bool CircleContainsAnyNonTriggers(VVector2 pos, float radious, int? layerMask = null)
     {
-        int num = Physics2D.OverlapCircleNonAlloc(pos, radious, PhysicsHelpers.colliderHits, layerMask ?? Constants.ShipAndAllObjectsMask);
+        var hits = PhysicsHelpers.colliderHits;
+        int num = FastMethods.OverlapCircleNonAllocFast(pos, radious, hits, layerMask ?? Constants.ShipAndAllObjectsMask);
         for (int i = 0; i < num; i++)
         {
-            if (!PhysicsHelpers.colliderHits[i].isTrigger) return true;
+            if (!hits[i].isTrigger) return true;
         }
         return false;
     }
 
-    static public bool AnyNonTriggersBetween(Vector2 pos1, Vector2 pos2, out Vector2 vector, int? layerMask = null)
+    static public bool AnyNonTriggersBetween(VVector2 pos1, VVector2 pos2, out VVector2 vector, int? layerMask = null)
     {
         layerMask ??= Constants.ShipAndAllObjectsMask;
         vector = pos2 - pos1;
-        return PhysicsHelpers.AnyNonTriggersBetween(pos1, vector.normalized, vector.magnitude, layerMask!.Value);
+        return PhysicsHelpers.AnyNonTriggersBetween(pos1, vector.Normalized, vector.Magnitude, layerMask!.Value);
     }
 
-    static public bool AnyCustomNonTriggersBetween(Vector2 pos1, Vector2 pos2, Predicate<Collider2D> predicate, int? layerMask = null)
+    static private Il2CppStructArray<RaycastHit2D> castHits = new((long)32);
+    static public bool AnyCustomNonTriggersBetween(VVector2 pos1, VVector2 pos2, Predicate<Collider2D> predicate, int? layerMask = null)
     {
         layerMask ??= Constants.ShipAndAllObjectsMask;
         var vector = pos2 - pos1;
         
-        int num = Physics2D.RaycastNonAlloc(pos1, vector.normalized, PhysicsHelpers.castHits, vector.magnitude, layerMask!.Value);
+        int num = FastMethods.RaycastNonAllocFast(pos1, vector.Normalized, castHits, vector.Magnitude, layerMask!.Value);
         bool result = false;
         for (int i = 0; i < num; i++)
         {
-            var collider = PhysicsHelpers.castHits[i].collider;
+            var collider = castHits[i].collider;
             if (!collider.isTrigger && predicate.Invoke(collider))
             {
                 result = true;
@@ -360,19 +363,19 @@ public static class Helpers
         return result;
     }
 
-    public static bool AnyCustomNonTriggersBetweenThick(Vector2 pos1, Vector2 pos2, float radius, Predicate<Collider2D>? predicate, int? layerMask = null, bool ignoreHittingOnPos1 = false)
+    public static bool AnyCustomNonTriggersBetweenThick(VVector2 pos1, VVector2 pos2, float radius, Predicate<Collider2D>? predicate, int? layerMask = null, bool ignoreHittingOnPos1 = false)
     {
         layerMask ??= Constants.ShipAndAllObjectsMask;
         var vector = pos2 - pos1;
 
         //pos1近くでの衝突を無視するため、pos1からより遠い衝突を優先して取得するため、pos2からレイを出す。
-        int num = Physics2D.CircleCastNonAlloc(pos2, radius, -vector.normalized, PhysicsHelpers.castHits, vector.magnitude, layerMask!.Value);
+        int num = Physics2D.CircleCastNonAlloc(pos2, radius, -vector.Normalized, PhysicsHelpers.castHits, vector.Magnitude, layerMask!.Value);
         bool flag = false;
         for (int i = 0; i < num; i++)
         {
             var hit = PhysicsHelpers.castHits[i];
             if (hit.collider.isTrigger) continue;
-            if (ignoreHittingOnPos1 && Vector2.Dot(((Vector2)(hit.point - pos1)).normalized, vector.normalized) < 0f)
+            if (ignoreHittingOnPos1 && VVector2.Dot(((VVector2)hit.point - pos1).Normalized, vector.Normalized) < 0f)
             {
                 continue;
             }
@@ -441,7 +444,7 @@ public static class Helpers
 
     static public Vector3 TransformPointLocalToLocal(this Transform transform, Vector3 position, Transform toTransform)
     {
-        return toTransform.InverseTransformPoint(transform.TransformPoint(position));
+        return toTransform.InverseTransformPoint(transform.TransformPointFast(position));
     }
 
     internal static void SetColors(ArchivedColor color, SpriteRenderer renderer)

@@ -20,11 +20,11 @@ namespace NebulaInstaller
     /// </summary>
     public partial class InstallingPage : Page
     {
-        public InstallingPage(string vanillaDirectoryPath, string installToDirectoryPath)
+        public InstallingPage(string vanillaDirectoryPath, string installToDirectoryPath, GamePlatform platform)
         {
             InitializeComponent();
 
-            _ = AUInstalling.CoInstall(vanillaDirectoryPath, installToDirectoryPath, () =>
+            _ = AUInstalling.CoInstall(vanillaDirectoryPath, installToDirectoryPath, platform, () =>
             {
                 MainWindow.Instance.Dispatcher.Invoke(() =>
                 {

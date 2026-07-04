@@ -17,7 +17,7 @@ public class GuideLineAbility : IGameOperator
     public GuideLineAbility(GamePlayer player, Func<bool> predicate)
     {
         this.player = player;
-        guideRenderer = UnityHelper.CreateObject<SpriteRenderer>("Guideline", player.VanillaPlayer.transform, Vector3.zero, LayerExpansion.GetObjectsLayer());
+        guideRenderer = UnityHelper.CreateObject<SpriteRenderer>("Guideline", player.VanillaPlayer.transform, VVector3.Zero, LayerExpansion.GetObjectsLayer());
         guideRenderer.gameObject.SetActive(false);
         guideRenderer.transform.localScale = new(1.5f, 1.5f, 1f);
         guideRenderer.sprite = guideSprite.GetSprite();
@@ -30,8 +30,8 @@ public class GuideLineAbility : IGameOperator
         float angle = player.Unbox().MouseAngle;
         float degree = angle * 180f / Mathn.PI;
         guideRenderer.transform.localEulerAngles = new(0f, 0f, degree);
-        float p = Mathf.Repeat(Time.time / 1.2f, 1f);
-        guideRenderer.transform.localPosition = (Vector2.right.Rotate(degree) * (1.4f + Mathn.Sin(p * Mathn.PI * 0.5f) * 0.8f)).AsVector3(-10f);
+        float p = Mathf.Repeat(ev.ProcessTime / 1.2f, 1f);
+        guideRenderer.transform.localPosition = (VVector2.Right.Rotate(degree) * (1.4f + Mathn.Sin(p * Mathn.PI * 0.5f) * 0.8f)).AsVector3(-10f);
         guideRenderer.color = new(1f, 1f, 1f, 1f - (p * p * p));
     }
 

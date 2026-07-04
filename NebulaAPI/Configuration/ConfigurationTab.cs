@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using Virial.Assignable;
+using Virial.Utilities;
 
 namespace Virial.Configuration;
 
@@ -44,7 +45,7 @@ public class ConfigurationTab : IBit32
     }
 
 
-    private static byte ToByte(float f) => (byte)(Mathf.Clamp01(f) * 255);
+    private static byte ToByte(float f) => (byte)(Mathn.Clamp01(f) * 255);
     private static string ColorBegin(Color color) => string.Format("<color=#{0:X2}{1:X2}{2:X2}{3:X2}>", ToByte(color.R), ToByte(color.G), ToByte(color.B), ToByte(color.A));
     private static string ColorEnd() => "</color>";
     public string DisplayName { get => NebulaAPI.Language.Translate(translateKey).Replace("[", ColorBegin(Color)).Replace("]", ColorEnd()); }

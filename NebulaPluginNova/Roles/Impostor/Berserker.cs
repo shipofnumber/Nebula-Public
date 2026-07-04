@@ -15,7 +15,7 @@ namespace Nebula.Roles.Impostor;
 [NebulaRPCHolder]
 public class Berserker : DefinedSingleAbilityRoleTemplate<Berserker.Ability>, DefinedRole, IAssignableDocument
 {
-    private Berserker() : base("berserker", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [killCoolDownOption, accelRateOption, canCalmDownOption, berserkCooldownOption, berserkSEStrengthOption, maxBerserkDurationOption, killingForTranceOption])
+    private Berserker() : base("berserker", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [killCoolDownOption, accelRateOption, canCalmDownOption, berserkCooldownOption, berserkSEStrengthOption, maxBerserkDurationOption, killingForTranceOption])
     {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagFunny);
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Berserker.png");
@@ -255,7 +255,7 @@ public class Berserker : DefinedSingleAbilityRoleTemplate<Berserker.Ability>, De
         player.VanillaPlayer.AnimateCustom(AmongUsLLImpl.HudManagerInstance.IntroPrefab.HnSSeekerSpawnAnim);
 
         player.VanillaAnimations.Animator.SetTime(7.4f);//Coroutineは最初のyieldまで実行したのちに脱出することに留意
-        NebulaAsset.PlaySE(VanillaAsset.HnSTransformClip.Clip, player.VanillaPlayer.transform.position, 0.8f, berserkSEStrengthOption, 0.8f);
+        NebulaAsset.PlaySE(VanillaAsset.HnSTransformClip.Clip, player.Position, 0.8f, berserkSEStrengthOption, 0.8f);
         player.VanillaCosmetics.SetBodyCosmeticsVisible(false);
     });
 

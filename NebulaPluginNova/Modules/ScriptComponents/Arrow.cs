@@ -15,7 +15,9 @@ public class Arrow : FlexibleLifespan, IGameOperator
     }
 
     private SpriteRenderer? arrowRenderer;
+    private Virial.Compat.ModGameObject arrowRendererObj;
     private SpriteRenderer? smallRenderer = null;
+    private Virial.Compat.ModGameObject? smallRendererObj = null;
     private SpriteRenderer? subRenderer = null;
     public VVector2 TargetPos;
 
@@ -42,32 +44,34 @@ public class Arrow : FlexibleLifespan, IGameOperator
 
     public Arrow(Sprite? sprite = null, bool usePlayerMaterial = true, bool withSmallArrow = false, bool withSubRenderer = false)
     {
-        arrowRenderer = UnityHelper.CreateObject<SpriteRenderer>("Arrow", HudManager.Instance.transform, new Vector3(0, 0, -10f), LayerExpansion.GetArrowLayer());
+        arrowRenderer = UnityHelper.CreateObject<SpriteRenderer>("Arrow", HudManager.Instance.transform, new(0, 0, -10f), LayerExpansion.GetArrowLayer());
+        arrowRendererObj = arrowRenderer.ModGameObject(true);
         arrowRenderer.sprite = sprite ?? arrowSprite.GetSprite();
         arrowRenderer.sharedMaterial = usePlayerMaterial ? HatManager.Instance.PlayerMaterial : HatManager.Instance.DefaultShader;
         if (usePlayerMaterial) SetColor(VColor.White, VColor.Gray);
         if (withSmallArrow)
         {
-            smallRenderer = UnityHelper.CreateObject<SpriteRenderer>("Arrow", arrowRenderer.transform, new Vector3(0, 0, -0.1f), LayerExpansion.GetArrowLayer());
+            smallRenderer = UnityHelper.CreateObject<SpriteRenderer>("Arrow", arrowRenderer.transform, new(0, 0, -0.1f), LayerExpansion.GetArrowLayer());
+            smallRendererObj = smallRenderer.ModGameObject();
             smallRenderer.sprite = arrowSmallSprite.GetSprite();
             FixedAngle = true;
         }
         if (withSubRenderer)
         {
-            subRenderer = UnityHelper.CreateObject<SpriteRenderer>("Subrenderer", arrowRenderer.transform, new Vector3(0, 0, 0.01f), LayerExpansion.GetArrowLayer());
+            subRenderer = UnityHelper.CreateObject<SpriteRenderer>("Subrenderer", arrowRenderer.transform, new(0, 0, 0.01f), LayerExpansion.GetArrowLayer());
             subRenderer.sprite = null;
         }
 
         //if (ShowOnlyOutside) 
-        arrowRenderer.gameObject.SetActive(false);
+        arrowRendererObj.SetActive(false);
     }
 
     public void SetSprite(Sprite? sprite) => arrowRenderer!.sprite = sprite;
     public void SetSubSprite(Sprite? sprite, float z)
     {
-        if(subRenderer != null)
+        if(subRenderer.AsBoolFast())
         {
-            subRenderer.sprite = sprite;
+            subRenderer!.sprite = sprite;
             subRenderer.transform.localPosition = new(0f,0f,z);
         }
     }
@@ -93,19 +97,19 @@ public class Arrow : FlexibleLifespan, IGameOperator
     public Arrow SetColor(VColor mainColor) => SetColor(mainColor, mainColor * 0.65f);
     public Arrow SetSmallColor(VColor smallColor)
     {
-        if (smallRenderer) smallRenderer!.color = smallColor.ToUnityColor();
+        if (smallRenderer.AsBoolFast()) smallRenderer!.color = smallColor.ToUnityColor();
         return this;
     }
     void IGameOperator.OnReleased()
     {
-        if (arrowRenderer) GameObject.Destroy(arrowRenderer!.gameObject);
+        if (arrowRenderer.AsBoolFast()) GameObject.Destroy(arrowRenderer!.gameObject);
         arrowRenderer = null;
     }
 
     private static float perc = 0.925f;
     void HudUpdate(GameHudUpdateEvent ev)
     {
-        if (!arrowRenderer) return;
+        if (!arrowRenderer.AsBoolFast()) return;
 
         bool ovalMode = ClientOption.GetValue(ClientOption.ClientOptionType.ArrowRework) == 1;
 
@@ -122,31 +126,29 @@ public class Arrow : FlexibleLifespan, IGameOperator
         float cameraMainOrthographicSize = Camera.main.orthographicSize;
 
 
-        var del = (TargetPos - (VVector2)main.transform.position);
+        var del = (TargetPos - (VVector2)main.ModGameObject().Position);
 
         //目的地との見た目上の離れ具合
         float num = del.Magnitude / (worldOrthographicSize * perc);
 
         //近くの矢印を隠す
         bool flag = IsActive && (!IsSmallenNearPlayer || (double)num > 0.3);
-        arrowRenderer!.gameObject.SetActive(flag);
+        arrowRendererObj.SetActive(flag);
         if (!flag) return;
 
         bool Between(float value, float min, float max) => value > min && value < max;
-
-        var arrowTransform = arrowRenderer.transform;
 
         //スクリーン上の位置
         VVector2 viewportPoint = worldCam.WorldToViewportPoint(TargetPos.AsUnityVector3());
 
         if (ArrowUpdatePatch.InArea(ovalMode, viewportPoint))
         {
-            if (ShowOnlyOutside) arrowRenderer!.gameObject.SetActive(false);
+            if (ShowOnlyOutside) arrowRendererObj.SetActive(false);
             else
             {
                 //画面内を指す矢印
-                arrowTransform.localPosition = (del - (OnJustPoint ? VVector2.Zero : del.Normalized * (WithSmallArrow ? 0.9f : 0.6f) * (worldOrthographicSize / cameraMainOrthographicSize))).AsUnityVector3(2f);
-                arrowTransform.localScale = IsSmallenNearPlayer ? VVector3.One * Mathn.Clamp(num, 0f, 1f) : VVector3.One;
+                arrowRendererObj.LocalPosition = (del - (OnJustPoint ? VVector2.Zero : del.Normalized * (WithSmallArrow ? 0.9f : 0.6f) * (worldOrthographicSize / cameraMainOrthographicSize))).AsUnityVector3(2f);
+                arrowRendererObj.LocalScale = IsSmallenNearPlayer ? VVector3.One * Mathn.Clamp(num, 0f, 1f) : VVector3.One;
             }
         }
         else
@@ -157,32 +159,32 @@ public class Arrow : FlexibleLifespan, IGameOperator
             //UIのカメラに合わせて位置を調節する
             float num3 = mainOrthographicSize * main.aspect;
             VVector3 vector4 = new VVector3(Mathn.LerpUnclamped(0f, num3 * (WithSmallArrow ? 0.82f : 0.88f), vector3.x), Mathn.LerpUnclamped(0f, mainOrthographicSize * (WithSmallArrow ? 0.72f : 0.79f), vector3.y), 2f);
-            arrowTransform.localPosition = vector4;
-            arrowTransform.localScale = Vector3.one;
+            arrowRendererObj.LocalPosition = vector4;
+            arrowRendererObj.LocalScale = VVector3.One;
         }
 
-        arrowTransform.localScale *= (worldOrthographicSize / cameraMainOrthographicSize);
+        arrowRendererObj.LocalScale *= (worldOrthographicSize / cameraMainOrthographicSize);
 
 
         //角度の計算のために正規化する(しなくてもいいのかも)
         del = del.Normalized;
 
         if(FixedAngle)
-            arrowTransform.eulerAngles = new Vector3(0f, 0f, 0f);
+            arrowRendererObj.LocalEulerAngles = new(0f, 0f, 0f);
         else
-            arrowTransform.eulerAngles = new Vector3(0f, 0f, Mathn.Atan2(del.y, del.x) * 180f / Mathn.PI);
+            arrowRendererObj.LocalEulerAngles = new(0f, 0f, Mathn.Atan2(del.y, del.x) * 180f / Mathn.PI);
 
-        if(smallRenderer != null)
+        if(smallRenderer.AsBoolFast())
         {
             if (FixedAngle)
             {
                 var angle = Mathn.Atan2(del.y, del.x) * 180f / Mathn.PI;
-                smallRenderer.transform.localPosition = Vector3.right.RotateZ(angle) * 0.45f;
-                smallRenderer.transform.eulerAngles = new Vector3(0f, 0f, angle);
+                smallRendererObj!.LocalPosition = (VVector2.Right.Rotate(angle) * 0.45f).AsVector3();
+                smallRendererObj.LocalEulerAngles = new(0f, 0f, angle);
             }
             else
             {
-                smallRenderer.transform.localPosition = Vector3.right * 0.45f;
+                smallRendererObj!.LocalPosition = (VVector2.Right * 0.45f).AsVector3();
             }
         }
 
@@ -200,8 +202,7 @@ public class Arrow : FlexibleLifespan, IGameOperator
             }else if(DisappearanceEffect == DisappearanceType.Reduction)
             {
                 disappearProgress += ev.DeltaTime * 3.2f;
-
-                arrowRenderer.transform.localScale *= a;
+                arrowRendererObj.LocalScale *= a;
             }
 
             if (disappearProgress > 1f)

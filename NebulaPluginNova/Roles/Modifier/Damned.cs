@@ -15,7 +15,7 @@ namespace Nebula.Roles.Modifier;
 [NebulaRPCHolder]
 public class Damned : DefinedAllocatableModifierTemplate, DefinedAllocatableModifier
 {
-    private Damned() : base("damned", "DMD", new(Palette.ImpostorRed), [DamnedActionOption, DamnedMurderMyKillerOption, KillDelayOption,
+    private Damned() : base("damned", "DMD", VColor.ImpostorColor, [DamnedActionOption, DamnedMurderMyKillerOption, KillDelayOption,
         new GroupConfiguration("options.role.damned.group.task", [CanBecomeAwareOfOption, TaskProgressOption], GroupConfigurationColor.ImpostorRed)
         ]) {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagFunny);
@@ -131,7 +131,7 @@ public class Damned : DefinedAllocatableModifierTemplate, DefinedAllocatableModi
                 NebulaManager.Instance.StartCoroutine(CoDelayKill().WrapToIl2Cpp());
             }
 
-            if(AmOwner) AmongUsUtil.PlayQuickFlash(new(Palette.ImpostorRed));
+            if(AmOwner) AmongUsUtil.PlayQuickFlash(VColor.ImpostorColor);
         }
 
         [OnlyHost, OnlyMyPlayer]

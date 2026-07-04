@@ -50,7 +50,7 @@ internal class AchievementChecker : IGameOperator
     private void OnGameEnd(GameEndEvent ev)
     {
         //10問、HardOnly、マップ2種以上、900未満を記録していない
-        if(GeneralConfigurations.NumOfQuizOption == 10 && GeneralConfigurations.AeroGuesserHardOption >= 1 && GeneralConfigurations.AeroGuesserNormalOption == 0 && BitOperations.PopCount((uint)AeroGuesserSenario.MapMask) >= 2 && !recordLess900)
+        if(GeneralConfigurations.NumOfAeroQuizOption == 10 && GeneralConfigurations.AeroGuesserHardOption >= 1 && GeneralConfigurations.AeroGuesserNormalOption == 0 && BitOperations.PopCount((uint)AeroGuesserSenario.MapMask) >= 2 && !recordLess900)
         {
             new StaticAchievementToken("aeroGuesser.allMore900");
         }

@@ -15,7 +15,7 @@ namespace Nebula.Roles.Impostor;
 
 internal class Rokurokubi : DefinedSingleAbilityRoleTemplate<Rokurokubi.Ability>, DefinedRole, IAssignableDocument
 {
-    private Rokurokubi() : base("rokurokubi", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [CraneSpeedOption, MaxNeckLengthOption, AutoKillOption])
+    private Rokurokubi() : base("rokurokubi", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [CraneSpeedOption, MaxNeckLengthOption, AutoKillOption])
     {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagFunny);
         //ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Berserker.png");
@@ -53,10 +53,10 @@ internal class Rokurokubi : DefinedSingleAbilityRoleTemplate<Rokurokubi.Ability>
         public LongBoiPlayerBody LongBoi { get; private set; } = null!;
         EmptyBehaviour CamTarget = null!;
         public bool IsActive => !calmDownInvoked;
-        public Vector3 GetHeadPos()
+        public VVector2 GetHeadPos()
         {
-            if (HeadTracker.AsBoolFast()) return HeadTracker.transform.position;
-            return myPlayer.VanillaPlayer.transform.position;
+            if (HeadTracker.AsBoolFast()) return HeadTracker.transform.GetPositionFast();
+            return myPlayer.Position;
         }
 
         public LongNeckMode(Rokurokubi.Ability rokurokubi, float angleDeg)
@@ -68,7 +68,7 @@ internal class Rokurokubi : DefinedSingleAbilityRoleTemplate<Rokurokubi.Ability>
             RpcStartLongNeck.Invoke((myPlayer, angleDeg));
 
             LongBoi = GetLongBody(myPlayer);
-            HeadTracker = UnityHelper.CreateObject("HeadTracker", null, myPlayer.VanillaPlayer.transform.position);
+            HeadTracker = UnityHelper.CreateObject("HeadTracker", null, myPlayer.Position.AsVector3());
             var light = AmongUsUtil.GenerateCustomLight(new Vector2(0f, 0f));
             light.transform.SetParent(HeadTracker.transform);
             light.transform.localPosition = new(0f, 0f, -11f);
@@ -219,7 +219,7 @@ internal class Rokurokubi : DefinedSingleAbilityRoleTemplate<Rokurokubi.Ability>
         static private RemoteProcess<(GamePlayer player, float goal)> RpcUpdateLongNeck = new("updateLongNeck", (message, _) =>
         {
             var longBoiBody = GetLongBody(message.player);
-            if (longBoiBody.AsBoolFast() && longBoiBody.targetHeight > 0f) longBoiBody.targetHeight = message.goal < 0f ? Ability.NeckMaxLength : Mathf.Max(0.1f, message.goal);
+            if (longBoiBody.AsBoolFast() && longBoiBody.targetHeight > 0f) longBoiBody.targetHeight = message.goal < 0f ? Ability.NeckMaxLength : Mathn.Max(0.1f, message.goal);
         });
 
         static private RemoteProcess<(GamePlayer player, float angleDeg)> RpcStartLongNeck = new("longNeck", (message, _) =>
@@ -305,7 +305,7 @@ internal class Rokurokubi : DefinedSingleAbilityRoleTemplate<Rokurokubi.Ability>
             {
                 var longBoi = GetLongBody(message.player);
                 var height = longBoi.calculatedNeckHeight;
-                var speed = Mathf.Max(CraneNeckSpeed * 1.5f, height);
+                var speed = Mathn.Max(CraneNeckSpeed * 1.5f, height);
                 IEnumerator CoUpdateNeck()
                 {
                     while (height > 0f && longBoi.isActiveAndEnabled)
@@ -392,7 +392,7 @@ internal class Rokurokubi : DefinedSingleAbilityRoleTemplate<Rokurokubi.Ability>
                 calmButton.BindSubKey(Virial.Compat.VirtualKeyInput.AidAction, "rokurokubi.pause");
 
                 var killAchToken = new AchievementToken<int>("rokurokubi.common1", 0, (val, _) => val >= 2);
-                var tracker = ObjectTrackers.ForPlayerlike(this, AmongUsLLImpl.Instance.VanillaKillDistance + (AutoKillOption ? 0.2f : 0.5f), () => CurrentLongNeckMode?.GetHeadPos() ?? MyPlayer.VanillaPlayer.transform.position, ObjectTrackers.PlayerlikeLocalKillablePredicate, null, UnityEngine.Color.red, false, true);
+                var tracker = ObjectTrackers.ForPlayerlike(this, AmongUsLLImpl.Instance.VanillaKillDistance + (AutoKillOption ? 0.2f : 0.5f), () => CurrentLongNeckMode?.GetHeadPos() ?? MyPlayer.Position, ObjectTrackers.PlayerlikeLocalKillablePredicate, null, UnityEngine.Color.red, false, true);
                 var killButton = NebulaAPI.Modules.PlayerlikeKillButton(this, MyPlayer, new Virial.Events.Player.PlayerInteractParameter(IsKillInteraction: true), true, Virial.Compat.VirtualKeyInput.Kill, null, 1f, "kill", ModAbilityButton.LabelType.Impostor, null,
                     (target, button) => {
                         var myPos = MyPlayer.Position;
@@ -652,7 +652,7 @@ internal class Rokurokubi : DefinedSingleAbilityRoleTemplate<Rokurokubi.Ability>
             longBoi.myPlayerControl.MyPhysics.Animations.UpdateCosmeticOffset(unityOffset, unityOffset);
             longBoi.cosmeticLayer.UpdateCosmeticOffset(num, false);
 
-            lastHeadY = longBoi.headSprite.transform.position.y;
+            lastHeadY = longBoi.headSprite.transform.GetPositionFast().y;
         }
 
         private float lastHeadY = 0f;
@@ -697,7 +697,7 @@ internal class Rokurokubi : DefinedSingleAbilityRoleTemplate<Rokurokubi.Ability>
 
 file static class LongNeckHelpers
 {
-    public static float GetBaseSumNeckRate(this LongBoiPlayerBody longBoi) => Mathf.Clamp01(longBoi.calculatedNeckHeight / Rokurokubi.Ability.NeckBaseSumLength);
-    public static float GetBaseCurveNeckRate(this LongBoiPlayerBody longBoi) => Mathf.Clamp01((longBoi.calculatedNeckHeight - Rokurokubi.Ability.NeckBaseStraightLength) / Rokurokubi.Ability.NeckBaseCurveLength);
-    public static float GetBaseStraightNeckRate(this LongBoiPlayerBody longBoi) => Mathf.Clamp01(longBoi.calculatedNeckHeight / Rokurokubi.Ability.NeckBaseStraightLength);
+    public static float GetBaseSumNeckRate(this LongBoiPlayerBody longBoi) => Mathn.Clamp01(longBoi.calculatedNeckHeight / Rokurokubi.Ability.NeckBaseSumLength);
+    public static float GetBaseCurveNeckRate(this LongBoiPlayerBody longBoi) => Mathn.Clamp01((longBoi.calculatedNeckHeight - Rokurokubi.Ability.NeckBaseStraightLength) / Rokurokubi.Ability.NeckBaseCurveLength);
+    public static float GetBaseStraightNeckRate(this LongBoiPlayerBody longBoi) => Mathn.Clamp01(longBoi.calculatedNeckHeight / Rokurokubi.Ability.NeckBaseStraightLength);
 }

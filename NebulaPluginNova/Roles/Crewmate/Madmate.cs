@@ -22,13 +22,13 @@ internal static class MadmateAssignmentSetUp
 {
     public static void Preprocess(NebulaPreprocessor preprocessor)
     {
-        preprocessor.RegisterAssignmentType(() => Madmate.MyRole, (lastArgs, role) => Madmate.GenerateArgument(role), "madden", new(Palette.ImpostorRed), (status, role) => status.HasFlag(AbilityAssignmentStatus.CanLoadToMadmate), () => (Madmate.MyRole as ISpawnable).CanSpawnInCurrentGame && Madmate.MaddenRoleOption);
+        preprocessor.RegisterAssignmentType(() => Madmate.MyRole, (lastArgs, role) => Madmate.GenerateArgument(role), "madden", VColor.ImpostorColor, (status, role) => status.HasFlag(AbilityAssignmentStatus.CanLoadToMadmate), () => (Madmate.MyRole as ISpawnable).CanSpawnInCurrentGame && Madmate.MaddenRoleOption);
     }
 }
 
 public class Madmate : DefinedRoleTemplate, HasCitation, DefinedRole, IAssignableDocument
 {
-    private Madmate() : base("madmate", new(Palette.ImpostorRed), RoleCategory.CrewmateRole, Crewmate.MyTeam, 
+    private Madmate() : base("madmate", VColor.ImpostorColor, RoleCategory.CrewmateRole, Crewmate.MyTeam, 
         [CanFixLightOption, CanFixCommsOption, CanSuicideOption, SuicideCoolDownOption, HasImpostorVisionOption, CanUseVentsOption, CanMoveInVentsOption, MaddenRoleOption, 
         new GroupConfiguration("options.role.madmate.group.embroil", [EmbroilVotersOnExileOption, LimitEmbroiledPlayersToVotersOption, EmbroilDelayOption], GroupConfigurationColor.ImpostorRed), 
         new GroupConfiguration("options.role.madmate.group.identification", [CanIdentifyImpostorsOptionEditor], GroupConfigurationColor.ImpostorRed)
@@ -209,7 +209,7 @@ public class Madmate : DefinedRoleTemplate, HasCitation, DefinedRole, IAssignabl
         [Local]
         void DecorateOtherPlayerName(PlayerDecorateNameEvent ev)
         {
-            if (impostors.Contains(ev.Player.PlayerId) && ev.Player.IsImpostor) ev.Color = new(Palette.ImpostorRed);
+            if (impostors.Contains(ev.Player.PlayerId) && ev.Player.IsImpostor) ev.Color = VColor.ImpostorColor;
             
         }
 

@@ -16,16 +16,12 @@ file static class IgnoreShadowHelpers
 {
     static public void SetIgnoreShadow(bool ignore = true, bool showNameText = true)
     {
-        NebulaProfiler.LapTimer("Before SetIgnoreShadow");
         foreach (var p in NebulaGameManager.Instance!.AllPlayerlike) p.UpdateVisibility(null, false, ignore, showNameText);
-        NebulaProfiler.LapTimer("SetIgnoreShadow");
     }
 
     static public void ResetIgnoreShadow()
     {
-        NebulaProfiler.LapTimer("Before ResetIgnoreShadow");
         foreach (var p in NebulaGameManager.Instance!.AllPlayerlike) p.UpdateVisibility(null, false, !NebulaGameManager.Instance.WideCamera.DrawShadow);
-        NebulaProfiler.LapTimer("ResetIgnoreShadow");
     }
 }
 file class IgnoreShadowScope : IDisposable
@@ -50,20 +46,34 @@ public class IgnoreShadowCamera : MonoBehaviour
 {
     static IgnoreShadowCamera() => ClassInjector.RegisterTypeInIl2Cpp<IgnoreShadowCamera>();
     public bool ShowNameText = true;
-    void OnPreRender() => IgnoreShadowHelpers.SetIgnoreShadow(true, ShowNameText);
+    void OnPreRender()
+    {
+        IgnoreShadowHelpers.SetIgnoreShadow(true, ShowNameText);
+    }
+    void OnPostRender()
+    {
+        IgnoreShadowHelpers.SetIgnoreShadow(true, ShowNameText);
+    }
 }
 
 public class CustomIgnoreShadowCamera : MonoBehaviour
 {
     static CustomIgnoreShadowCamera() => ClassInjector.RegisterTypeInIl2Cpp<CustomIgnoreShadowCamera>();
     public Func<bool>? IgnoreShadow { get; set; } = null;
-    void OnPreRender() => IgnoreShadowHelpers.SetIgnoreShadow(IgnoreShadow?.Invoke() ?? false);
+    void OnPreRender()
+    {
+        IgnoreShadowHelpers.SetIgnoreShadow(IgnoreShadow?.Invoke() ?? false);
+    }
 }
 
 public class ResetIgnoreShadowCamera : MonoBehaviour
 {
     static ResetIgnoreShadowCamera() => ClassInjector.RegisterTypeInIl2Cpp<ResetIgnoreShadowCamera>();
-    void OnPostRender() => IgnoreShadowHelpers.ResetIgnoreShadow();
+
+    void OnPostRender()
+    {
+        IgnoreShadowHelpers.ResetIgnoreShadow();
+    }
 }
 
 
@@ -74,7 +84,7 @@ public static class AmongUsUtil
     {
         var currentOver = PassiveButtonManager.Instance.currentOver;
         if (!currentOver.AsBoolFast() || !uiElem.AsBoolFast()) return false;
-        return currentOver.GetInstanceID() == uiElem.GetInstanceID();
+        return currentOver.EqualsFast(uiElem);
     }
 
     public static string GetRoomName(UnityEngine.Vector2 position, bool detail = false, bool shortName = false, bool onlyVanillaRoom = false)
@@ -124,16 +134,18 @@ public static class AmongUsUtil
         var mat = renderer.material;
         if (on)
         {
+            color ??= new(1f, 1f, 0f);
             mat.SetFloat("_Outline", 1f);
-            mat.SetColor("_OutlineColor", color ?? Color.yellow);
-            mat.SetColor("_AddColor", color ?? Color.yellow);
+            mat.SetColor("_OutlineColor", color.Value);
+            mat.SetColor("_AddColor", color.Value);
             HighlightManager.AddHighlightedRenderer(renderer);
         }
         else
         {
+            color = new Color(0f, 0f, 0f, 0f);
             mat.SetFloat("_Outline", 0f);
-            mat.SetColor("_OutlineColor", Color.clear);
-            mat.SetColor("_AddColor", Color.clear);
+            mat.SetColor("_OutlineColor", color.Value);
+            mat.SetColor("_AddColor", color.Value);
         }
     }
 
@@ -432,7 +444,7 @@ public static class AmongUsUtil
 
         var playerInfo = GameData.Instance.AddDummy(playerControl);
         
-        playerControl.transform.position = AmongUsLLImpl.LocalPlayer.transform.position;
+        playerControl.transform.position = AmongUsLLImpl.LocalPlayer.transform.GetPositionFast();
         playerControl.GetComponent<DummyBehaviour>().enabled = true;
         playerControl.isDummy = true;
         playerControl.SetName(AccountManager.Instance.GetRandomName());
@@ -742,7 +754,7 @@ public static class AmongUsUtil
         }
     }
 
-    public static Vector2? GetPetPosition(this CosmeticsLayer cLayer) => cLayer.currentPet ? cLayer.currentPet.transform.position : null;
+    public static Vector2? GetPetPosition(this CosmeticsLayer cLayer) => cLayer.currentPet ? cLayer.currentPet.transform.GetPositionFast() : null;
 
     public static void ChangeMoveMode(this PlayerControl player, bool movable)
     {

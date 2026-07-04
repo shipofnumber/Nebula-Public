@@ -123,13 +123,13 @@ file static class ModServerSearcher
         {
             if (failure.Reason == DisconnectReasons.Custom)
             {
-                errorRegions.Add(region.TranslateName == StringNames.NoTranslation ? region.ModTranslatedName() : DestroyableSingleton<TranslationController>.Instance.GetString(region.TranslateName));
+                errorRegions.Add(region.TranslateName == StringNames.NoTranslation ? region.ModTranslatedName() : VanillaTranslationCache.GetString(region.TranslateName));
             }
         }).WrapToIl2Cpp()).ToArray());
 
         if (!found)
         {
-            var errorTxt = DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.ErrorNotFoundGame);
+            var errorTxt = VanillaTranslationCache.GetString(StringNames.ErrorNotFoundGame);
             if (errorRegions.Count > 0)
             {
                 errorTxt += "<br>" + Language.Translate("ui.error.failedToSearchRoom") + "<br>";
@@ -139,7 +139,7 @@ file static class ModServerSearcher
             HttpMatchmakerManager.Instance.SetDisconnectInfoAndShowPopup(new MatchmakerFailure
             {
                 Reason = DisconnectReasons.GameNotFound,
-                CustomDisconnect = DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.ErrorNotFoundGame),
+                CustomDisconnect = VanillaTranslationCache.GetString(StringNames.ErrorNotFoundGame),
                 MatchmakerError = null,
                 ShouldGoOffline = false
             });

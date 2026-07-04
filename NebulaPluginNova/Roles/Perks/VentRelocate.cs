@@ -41,7 +41,7 @@ internal class VentRelocate : PerkFunctionalInstance
         }
         public void RequestReleaseVent(Vent vent)
         {
-            RpcReleaseVent.Invoke((GamePlayer.LocalPlayer, vent.Id, vent.transform.position));
+            RpcReleaseVent.Invoke((GamePlayer.LocalPlayer, vent.Id, vent.transform.GetPositionFast()));
         }
         private void CheckHoldVent(GamePlayer player, Vent vent)
         {
@@ -85,29 +85,27 @@ internal class VentRelocate : PerkFunctionalInstance
             if (TryGetVent(message.ventId, out var vent)) ModSingleton<VentHolderManager>.Instance.CheckAndReleaseVent(message.player, vent, message.pos);
         });
 
-        private bool CheckVentPosition(Vector3 position)
+        private bool CheckVentPosition(VVector2 position)
         {
             var data = MapData.GetCurrentMapData();
             return data.CheckMapArea(position, 0.3f);
         }
         void OnUpdate(GameHudUpdateEvent ev)
         {
-            if (!MeetingHud.Instance)
+            if (!MeetingHud.Instance.AsBoolFast())
             {
                 if (currentLocalHolding != null)
                 {
-                    var currentPos = currentLocalHolding.transform.position;
-                    var targetPos = GamePlayer.LocalPlayer.VanillaPlayer.GetTruePosition();
+                    VVector2 currentPos = currentLocalHolding.transform.GetPositionFast();
+                    var targetPos = GamePlayer.LocalPlayer.TruePosition;
 
-                    Vector3 nextPos;
+                    VVector2 nextPos;
                     if (currentPos.Distance(targetPos) < 0.7f)
-                        nextPos = currentPos + (Vector3)((Vector2)(targetPos - (Vector2)currentPos).Delta(5.5f, 0.02f));
+                        nextPos = currentPos + (targetPos - currentPos).Delta(5.5f, 0.02f);
                     else
                         nextPos = targetPos;
 
-                    nextPos.z = nextPos.y / 1000f + 0.01f;
-
-                    if (CheckVentPosition(nextPos)) currentLocalHolding.transform.position = nextPos;
+                    if (CheckVentPosition(nextPos)) currentLocalHolding.transform.position = nextPos.AsUnityVector3(nextPos.y / 1000f + 0.01f);
                 }
             }
         }

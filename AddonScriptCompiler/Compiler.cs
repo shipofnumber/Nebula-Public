@@ -64,6 +64,8 @@ public static class Compiler
 
         using var dllStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write);
         var emitResult = compilation.Emit(dllStream);
+        dllStream.Flush();
+        dllStream.Close();
 
         // Write log
         string logPath = outputPath + ".log";
@@ -86,6 +88,7 @@ public static class Compiler
         else
         {
             logBuilder.AppendLine("Compilation failed.");
+            if (File.Exists(outputPath)) File.Delete(outputPath);
         }
 
         File.WriteAllText(logPath, logBuilder.ToString(), Encoding.UTF8);

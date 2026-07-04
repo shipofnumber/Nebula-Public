@@ -24,8 +24,8 @@ internal partial class NebulaGameEventListeners
     }
     void NonCrewmateCanSeeTaskTracker(GameHudUpdateEvent ev)
     {
-        if (!progressBar.AsBoolFast() && HudManager.InstanceExists) {
-            progressBar = HudManager.Instance.TaskStuff.transform.GetChild(1).GetComponent<ProgressTracker>();
+        if (!progressBar.AsBoolFast() && AmongUsLLImpl.TryGetHudManager(out var hudManager)) {
+            progressBar = hudManager.TaskStuff.transform.GetChild(1).GetComponent<ProgressTracker>();
             if (progressBar.AsBoolFast())
             {
                 progressBarText = progressBar.transform.GetChild(2).GetComponent<TextMeshPro>();
@@ -33,7 +33,7 @@ internal partial class NebulaGameEventListeners
                 progressBarAspectPosition.updateAlways = true;
             }
         }
-        if (progressBar)
+        if (progressBar.AsBoolFast())
         {
             bool shouldShow = true;
             bool asNonCrew = false;
@@ -75,7 +75,7 @@ internal partial class NebulaGameEventListeners
                 }
                 else
                 {
-                    if (vanillaProgressBarText == null) vanillaProgressBarText = TranslationController.Instance.GetString(StringNames.TotalTasksCompleted);
+                    if (vanillaProgressBarText == null) vanillaProgressBarText = VanillaTranslationCache.GetString(StringNames.TotalTasksCompleted);
                     progressBarText.text = vanillaProgressBarText;
                 }
             }
@@ -118,8 +118,9 @@ public static class UpdateProgressTrackerPatch
         float num2 = (float)completed / (float)quota;
         float nextCurValue = Mathn.Lerp(__instance.curValue, num2, Time.fixedDeltaTime * 2f);
         __instance.curValue = nextCurValue;
-        tileParent.material.SetFloat("_Buckets", (float)1f);
-        tileParent.material.SetFloat("_FullBuckets", nextCurValue);
+        var mat = tileParent.material;
+        mat.SetFloat("_Buckets", (float)1f);
+        mat.SetFloat("_FullBuckets", nextCurValue);
 
         return false;
     }

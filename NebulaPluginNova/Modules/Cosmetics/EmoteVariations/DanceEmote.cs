@@ -14,7 +14,7 @@ internal class DanceEmote : AbstractEmote, IEmote
     private const string AttrTag = "DanceEmote";
     public override IEnumerator CoPlayEmote(PlayerControl player)
     {
-        SizeModulator sizeModulator = new(Vector2.one, 10000f, false, 100, AttrTag, false, false);
+        SizeModulator sizeModulator = new(VVector2.One, 10000f, false, 100, AttrTag, false, false);
         PlayerModInfo.RpcAttrModulator.LocalInvoke((player.PlayerId, sizeModulator, true));
 
         yield return ManagedEffects.Lerp(0.15f, p => sizeModulator.Size = new(1f, 1f + p * 0.1f));
@@ -33,7 +33,7 @@ internal class DanceEmote : AbstractEmote, IEmote
             p = 0f;
             while (p < halfPi)
             {
-                float sin = Mathf.Sin(halfPi - p);
+                float sin = Mathn.Sin(halfPi - p);
                 sizeModulator.Size = new(1f + sin * 0.35f, 1.1f - sin * 0.3f);
                 yield return null;
                 p += Time.deltaTime * 12f;

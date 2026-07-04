@@ -1,5 +1,6 @@
 ﻿using Nebula.Behavior;
 using Nebula.Roles.Abilities;
+using Rewired;
 using Virial.Runtime;
 
 namespace Nebula.Utilities;
@@ -86,14 +87,14 @@ public class VirtualInput
 [NebulaPreprocess(PreprocessPhase.PostBuildNoS)]
 public class NebulaInput
 {
-    public static bool SomeUiIsActive => (ControllerManager.Instance.AsBoolFast(out var controller) && controller.CurrentUiState?.BackButton != null) || NebulaManager.Instance.HasSomeUI || TextField.AnyoneValid || DyingMessages.ThereIsAnyCanvas;
+    public static bool SomeUiIsActive => (ControllerManager.Instance.AsBoolFast(out var controller) && (controller.CurrentUiState?.BackButton.AsBoolFast() ?? false)) || NebulaManager.Instance.HasSomeUI || TextField.AnyoneValid || DyingMessages.ThereIsAnyCanvas;
     private static bool SomeInputUiIsActive
     {
         get
         {
             try
             {
-                return (HudManager.InstanceExists && HudManager.Instance.Chat.freeChatField.textArea.hasFocus) || TextField.AnyoneValid;
+                return (AmongUsLLImpl.TryGetHudManager(out _, out var bridge) && bridge.Chat.freeChatField.textArea.hasFocus) || TextField.AnyoneValid;
             }
             catch
             {
@@ -146,11 +147,22 @@ public class NebulaInput
         return modInput.TryGetValue(type, out var result) ? result : VirtualInput.EmptyInput;
     }
 
+    private static KeyboardMap cachedKeyboardMap = null!;
+    private static void RefreshKeyboardMapCache() {
+        LogUtils.WriteToConsole("State: " + Rewired.InputMapper.Default.status);
+        cachedKeyboardMap = Rewired.ReInput.mapping.GetKeyboardMapInstanceSavedOrDefault(0, 0, 0);
+    }
     static NebulaInput()
     {
+        //キャッシュの更新
+        Rewired.InputMapper.Default.add_InputMappedEvent((Il2CppSystem.Action<InputMapper.InputMappedEventData>)(_ => RefreshKeyboardMapCache()));
+        ReInput.add_ControllerConnectedEvent((Il2CppSystem.Action<ControllerStatusChangedEventArgs>)(_ => RefreshKeyboardMapCache()));
+        ReInput.add_ControllerDisconnectedEvent((Il2CppSystem.Action<ControllerStatusChangedEventArgs>)(_ => RefreshKeyboardMapCache()));
+
         IEnumerable<KeyCode> GetVanillaKeyCode(int actionId)
         {
-            foreach (var action in Rewired.ReInput.mapping.GetKeyboardMapInstanceSavedOrDefault(0, 0, 0).GetButtonMapsWithAction(actionId)) yield return action.keyCode;
+            if (cachedKeyboardMap == null) RefreshKeyboardMapCache();
+            foreach (var action in cachedKeyboardMap.GetButtonMapsWithAction(actionId)) yield return action.keyCode;
         }
 
         Func<KeyCode> GetModKeyCodeGetter(string translationKey, KeyCode defaultKey)

@@ -12,7 +12,7 @@ namespace Nebula.Roles.Impostor;
 [NebulaRPCHolder]
 public class Camouflager : DefinedSingleAbilityRoleTemplate<Camouflager.Ability>, HasCitation, DefinedRole, IAssignableDocument
 {
-    private Camouflager():base("camouflager", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [CamoCoolDownOption, CamoDurationOption, CanInvokeCamoAfterDeathOption])
+    private Camouflager():base("camouflager", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [CamoCoolDownOption, CamoDurationOption, CanInvokeCamoAfterDeathOption])
     {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagBeginner);
     }

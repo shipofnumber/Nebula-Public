@@ -35,7 +35,7 @@ internal class CustomShadow : MonoBehaviour
         //最初は半分の大きさ
         var height = cam.orthographicSize;
         var width = height * cam.aspect;
-        Vector2 orig = cam.transform.position;
+        VVector2 orig = cam.ModGameObject(false).Position;
         orig.x -= width;
         orig.y -= height;
         //2倍にしておく
@@ -45,10 +45,16 @@ internal class CustomShadow : MonoBehaviour
         float ConvertX(float x) => (x - orig.x) / width;
         float ConvertY(float y) => (y - orig.y) / height;
 
-        var spriteWidthHalf = Renderer.sprite.rect.width / Renderer.sprite.pixelsPerUnit * 0.5f * Renderer.transform.localScale.x;
-        var spriteHeightHalf = Renderer.sprite.rect.height / Renderer.sprite.pixelsPerUnit * 0.5f * Renderer.transform.localScale.y;
-        var rendererX = Renderer.transform.position.x;
-        var rendererY = Renderer.transform.position.y;
+        var rendererSprite = Renderer.sprite;
+        var rendererSpriteRect = rendererSprite.rect;
+        var rendererTransform = Renderer.ModGameObject(false);
+        var rendererPosition = rendererTransform.Position;
+        var rendererLocalScale = rendererTransform.LocalScale;
+
+        var spriteWidthHalf = rendererSpriteRect.width / rendererSprite.pixelsPerUnit * 0.5f * rendererLocalScale.x;
+        var spriteHeightHalf = rendererSpriteRect.height / rendererSprite.pixelsPerUnit * 0.5f * rendererLocalScale.y;
+        var rendererX = rendererPosition.x;
+        var rendererY = rendererPosition.y;
         Renderer.material.SetVector("_ShadowRange", new(
             ConvertX(rendererX - spriteWidthHalf),
             ConvertX(rendererX + spriteWidthHalf),

@@ -184,8 +184,8 @@ public interface IPlayerlike : IModuleContainer, IGameObject
 
 internal interface IPlayerLogics
 {
-    internal UnityEngine.Vector2 Position { get; set; }
-    internal UnityEngine.Vector2 TruePosition { get; }
+    internal Virial.Compat.Vector2 Position { get; set; }
+    internal Virial.Compat.Vector2 TruePosition { get; }
     internal Collider2D GroundCollider { get; }
     internal PlayerAnimations Animations { get; }
     internal Rigidbody2D Body { get; }

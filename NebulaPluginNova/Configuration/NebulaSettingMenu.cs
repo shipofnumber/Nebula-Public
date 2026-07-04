@@ -32,7 +32,7 @@ public class NebulaSettingMenu : MonoBehaviour
     SpriteRenderer RightImage = null!;
     static public NebulaSettingMenu Instance { get; private set; } = null!;
 
-    static private readonly MultiImage MouseButton = DividedSpriteLoader.FromResource("Nebula.Resources.MouseButton.png", 100f, 3, 1);
+    static internal readonly MultiImage MouseButton = DividedSpriteLoader.FromResource("Nebula.Resources.MouseButton.png", 100f, 3, 1);
     public void Start()
     {
         Instance = this;

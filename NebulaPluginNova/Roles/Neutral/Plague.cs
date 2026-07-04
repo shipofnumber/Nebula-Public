@@ -45,7 +45,7 @@ internal class Plague : DefinedRoleTemplate, DefinedRole, IAssignableDocument
                 plague.CanGainPoison,
                 console =>
             {
-                if(NebulaSyncObject.GetObjects<PoisonPod>(MyTag).Find(obj => obj.MyRenderer.gameObject.GetInstanceID() == console.gameObject.GetInstanceID(), out var pod))
+                if(NebulaSyncObject.GetObjects<PoisonPod>(MyTag).Find(obj => obj.MyRenderer.gameObject.GetInstanceIdFast() == console.gameObject.GetInstanceIdFast(), out var pod))
                 {
                     if ((GamePlayer.LocalPlayer?.TryGetRole<Instance>(out var plague) ?? false) && plague.TryGainPoison()) pod.Use();
                 }

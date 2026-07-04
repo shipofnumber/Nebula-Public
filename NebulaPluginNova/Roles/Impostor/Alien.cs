@@ -9,7 +9,7 @@ namespace Nebula.Roles.Impostor;
 
 public class Alien : DefinedSingleAbilityRoleTemplate<Alien.Ability>, HasCitation, DefinedRole, IAssignableDocument
 {
-    private Alien(): base("alien", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [EMICoolDownOption, EMIDurationOption, InvalidateCoolDownOption, NumOfInvalidationsOption])
+    private Alien(): base("alien", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [EMICoolDownOption, EMIDurationOption, InvalidateCoolDownOption, NumOfInvalidationsOption])
     {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagSNR);
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Alien.png");

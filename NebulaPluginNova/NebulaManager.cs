@@ -159,7 +159,7 @@ public class MouseOverPopup : MonoBehaviour
             VVector2 upper = UnityHelper.ScreenToWorldPoint(new(NebulaAPI.AmongUs.ScreenWidth - 10f, NebulaAPI.AmongUs.ScreenHeight - 10f), LayerExpansion.GetUILayer());
             float diff;
 
-            VVector3 adjustedPos = transform.position;
+            VVector3 adjustedPos = transform.GetPositionFast();
 
             diff = (adjustedPos.x + xRange[0]) - lower.x;
             if (diff < 0f) adjustedPos.x -= diff;
@@ -386,7 +386,7 @@ public class NebulaManager : MonoBehaviour
         }
     }
     List<PopupProvider> PopupProviders = null!;
-    private List<Tuple<GameObject, PassiveButton?>> allModUi = [];
+    private List<Tuple<Virial.Compat.ModGameObject, PassiveButton?>> allModUi = [];
     static private List<MetaCommand> commands = [];
     static public NebulaManager Instance { get; private set; } = null!;
 
@@ -498,13 +498,13 @@ public class NebulaManager : MonoBehaviour
 
     public void CloseAllUI()
     {
-        foreach (var ui in allModUi) GameObject.Destroy(ui.Item1);
+        foreach (var ui in allModUi) GameObject.Destroy(ui.Item1.GetUnityObject());
         allModUi.Clear();
     }
 
     public void RegisterUI(GameObject uiObj,PassiveButton? closeButton)
     {
-        allModUi.Add(new Tuple<GameObject, PassiveButton?>(uiObj,closeButton));
+        allModUi.Add(new(uiObj.ModGameObject(),closeButton));
     }
 
     public bool HasSomeUI => allModUi.Count > 0;
@@ -553,9 +553,6 @@ public class NebulaManager : MonoBehaviour
     {
         if (PreloadManager.FinishedPreload)
         {
-            //NebulaProfiler.ShowPtrStatus();
-            NebulaProfiler.LapTimer("Before NebulaManager.Update");
-
             //スクリーンショット
             if (NebulaInput.GetInput(Virial.Compat.VirtualKeyInput.Screenshot).KeyDownForAction) StartCoroutine(CaptureAndSave().WrapToIl2Cpp());
 
@@ -568,7 +565,7 @@ public class NebulaManager : MonoBehaviour
             }
 
 
-            if (AmongUsClient.Instance && AmongUsClient.Instance.GameState != InnerNet.InnerNetClient.GameStates.NotJoined)
+            if (AmongUsLLImpl.TryGetAmongUsClientInstance(out var auInstance) && auInstance.GameState != InnerNet.InnerNetClient.GameStates.NotJoined)
             {
                 var stampInput = NebulaInput.GetInput(Virial.Compat.VirtualKeyInput.Stamp);
                 if (stampInput.KeyDownForAction)
@@ -755,24 +752,19 @@ public class NebulaManager : MonoBehaviour
                     }
                 }
             }
-
-            NebulaProfiler.LapTimer("NebulaManager.Update");
         }
 
-        NebulaProfiler.LapTimer("Before Dialogs", 150);
         //ダイアログ管理
-        allModUi.RemoveAll(tuple => !tuple.Item1);
+        allModUi.RemoveAll(tuple => !tuple.Item1.GetUnityObject().AsBoolFast());
         for (int i = 0; i < allModUi.Count; i++)
         {
-            var lPos = allModUi[i].Item1.transform.localPosition;
-            allModUi[i].Item1.transform.localPosition = new Vector3(lPos.x, lPos.y, -750f - i * 30f);
+            var lPos = allModUi[i].Item1.LocalPosition;
+            allModUi[i].Item1.LocalPosition = new VVector3(lPos.x, lPos.y, -750f - i * 30f);
             allModUi[i].Item2?.gameObject.SetActive(i == allModUi.Count - 1);
         }
 
         if (allModUi.Count > 0 && Input.GetKeyDown(KeyCode.Escape))
             allModUi[^1].Item2?.OnClick.Invoke();
-
-        NebulaProfiler.LapTimer("Dialogs");
 
         //静的に表示されるオーバーレイ
         PopupProviders.RemoveAll(p => p.isFinallyDead());
@@ -788,20 +780,11 @@ public class NebulaManager : MonoBehaviour
             mouseOverPopup.UpdatePosition(parameters.screenPosition.Invoke(), true);
         }
 
-        NebulaProfiler.LapTimer("Overlays");
-
         MoreCosmic.Update();
-
-        NebulaProfiler.LapTimer("MoreCosmic");
 
         ringMenu.Update();
 
-        NebulaProfiler.LapTimer("RingMenu");
-
-
         OnUpdate(SceneManager.GetActiveScene().name);
-
-        NebulaProfiler.LapTimer("NebulaManager.OnUpdate");
     }
 
     public void Awake()
@@ -809,7 +792,7 @@ public class NebulaManager : MonoBehaviour
         Instance = this;
         gameObject.layer = LayerExpansion.GetUILayer();
 
-        mouseOverPopup = UnityHelper.CreateObject<MouseOverPopup>("MouseOverPopup",transform,Vector3.zero);
+        mouseOverPopup = UnityHelper.CreateObject<MouseOverPopup>("MouseOverPopup", transform, VVector3.Zero);
         debugScreen = new DebugScreen(transform);
 
         PopupProviders = [];

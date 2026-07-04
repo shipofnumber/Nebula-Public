@@ -200,7 +200,7 @@ public abstract class MapData
     {
         if (radius > 0f)
         {
-            int num = Physics2D.OverlapCircleNonAlloc(position, radius, PhysicsHelpers.colliderHits, Constants.ShipAndAllObjectsMask);
+            int num = FastMethods.OverlapCircleNonAllocFast(position, radius, PhysicsHelpers.colliderHits, Constants.ShipAndAllObjectsMask);
             if (num > 0) for (int i = 0; i < num; i++) if (!PhysicsHelpers.colliderHits[i].isTrigger) return false;
         }
 

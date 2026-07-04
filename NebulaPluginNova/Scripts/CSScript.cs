@@ -42,9 +42,6 @@ internal static class AddonScriptManagerLoader
 
     static IEnumerator Preprocess(NebulaPreprocessor preprocessor)
     {
-        Patches.LoadPatch.LoadingText = "Compiling Addon Scripts";
-        yield return null;
-
         yield return AddonScriptManager.CoLoad(preprocessor);
     }
 }
@@ -132,14 +129,33 @@ internal static class AddonScriptManager
     {
         Log = NebulaAPI.Logging.NebulaLogger("Scripting");
 
+        string versionCheckPath = Path.Combine(PathHelpers.DllCacheDirPath, "compileInfo.txt");
+        if (!File.Exists(versionCheckPath) || File.ReadAllText(versionCheckPath) != NebulaPlugin.PluginBuildNumStr)
+        {
+            preprocessor.SetLoadingText("Deleting Addon Caches");
+            
+            if (Directory.Exists(PathHelpers.DllCacheDirPath)) Directory.Delete(PathHelpers.DllCacheDirPath, true);
+            do { yield return Effects.Wait(0.5f); } while (Directory.Exists(PathHelpers.DllCacheDirPath));
+
+            Directory.CreateDirectory(PathHelpers.DllCacheDirPath);
+            do { yield return Effects.Wait(0.5f); } while (!Directory.Exists(PathHelpers.DllCacheDirPath));
+
+            File.WriteAllText(versionCheckPath, NebulaPlugin.PluginBuildNumStr);
+        }
+
         // Write references.txt at the start
         AddonScriptManagerLoader.SetUp();
+
+        preprocessor.SetLoadingText("Compiling Addon Scripts");
+        yield return null;
 
         if (!Directory.Exists(PathHelpers.DllCacheDirPath)) Directory.CreateDirectory(PathHelpers.DllCacheDirPath);
 
 #if PC
         string referencesPath = Path.Combine(PathHelpers.DllCacheDirPath, "references.txt");
         File.WriteAllLines(referencesPath, AddonScriptManagerLoader.ReferenceAssemblies);
+
+       
 #endif
 
         bool triedChecking = false;
@@ -208,7 +224,7 @@ internal static class AddonScriptManager
 
                 foreach (var lib in libraries)
                 {
-                    var fileName = $"{addon.Id}_{addon.HandshakeHash.ToBase36()}_{lib.Name.Substring(libPrefix.Length, lib.Name.Length - libPrefix.Length - 4)}.dll";
+                    var fileName = $"{addon.Id}_{addon.HandshakeHash.ToBase36()}_{lib.FullName.Substring(libPrefix.Length, lib.FullName.Length - libPrefix.Length - 4)}.dll";
 
                     if (!TryLoadCache(fileName, out var libPath) || !TryLoadFrom(libPath, out var libAssembly))
                     {

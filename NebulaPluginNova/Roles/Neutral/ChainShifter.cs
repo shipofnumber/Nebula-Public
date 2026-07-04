@@ -116,15 +116,16 @@ public class ChainShifter : DefinedRoleTemplate, HasCitation, DefinedRole
                     int leftQuota = 0;
                     if (shiftTarget.Tasks.IsCrewmateTask && shiftTarget.Tasks.HasExecutableTasks)
                     {
-                        leftCrewmateTask = Mathf.Max(0, shiftTarget.Tasks.CurrentTasks - shiftTarget.Tasks.CurrentCompleted);
-                        leftQuota = Mathf.Max(0, shiftTarget.Tasks.Quota - shiftTarget.Tasks.TotalCompleted);
+                        leftCrewmateTask = Mathn.Max(0, shiftTarget.Tasks.CurrentTasks - shiftTarget.Tasks.CurrentCompleted);
+                        leftQuota = Mathn.Max(0, shiftTarget.Tasks.Quota - shiftTarget.Tasks.TotalCompleted);
                     }
 
                     if (leftCrewmateTask > 0)
                     {
-                        int commonTasks = GameOptionsManager.Instance.CurrentGameOptions.GetInt(AmongUs.GameOptions.Int32OptionNames.NumCommonTasks);
-                        int shortTasks = GameOptionsManager.Instance.CurrentGameOptions.GetInt(AmongUs.GameOptions.Int32OptionNames.NumShortTasks);
-                        int longTasks = GameOptionsManager.Instance.CurrentGameOptions.GetInt(AmongUs.GameOptions.Int32OptionNames.NumLongTasks);
+                        var gameOptions = AmongUsLLImpl.CurrentGameOptionsInstance;
+                        int commonTasks = gameOptions.GetInt(AmongUs.GameOptions.Int32OptionNames.NumCommonTasks);
+                        int shortTasks = gameOptions.GetInt(AmongUs.GameOptions.Int32OptionNames.NumShortTasks);
+                        int longTasks = gameOptions.GetInt(AmongUs.GameOptions.Int32OptionNames.NumLongTasks);
                         float longWeight = (float)longTasks / (float)(commonTasks + shortTasks + longTasks);
                         float commonWeight = (float)commonTasks / (float)(commonTasks + shortTasks + longTasks);
 

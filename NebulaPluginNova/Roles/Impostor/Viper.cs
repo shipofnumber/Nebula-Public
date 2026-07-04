@@ -23,7 +23,7 @@ namespace Nebula.Roles.Impostor;
 
 internal class Viper : DefinedSingleAbilityRoleTemplate<Viper.Ability>, HasCitation, DefinedRole
 {
-    private Viper() : base("viper", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [AcidCooldownOption, DissolveDurationOption, AcidLeavesBoneOption, CanReportBoneOption])
+    private Viper() : base("viper", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [AcidCooldownOption, DissolveDurationOption, AcidLeavesBoneOption, CanReportBoneOption])
     {
     }
     Citation? HasCitation.Citation => Citations.AmongUs;

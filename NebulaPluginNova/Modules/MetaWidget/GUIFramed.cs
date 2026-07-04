@@ -62,13 +62,13 @@ public class NoSGUIFramedConfiguration : AbstractGUIWidget
 {
     private TextComponent textComponent;
     public GUIWidgetSupplier? Inner { get; }
-    private Color color;
+    private VColor color;
     static private Virial.Compat.Vector2 margin = new(0.25f, 0.1f);
     static private Virial.Compat.Vector2 outsideMargin = new(0f, 0.15f);
     static private float innerOffsetY = -0.1f;
 
     static private Image backgroundSprite = SpriteLoader.FromResource("Nebula.Resources.ConfigurationGroup.png", 100f);
-    public NoSGUIFramedConfiguration(TextComponent title, GUIWidgetSupplier? inner, Color color) : base(GUIAlignment.Left)
+    public NoSGUIFramedConfiguration(TextComponent title, GUIWidgetSupplier? inner, VColor color) : base(GUIAlignment.Left)
     {
         this.Inner = inner;
         this.textComponent = title;
@@ -109,7 +109,7 @@ public class NoSGUIFramedConfiguration : AbstractGUIWidget
                 new UnityEngine.Vector3(left + backgroundSprite.GetSprite().bounds.size.x * 0.5f, top ,-0.01f), LayerExpansion.GetUILayer());
             textBackRenderer.sprite = backgroundSprite.GetSprite();
             textBackRenderer.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
-            textBackRenderer.color = color;
+            textBackRenderer.color = color.ToUnityColor();
             textBackRenderer.sortingOrder = 1;
         }
 

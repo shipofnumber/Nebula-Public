@@ -16,7 +16,7 @@ public class Jester : DefinedRoleTemplate, HasCitation, DefinedRole, IAssignable
     static readonly public RoleTeam MyTeam = NebulaAPI.Preprocessor!.CreateTeam("teams.jester", new(253,84,167), TeamRevealType.OnlyMe);
 
     private Jester() : base("jester", MyTeam.Color, RoleCategory.NeutralRole, MyTeam, [VentConfiguration, CanDragDeadBodyOption, CanFixLightOption, CanFixCommsOption,
-        TaskConfiguration.AsGroup(new(GroupConfigurationColor.ToDarkenColor(MyTeam.Color.ToUnityColor()))),
+        TaskConfiguration.AsGroup(GroupConfigurationColor.ToDarkenColor(MyTeam.Color)),
         ]) {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagBeginner);
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Jester.png");

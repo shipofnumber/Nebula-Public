@@ -25,7 +25,7 @@ using static UnityEngine.UI.GridLayoutGroup;
 
 namespace Nebula.Roles.Abilities;
 
-public record DyingMessageBrush(Color Color, float Width);
+public record DyingMessageBrush(VColor Color, float Width);
 public class DyingMessageCanvasRenderRequest : MonoBehaviour
 {
     static DyingMessageCanvasRenderRequest() => ClassInjector.RegisterTypeInIl2Cpp<DyingMessageCanvasRenderRequest>();
@@ -48,22 +48,21 @@ public class DyingMessageCanvasRenderRequest : MonoBehaviour
                 storedQueue.Enqueue((brush, [point]));
         }
     }
-    public bool HasNoRequest => requests.Count == 0;
+    public bool HasNoRequest => requests.Count == 0 && storedQueue.Count == 0;
     private RenderTexture myTexture;
     private Material glMaterial;
     private DyingMessageBrush? brush;
     public float brushRadius = 0.014f;
 
-    public const float DyingMessageBrushRadius = 0.014f;
-    public const float PaintQuizBrushRadius = 0.003f;
+    public const float DefaultBrushRadius = 0.014f;
 
-    public void SetUp(RenderTexture texture, float brushRadius)
+    public void SetUp(RenderTexture texture, float brushRadius, VColor clearColor)
     {
         this.brushRadius = brushRadius;
         myTexture = texture;
         glMaterial = new(Shader.Find("Unlit/Color"));
         //glMaterial.color = Color.red;
-        ClearRenderTexture(myTexture);
+        ClearRenderTexture(myTexture, clearColor);
     }
     void OnPostRender()
     {
@@ -76,7 +75,7 @@ public class DyingMessageCanvasRenderRequest : MonoBehaviour
             var next = storedQueue.Dequeue();
             requests = next.dots;
             brush = next.brush;
-            glMaterial.color = brush?.Color ?? Color.white;
+            glMaterial.color = (brush?.Color ?? VColor.White).ToUnityColor();
             brushRadius = brush?.Width ?? 0.014f;
         }
 
@@ -135,10 +134,10 @@ public class DyingMessageCanvasRenderRequest : MonoBehaviour
         requests.Clear();
     }
 
-    void ClearRenderTexture(RenderTexture rt)
+    void ClearRenderTexture(RenderTexture rt, VColor clearColor)
     {
         RenderTexture.active = rt;
-        GL.Clear(true, true, new Color(0, 0, 0, 0));
+        GL.Clear(true, true, clearColor.ToUnityColor());
         RenderTexture.active = null;
     }
 }
@@ -148,9 +147,15 @@ internal class DyingMessageCanvas : MonoBehaviour
 {
     static DyingMessageCanvas() => ClassInjector.RegisterTypeInIl2Cpp<DyingMessageCanvas>(); 
 
+    public const float DyingMessageMinDistance = 0.01f;
+    public const float PaintQuizMinDistance = 0.0035f;
+    public const int DyingMessageSerializeScale = 2;
+    public const int PaintQuizSerializeScale = 8;
+
     private int TextureSize = 512;
     private float rendererSize = 3.5f;
     public float minDistance = 0.01f; // 同じ場所に書かないための閾値
+    private int serializeScale = 1;
 
     private RenderTexture canvas;
     private MeshRenderer canvasRenderer;
@@ -160,6 +165,8 @@ internal class DyingMessageCanvas : MonoBehaviour
 
     private List<VVector2> currentStroke = [];
     private List<List<VVector2>> allStrokes = [];
+    private List<DyingMessageBrush?> allStrokeBrushes = [];
+    private DyingMessageBrush? currentStrokeBrush = null;
 
     private bool asDyingMessage = false;
     private bool asQuizCanvas = false;
@@ -174,6 +181,7 @@ internal class DyingMessageCanvas : MonoBehaviour
     private DyingMessageBrush? brush;
     private DefinedAssignable? assignable;
     private float brushRadius = 0f;
+    private bool isLocked = false;
 
     [HideFromIl2Cpp]
     public void SetUpAsDyingMessage(float leftTime, VVector2 pos, DefinedAssignable? assignable, Action<Texture2D>? callBack, Action? onFailed = null)
@@ -188,10 +196,12 @@ internal class DyingMessageCanvas : MonoBehaviour
         this.TextureSize = 512;
         this.rendererSize = 3.5f;
 
+        this.serializeScale = DyingMessageSerializeScale;
+
         this.asDyingMessage = true;
         this.asQuizCanvas = false;
 
-        this.brushRadius = DyingMessageCanvasRenderRequest.DyingMessageBrushRadius;
+        this.brushRadius = DyingMessageCanvasRenderRequest.DefaultBrushRadius;
         this.brush = null;
     }
 
@@ -204,10 +214,12 @@ internal class DyingMessageCanvas : MonoBehaviour
         this.TextureSize = 768;
         this.rendererSize = 6.2f;
 
+        this.serializeScale = PaintQuizSerializeScale;
+
         this.asDyingMessage = false;
         this.asQuizCanvas = true;
 
-        this.brushRadius = DyingMessageCanvasRenderRequest.PaintQuizBrushRadius;
+        this.brushRadius = DyingMessageCanvasRenderRequest.DefaultBrushRadius;
         this.brush = null;
     }
 
@@ -234,7 +246,7 @@ internal class DyingMessageCanvas : MonoBehaviour
 
 
         request = Camera.main.gameObject.AddComponent<DyingMessageCanvasRenderRequest>();
-        request.Value.SetUp(canvas, brushRadius);
+        request.Value.SetUp(canvas, brushRadius, asDyingMessage ? VColor.Clear : new(200, 200, 200));
 
         if (asDyingMessage)
         {
@@ -254,10 +266,12 @@ internal class DyingMessageCanvas : MonoBehaviour
             collider.gameObject.SetUpButton();
         }else if (asQuizCanvas)
         {
+            /*
             backRenderer = UnityHelper.CreateSpriteRenderer("Background", transform, new(0f, 0f, 0f), LayerExpansion.GetUILayer());
             backRenderer.sprite = NebulaAsset.WhiteImage.GetSprite();
             backRenderer.color = new(200f / 255f, 200f / 255f, 200f / 255f);
             backRenderer.transform.localScale = new(rendererSize, rendererSize / 16f * 9f);
+            */
             minDistance = 0.0035f;
         }
     }
@@ -268,10 +282,30 @@ internal class DyingMessageCanvas : MonoBehaviour
         this.brush = brush;
     }
 
+    public bool IsLocked => isLocked;
+
+    [HideFromIl2Cpp]
+    public void Lock() => isLocked = true;
+
+    [HideFromIl2Cpp]
+    public void Unlock() => isLocked = false;
+
+    [HideFromIl2Cpp]
+    public void Clear(VColor clearColor)
+    {
+        FinishDraw();
+        allStrokes.Clear();
+        allStrokeBrushes.Clear();
+        RenderTexture.active = canvas;
+        GL.Clear(true, true, clearColor.ToUnityColor());
+        RenderTexture.active = null;
+    }
+
     [HideFromIl2Cpp]
     void StartDraw(VVector2 mousePos)
     {
         currentStroke = [];
+        currentStrokeBrush = brush;
         DrawPoint(mousePos, true);
         lastPos = mousePos;
     }
@@ -299,15 +333,18 @@ internal class DyingMessageCanvas : MonoBehaviour
         if (currentStroke.Count > 0)
         {
             allStrokes.Add(currentStroke);
+            allStrokeBrushes.Add(currentStrokeBrush);
         }
         lastPos = null;
+        currentStrokeBrush = null;
     }
 
     void Update()
     {
+        if (isLocked) return;
         if(inP < 1f && asDyingMessage)
         {
-            inP += Time.deltaTime * 5f;
+            inP += FastMethods.GetDeltaTimeFast() * 5f;
             if (inP > 1f) inP = 1f;
 
             backRenderer.transform.localScale = new(inP * rendererSize, inP * rendererSize, 0f);
@@ -319,7 +356,7 @@ internal class DyingMessageCanvas : MonoBehaviour
             if (asDyingMessage)
             {
                 guageRenderer.material.SetFloat("_Guage", leftTime / maxTime);
-                leftTime -= Time.deltaTime;
+                leftTime -= FastMethods.GetDeltaTimeFast();
             }
 
             VVector2 mousePos = GetNormalizedMousePos();
@@ -379,7 +416,7 @@ internal class DyingMessageCanvas : MonoBehaviour
     // GL命令による円の描画
     void DrawPoint(Vector2 pos, bool shouldRecord)
     {
-        if(shouldRecord) currentStroke.Add(pos);
+        if (shouldRecord) currentStroke.Add(pos);
 
         if (asQuizCanvas)
             request.Value.AddPoint(pos, brush!);
@@ -457,6 +494,67 @@ internal class DyingMessageCanvas : MonoBehaviour
     }
 
     [HideFromIl2Cpp]
+    public (byte r, byte g, byte b, byte width, byte beginX, byte beginY, byte[] trajectory)[] SerializePaintQuiz()
+    {
+        FinishDraw();
+        var strokes = allStrokes;
+        var encoded = new List<(byte r, byte g, byte b, byte width, byte beginX, byte beginY, byte[] trajectory)>();
+
+        for (int si = 0; si < strokes.Count; si++)
+        {
+            var rawStroke = strokes[si];
+            if (rawStroke == null || rawStroke.Count <= 1) continue;
+
+            var strokeBrush = si < allStrokeBrushes.Count ? allStrokeBrushes[si] : null;
+            var c = strokeBrush?.Color ?? VColor.White;
+            byte r = (byte)Mathn.Clamp(Mathn.RoundToInt(c.R * 255f), 0, 255);
+            byte g = (byte)Mathn.Clamp(Mathn.RoundToInt(c.G * 255f), 0, 255);
+            byte b = (byte)Mathn.Clamp(Mathn.RoundToInt(c.B * 255f), 0, 255);
+            byte width = (byte)Mathn.Clamp(Mathn.RoundToInt((strokeBrush?.Width ?? 0.005f) * 10000f), 0, 255);
+
+            List<VVector2> currentInViewPath = new List<VVector2>();
+            var subEncoded = new List<(byte beginX, byte beginY, byte[] trajectory)>();
+
+            for (int i = 0; i < rawStroke.Count - 1; i++)
+            {
+                if (ClipLine(rawStroke[i], rawStroke[i + 1], out var pStart, out var pEnd, out bool isStartClipped, out bool isEndClipped))
+                {
+                    if (currentInViewPath.Count == 0 || isStartClipped)
+                    {
+                        if (currentInViewPath.Count > 0)
+                        {
+                            SerializeNormalizedStroke(currentInViewPath, subEncoded);
+                            currentInViewPath.Clear();
+                        }
+                        currentInViewPath.Add(pStart);
+                    }
+                    currentInViewPath.Add(pEnd);
+                    if (isEndClipped)
+                    {
+                        SerializeNormalizedStroke(currentInViewPath, subEncoded);
+                        currentInViewPath.Clear();
+                    }
+                }
+                else
+                {
+                    if (currentInViewPath.Count > 0)
+                    {
+                        SerializeNormalizedStroke(currentInViewPath, subEncoded);
+                        currentInViewPath.Clear();
+                    }
+                }
+            }
+            if (currentInViewPath.Count > 0)
+                SerializeNormalizedStroke(currentInViewPath, subEncoded);
+
+            foreach (var (bx, by, traj) in subEncoded)
+                encoded.Add((r, g, b, width, bx, by, traj));
+        }
+
+        return encoded.ToArray();
+    }
+
+    [HideFromIl2Cpp]
     private bool ClipLine(VVector2 p1, VVector2 p2, out VVector2 start, out VVector2 end, out bool isStartClipped, out bool isEndClipped)
     {
         float t0 = 0, t1 = 1;
@@ -515,13 +613,13 @@ internal class DyingMessageCanvas : MonoBehaviour
         byte bY = (byte)Mathn.Clamp(Mathn.RoundToInt(stroke[0].y * 255f), 0, 255);
         var nibbles = new List<byte>();
 
-        int lastX = bX;
-        int lastY = bY;
+        int lastX = (int)((float)bX * serializeScale);
+        int lastY = (int)((float)bY * serializeScale);
 
         for (int i = 1; i < stroke.Count; i++)
         {
-            int targetX = Mathn.Clamp(Mathn.RoundToInt(stroke[i].x * 255f), 0, 255);
-            int targetY = Mathn.Clamp(Mathn.RoundToInt(stroke[i].y * 255f), 0, 255);
+            int targetX = Mathn.Clamp(Mathn.RoundToInt(stroke[i].x * serializeScale * 255f), 0, 255 * serializeScale);
+            int targetY = Mathn.Clamp(Mathn.RoundToInt(stroke[i].y * serializeScale * 255f), 0, 255 * serializeScale);
 
             while (lastX != targetX || lastY != targetY)
             {
@@ -625,8 +723,7 @@ internal static class DyingMessages
         });
     });
 
-    private const float minDistance = 0.01f; // DyingMessageCanvasからコピー。本当は共有するべき。
-    static void DecodeTrajectory(byte beginX, byte beginY, byte[] trajectory, Action<VVector2> drawPoint)
+    static void DecodeTrajectory(int serializeScale, byte beginX, byte beginY, byte[] trajectory, float minDistance, Action<VVector2> drawPoint)
     {
         VVector2 currentPos = new(beginX / 255f, beginY / 255f);
         drawPoint(currentPos); 
@@ -639,7 +736,7 @@ internal static class DyingMessages
             int dxInt = ((b >> 4) & 0x0F) - 7;
             int dyInt = (b & 0x0F) - 7;
 
-            VVector2 delta = new(dxInt / 255f, dyInt / 255f);
+            VVector2 delta = new(dxInt / 255f / (float)serializeScale, dyInt / 255f / (float)serializeScale);
             VVector2 targetPos = currentPos + delta;
 
             float dist = delta.Magnitude;
@@ -660,13 +757,41 @@ internal static class DyingMessages
     }
 
     private const int TextureSize = 512;
+    public const int PaintQuizTextureSize = 768;
+
+    static public void GeneratePaintQuizDrawing((byte r, byte g, byte b, byte width, byte beginX, byte beginY, byte[] trajectory)[] encoded, Action<Texture2D> callback)
+    {
+        var request = Camera.main.gameObject.AddComponent<DyingMessageCanvasRenderRequest>();
+        var rt = new RenderTexture(PaintQuizTextureSize, PaintQuizTextureSize, 32, RenderTextureFormat.ARGB32);
+        request.SetUp(rt, DyingMessageCanvasRenderRequest.DefaultBrushRadius, new(200, 200, 200));
+
+        foreach (var entry in encoded)
+        {
+            float decodedWidth = entry.width / 10000f;
+            var brush = new DyingMessageBrush(new VColor(entry.r / 255f, entry.g / 255f, entry.b / 255f), decodedWidth);
+            DecodeTrajectory(DyingMessageCanvas.PaintQuizSerializeScale, entry.beginX, entry.beginY, entry.trajectory, DyingMessageCanvas.PaintQuizMinDistance, pos => request.AddPoint(pos, brush));
+        }
+
+        IEnumerator CoWaitDrawing()
+        {
+            while (!request.HasNoRequest) yield return null;
+            Texture2D texture2D = new Texture2D(PaintQuizTextureSize, PaintQuizTextureSize, TextureFormat.ARGB32, false, false);
+            RenderTexture.active = rt;
+            texture2D.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+            texture2D.Apply();
+            callback.Invoke(texture2D);
+            GameObject.Destroy(rt);
+        }
+        request.StartCoroutine(CoWaitDrawing().WrapToIl2Cpp());
+    }
+
     static private void GenerateDyingMessage((byte beginX, byte beginY, byte[] trajectory)[] encoded, Action<Texture2D> callback)
     {
         var request = Camera.main.gameObject.AddComponent<DyingMessageCanvasRenderRequest>();
         var rt = new RenderTexture(TextureSize, TextureSize, 32, RenderTextureFormat.ARGB32);
-        request.SetUp(rt, DyingMessageCanvasRenderRequest.DyingMessageBrushRadius);
+        request.SetUp(rt, DyingMessageCanvasRenderRequest.DefaultBrushRadius, VColor.Clear);
 
-        foreach (var entry in encoded) DecodeTrajectory(entry.beginX, entry.beginY, entry.trajectory, request.AddPoint);
+        foreach (var entry in encoded) DecodeTrajectory(DyingMessageCanvas.DyingMessageSerializeScale, entry.beginX, entry.beginY, entry.trajectory, DyingMessageCanvas.DyingMessageMinDistance, request.AddPoint);
 
         IEnumerator CoWaitDrawing()
         {

@@ -69,7 +69,7 @@ internal class StatsViewer : MonoBehaviour
                     hMargin,
                     semicolon,
                     hMargin,
-                    new NoSGUIText(GUIAlignment.Right, numAttr, GUI.API.RawTextComponent(stats.Progress.ToString("N0")))
+                    new NoSGUIText(GUIAlignment.Right, numAttr, GUI.API.RawTextComponent(stats.DisplayValue))
                     ));
         }
         

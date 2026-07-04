@@ -15,7 +15,7 @@ namespace Nebula.Roles.Impostor;
 [NebulaRPCHolder]
 public class Marionette : DefinedSingleAbilityRoleTemplate<Marionette.Ability>, DefinedRole, IAssignableDocument
 {
-    private Marionette() : base("marionette", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [MannequinModeOption, FixDecoyAppearanceOption, PlaceCoolDownOption, SwapCoolDownOption, DecoyDurationOption, CanSeeDecoyInShadowOption]) {
+    private Marionette() : base("marionette", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [MannequinModeOption, FixDecoyAppearanceOption, PlaceCoolDownOption, SwapCoolDownOption, DecoyDurationOption, CanSeeDecoyInShadowOption]) {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagFunny, ConfigurationTags.TagDifficult);
 
         GameActionTypes.DecoyPlacementAction = new("marionette.placement", this, isEquippingAction: true);

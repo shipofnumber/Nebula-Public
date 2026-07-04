@@ -118,7 +118,7 @@ internal class AeroGuesserSenario : AbstractModuleContainer, IModule, IGameModeA
     }
 
     static public IEnumerator CoIntro(bool amHost) {
-        if (amHost) RpcIntro.Invoke((MapMask, GeneralConfigurations.NumOfQuizOption, GeneralConfigurations.MonochromeModeOption));
+        if (amHost) RpcIntro.Invoke((MapMask, GeneralConfigurations.NumOfAeroQuizOption, GeneralConfigurations.MonochromeModeOption));
 
         SpecialModeFunctions.IntroSetUp();
         yield break;

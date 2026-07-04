@@ -1,23 +1,34 @@
-﻿using System;
+﻿using Nebula.Roles.Assignment;
+using Rewired.Utils.Classes.Data;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Virial.Assignable;
+using Virial.Media;
+using Virial.Text;
 
 namespace Nebula.SpecialModes.PaintQuiz;
 
 internal enum QuizCategories
 {
-    TitleToRole, // 称号から役職 (称号を共有)
     BlurbToRole, // フレーバーから役職 (役職を共有、事前共有不要)
+    TitleToRole, // 称号から役職 (称号を共有)
+    ChallengeTitleToRole, // チャレンジ称号から役職 (称号を共有)
     RoleToBlurb, // 役職からフレーバー (役職を共有、事前共有不要)
-    RoleToChallengeTitle, // 役職から称号 (役職を共有)
-    IconToRole, //アイコンから役職 (役職を共有、事前共有不要)
+    RoleToChallengeTitle, // 役職からチャレンジ称号 (役職を共有)
+    //IconToRole, //アイコンから役職 (役職を共有、事前共有不要)
 }
 
 internal interface QuizCategoryStrategy
 {
+    protected const string BrokenData = "BROKEN DATA";
+
     QuizCategories Category { get; }
+
+    string CategoryId { get; }
+    string RuleText => (Language.Translate("paintQuiz.category.hint") + "<br>" + Language.Translate($"paintQuiz.category.{CategoryId}.hint")).Sized(18);
 
     /// <summary>
     /// 自身の進行状況から問題を提案します。
@@ -37,7 +48,7 @@ internal interface QuizCategoryStrategy
     /// <param name="quizSeed"></param>
     /// <param name="achieved"></param>
     /// <returns></returns>
-    string GetQuizText(int quizSeed, GamePlayer[] achieved);
+    (string question, string? achieved) GetQuizText(int quizSeed, GamePlayer[] achieved);
 
     /// <summary>
     /// クイズの答えを取得します。
@@ -54,15 +65,176 @@ internal interface QuizCategoryStrategy
 
     void OnReceivePreSharing(int[] candidates);
 
+    GUIWidgetSupplier? RelatedInformation(int quizSeed) => null;
+
+    bool PoolIsEmpty();
+    void ResetPoolToDefault();
+
     static internal QuizCategoryStrategy Create(QuizCategories category)
     {
         return category switch
         {
+            QuizCategories.BlurbToRole => new BlurbToRoleQuizCategory(),
             QuizCategories.TitleToRole => new TitleToRoleQuizCategory(),
+            QuizCategories.ChallengeTitleToRole => new ChallengeTitleToRoleQuizCategory(),
+            QuizCategories.RoleToBlurb => new RoleToBlurbQuizCategory(),
+            QuizCategories.RoleToChallengeTitle => new RoleToChallengeTitleQuizCategory(),
             _ => throw new NotImplementedException($"QuizCategoryStrategy for {category} is not implemented."),
         };
     }
 
+    static protected string? GetAchievedPlayersName(GamePlayer[] achieved)
+    {
+        string? achievedLine = null;
+        if (achieved.Length <= 2)
+            achievedLine = Language.Translate("paintQuiz.hint.title").Replace("%PLAYERS%", string.Join(Language.Translate("paintQuiz.hint.comma"), achieved.Select(p => p.ColoredName)));
+        else
+            achievedLine = Language.Translate("paintQuiz.hint.title.moreThan2").Replace("%PLAYERS%", string.Join(Language.Translate("paintQuiz.hint.comma"), achieved.Take(2).Select(p => p.ColoredName))).Replace("%OTHERS%", (achieved.Length - 2).ToString());
+        return achievedLine;
+    }
+
+    static protected string? GetPlayedPlayersName(GamePlayer[] achieved)
+    {
+        string? achievedLine = null;
+        if (achieved.Length <= 2)
+            achievedLine = Language.Translate("paintQuiz.hint.role").Replace("%PLAYERS%", string.Join(Language.Translate("paintQuiz.hint.comma"), achieved.Select(p => p.ColoredName)));
+        else
+            achievedLine = Language.Translate("paintQuiz.hint.role.moreThan2").Replace("%PLAYERS%", string.Join(Language.Translate("paintQuiz.hint.comma"), achieved.Take(2).Select(p => p.ColoredName))).Replace("%OTHERS%", (achieved.Length - 2).ToString());
+        return achievedLine;
+    }
+
+    static protected int AssignableToInt(DefinedAssignable assignable)
+    {
+
+        int id = assignable switch
+        {
+            DefinedRole => 0b01,
+            DefinedModifier => 0b10,
+            DefinedGhostRole => 0b11,
+            _ => 0b00
+        };
+        return id | (assignable.Id << 2);
+    }
+
+    static protected DefinedAssignable? IntToAssignable(int id)
+    {
+        int mask = id & 0b11;
+        id >>= 2;
+        if(mask == 0b01)
+        {
+            return Roles.Roles.GetRole(id);
+        }
+        if (mask == 0b10)
+        {
+            return Roles.Roles.GetModifier(id);
+        }
+        if (mask == 0b11)
+        {
+            return Roles.Roles.GetGhostRole(id);
+        }
+        return null;
+    }
+
+}
+
+internal class BlurbToRoleQuizCategory : QuizCategoryStrategy
+{
+    List<int> idCandidates;
+    
+    public BlurbToRoleQuizCategory()
+    {
+        var flags = AssignmentPreview.CalcPreview(GamePlayer.AllPlayers.Count(), out var gameParam);
+        AssignmentPreview.AssignmentFlag allFlag = 0;
+        foreach (var f in flags) allFlag |= f;
+        var summary = AssignmentPreview.CalcSummary(allFlag, gameParam);
+        
+        HashSet<int> assignablesSet = [];
+        void AddAll(IEnumerable<DefinedAssignable> assignables)
+        {
+            foreach(var a in assignables)
+            {
+                if (a.ShowOnHelpScreen) assignablesSet.Add(QuizCategoryStrategy.AssignableToInt(a));
+            }
+        }
+
+        AddAll(summary.Roles.Select(r => r.Role));
+        AddAll(summary.Modifiers.Select(r => r.Assignable));
+        AddAll(summary.GhostRoles.Select(r => r.Assignable));
+        AddAll(summary.Additionals.Select(r => r.Role));
+        AddAll(summary.Specials.Select(r => r.Role));
+
+        idCandidates = assignablesSet.ToList();
+    }
+    
+
+    virtual public QuizCategories Category => QuizCategories.BlurbToRole;
+
+    string QuizCategoryStrategy.CategoryId => "blurbToRole";
+
+    int[] QuizCategoryStrategy.SuggestMyCandidate(int numOfQuizzes) => [];
+
+    virtual protected string AssignableToQuestion(DefinedAssignable assignable) => Language.Translate("paintQuiz.category.blurbToRole.quiz").Replace("%BLURB%", assignable.GeneralBlurb);
+    virtual protected string AssignableToAnswer(DefinedAssignable assignable) => assignable.DisplayColoredName;
+
+    bool QuizCategoryStrategy.HaveAchievedAlready(int numTitleId) => PlayerModInfo.IsPlayedRecently(QuizCategoryStrategy.IntToAssignable(numTitleId));
+    (string question, string? achieved) QuizCategoryStrategy.GetQuizText(int quizSeed, GamePlayer[] achieved)
+    {
+        var assignable = QuizCategoryStrategy.IntToAssignable(quizSeed);
+        if (assignable == null) return (QuizCategoryStrategy.BrokenData, null);
+
+        var baseText = AssignableToQuestion(assignable);
+        if (achieved.Length == 0) return (baseText, null);
+
+        return (baseText, QuizCategoryStrategy.GetPlayedPlayersName(achieved));
+    }
+
+    string QuizCategoryStrategy.GetAnswerText(int quizSeed)
+    {
+        var assignable = QuizCategoryStrategy.IntToAssignable(quizSeed);
+        if (assignable == null) return QuizCategoryStrategy.BrokenData;
+        return AssignableToAnswer(assignable);
+    }
+
+    void QuizCategoryStrategy.OnReceivePreSharing(int[] candidates)
+    {
+    }
+
+    int? QuizCategoryStrategy.GenerateQuizSeed()
+    {
+        if (this.idCandidates.Count == 0) return null;
+        
+        var index = System.Random.Shared.Next(this.idCandidates.Count);
+        var selected = this.idCandidates[index];
+        this.idCandidates.RemoveAt(index);
+        return selected;
+    }
+
+    GUIWidgetSupplier? QuizCategoryStrategy.RelatedInformation(int quizSeed) {
+        var assignable = QuizCategoryStrategy.IntToAssignable(quizSeed);
+        var component = assignable?.ConfigurationHolder?.Detail;
+        if (component == null) return null;
+        var holder = GUI.API.VerticalHolder(GUIAlignment.Left, 
+            GUI.API.RawText(GUIAlignment.Left, AttributeAsset.OverlayTitle, assignable!.DisplayColoredName),
+            GUI.API.Text(GUIAlignment.Left, AttributeAsset.OverlayContent, component)
+            );
+        holder.BackImage = assignable.ConfigurationHolder?.Illustration;
+        return holder;
+    }
+
+    bool QuizCategoryStrategy.PoolIsEmpty() => idCandidates.Count == 0;
+    
+    void QuizCategoryStrategy.ResetPoolToDefault()
+    {
+        idCandidates = Roles.Roles.AllAssignables().Where(r => r.ShowOnHelpScreen).Select(QuizCategoryStrategy.AssignableToInt).ToList();
+    }
+}
+
+internal class RoleToBlurbQuizCategory : BlurbToRoleQuizCategory, QuizCategoryStrategy
+{
+    override public QuizCategories Category => QuizCategories.RoleToBlurb;
+    string QuizCategoryStrategy.CategoryId => "roleToBlurb";
+    override protected string AssignableToQuestion(DefinedAssignable assignable) => Language.Translate("paintQuiz.category.roleToBlurb.quiz").Replace("%ROLE%", assignable.DisplayColoredName);
+    override protected string AssignableToAnswer(DefinedAssignable assignable) => assignable.GeneralBlurb;
 }
 
 internal class TitleToRoleQuizCategory : QuizCategoryStrategy
@@ -70,13 +242,18 @@ internal class TitleToRoleQuizCategory : QuizCategoryStrategy
     HashSet<int> idCandidates = [];
     List<INebulaAchievement>? achCandidates = null; //ホスト以外は作成する必要がない
 
-    public QuizCategories Category => QuizCategories.TitleToRole;
+    virtual public QuizCategories Category => QuizCategories.TitleToRole;
+    string QuizCategoryStrategy.CategoryId => "titleToRole";
+
+    virtual protected IEnumerable<INebulaAchievement> TargetAchievements => NebulaAchievementManager.AllAchievements;
+    virtual protected string TitleToQuestion(INebulaAchievement achievement) => Language.Translate("paintQuiz.category.titleToRole.quiz").Replace("%TITLE%", Language.Translate(achievement.TranslationKey));
+    virtual protected string TitleToAnswer(INebulaAchievement achievement) => string.Join(", ", achievement.RelatedRole.Select(r => r.DisplayColoredName));
     int[] QuizCategoryStrategy.SuggestMyCandidate(int numOfQuizzes)
     {
         int numOfCands = Mathn.Clamp(numOfQuizzes * 10, 50, 100);
 
         List<INebulaAchievement> achievements = [];
-        foreach (var ach in NebulaAchievementManager.AllAchievements)
+        foreach (var ach in TargetAchievements)
         {
             if (ach.RelatedRole.IsEmpty()) continue;
             if (ach.IsCleared) achievements.Add(ach);
@@ -95,28 +272,32 @@ internal class TitleToRoleQuizCategory : QuizCategoryStrategy
     }
 
     bool QuizCategoryStrategy.HaveAchievedAlready(int numTitleId) => NebulaAchievementManager.GetFromNumId(numTitleId)?.IsCleared ?? false;
-    string QuizCategoryStrategy.GetQuizText(int quizSeed, GamePlayer[] achieved)
+    (string question, string? achieved) QuizCategoryStrategy.GetQuizText(int quizSeed, GamePlayer[] achieved)
     {
         var achievement = NebulaAchievementManager.GetFromNumId(quizSeed);
-        if (achievement == null) return "クイズデータが壊れています。";
-        return $"「{Language.Translate(achievement.TranslationKey)}」は何の称号？";
+        if (achievement == null) return (QuizCategoryStrategy.BrokenData, null);
+
+        var baseText = TitleToQuestion(achievement);
+        if (achieved.Length == 0) return (baseText, null);
+
+        return (baseText, QuizCategoryStrategy.GetAchievedPlayersName(achieved));
     }
 
     string QuizCategoryStrategy.GetAnswerText(int quizSeed)
     {
         var achievement = NebulaAchievementManager.GetFromNumId(quizSeed);
-        if (achievement == null) return "クイズデータが壊れています。";
-        return string.Join(", ", achievement.RelatedRole.Select(r => r.DisplayColoredName));
+        if (achievement == null) return QuizCategoryStrategy.BrokenData;
+        return TitleToAnswer(achievement);
     }
 
     void QuizCategoryStrategy.OnReceivePreSharing(int[] candidates)
     {
-        foreach(var id in candidates) this.idCandidates.Add(id);
+        foreach (var id in candidates) this.idCandidates.Add(id);
     }
 
     int? QuizCategoryStrategy.GenerateQuizSeed()
     {
-        if(this.achCandidates == null)
+        if (this.achCandidates == null)
         {
             this.achCandidates = new List<INebulaAchievement>(this.idCandidates.Count);
             foreach (var id in this.idCandidates)
@@ -132,4 +313,33 @@ internal class TitleToRoleQuizCategory : QuizCategoryStrategy
         this.achCandidates.RemoveAt(index);
         return selected.NumId;
     }
+
+    GUIWidgetSupplier? QuizCategoryStrategy.RelatedInformation(int quizSeed)
+    {
+        var ach = NebulaAchievementManager.GetFromNumId(quizSeed);
+        return ach?.GetOverlayWidget(false, true, false, true, true, true, false);
+    }
+
+    bool QuizCategoryStrategy.PoolIsEmpty() => (achCandidates?.Count ?? 1) == 0;
+
+    void QuizCategoryStrategy.ResetPoolToDefault()
+    {
+        achCandidates = TargetAchievements.ToList();
+    }
+}
+
+internal class ChallengeTitleToRoleQuizCategory : TitleToRoleQuizCategory, QuizCategoryStrategy
+{
+    override public QuizCategories Category => QuizCategories.ChallengeTitleToRole;
+    string QuizCategoryStrategy.CategoryId => "challengeToRole";
+    override protected IEnumerable<INebulaAchievement> TargetAchievements => NebulaAchievementManager.AllAchievements.Where(ach => ach.AchievementType().Contains(AchievementType.Challenge));
+}
+
+internal class RoleToChallengeTitleQuizCategory : ChallengeTitleToRoleQuizCategory, QuizCategoryStrategy
+{
+    override public QuizCategories Category => QuizCategories.RoleToChallengeTitle;
+    string QuizCategoryStrategy.CategoryId => "roleToChallenge";
+    override protected IEnumerable<INebulaAchievement> TargetAchievements => NebulaAchievementManager.AllAchievements.Where(ach => ach.AchievementType().Contains(AchievementType.Challenge));
+    override protected string TitleToQuestion(INebulaAchievement achievement) => Language.Translate("paintQuiz.category.roleToChallenge.quiz").Replace("%ROLE%", achievement.RelatedRole.FirstOrDefault()!.DisplayColoredName);
+    override protected string TitleToAnswer(INebulaAchievement achievement) => Language.Translate(achievement.TranslationKey);
 }

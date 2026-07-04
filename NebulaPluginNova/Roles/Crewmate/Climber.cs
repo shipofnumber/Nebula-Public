@@ -130,7 +130,7 @@ internal class Climber : DefinedSingleAbilityRoleTemplate<Climber.Ability>, Defi
                 {
                     //条件に適う位置を発見したとき
 
-                    var to = Impostor.Cannon.SuggestMoveToPos(localPlayer.TruePosition, h.point - localPlayer.VanillaPlayer.GetTruePosition()) - localPlayer.VanillaPlayer.Collider.offset;
+                    var to = Impostor.Cannon.SuggestMoveToPos(localPlayer.TruePosition, h.point - localPlayer.VanillaPlayer.GetTruePosition()) - (VVector2)localPlayer.VanillaPlayer.Collider.offset;
                     float delay = localPlayer.TruePosition.Distance(h.point) / HookSpeed;
                     
                     RpcHook.Invoke((localPlayer, h.point, to, delay, true));
@@ -207,8 +207,8 @@ internal class Climber : DefinedSingleAbilityRoleTemplate<Climber.Ability>, Defi
         GamePlayer IBindPlayer.MyPlayer => player;
         private SpriteRenderer ropeRenderer, hookRenderer;
         private GamePlayer player;
-        private Vector2 target;
-        private Vector2 begin;
+        private VVector2 target;
+        private VVector2 begin;
         private float p, pMax; //初期状態からの進行具合
         private float length;
 
@@ -264,17 +264,17 @@ internal class Climber : DefinedSingleAbilityRoleTemplate<Climber.Ability>, Defi
                 }
             }
 
-            Vector2 playerEdge;
+            VVector2 playerEdge;
             {
                 var cosmetics = player.VanillaPlayer.cosmetics;
                 var hat = cosmetics.hat;
                 var node = hat.SpriteSyncNode;
                 var noBounceHatPos = node.Parent.GetLocalPosition(1, false) + (cosmetics.FlipX ? node.flipOffset : node.normalOffset);
-                playerEdge = (Vector2)cosmetics.transform.TransformPoint(noBounceHatPos) - new Vector2(0f, 0.15f);
+                playerEdge = (VVector2)cosmetics.transform.TransformPointFast(noBounceHatPos) - new VVector2(0f, 0.15f);
             }
 
             float correctedP;
-            Vector2 targetGoal;
+            VVector2 targetGoal;
             if (IsDisappearing)
             {
                 targetGoal = playerEdge;
@@ -287,15 +287,15 @@ internal class Climber : DefinedSingleAbilityRoleTemplate<Climber.Ability>, Defi
                 correctedP = p;
                 if (pMax > 0f) correctedP /= pMax; else correctedP = 0f;
             }
-            Vector2 targetEdge = target * correctedP + targetGoal * (1f - correctedP);
-            Vector2 diff = playerEdge - targetEdge;
-            Vector2 center = (targetEdge + playerEdge) * 0.5f;
+            VVector2 targetEdge = target * correctedP + targetGoal * (1f - correctedP);
+            VVector2 diff = playerEdge - targetEdge;
+            VVector2 center = (targetEdge + playerEdge) * 0.5f;
 
             ropeRenderer.enabled = true;
-            ropeRenderer.transform.position = center;
+            ropeRenderer.transform.position = center.AsUnityVector3(0f);
             ropeRenderer.transform.SetLocalZ(0f);
             ropeRenderer.transform.localEulerAngles = new(0f, 0f, Mathn.Atan2(diff.y, diff.x).RadToDeg());
-            length = diff.magnitude;
+            length = diff.Magnitude;
             ropeRenderer.size = new(length, 0.17f);
 
             hookRenderer.enabled = true;

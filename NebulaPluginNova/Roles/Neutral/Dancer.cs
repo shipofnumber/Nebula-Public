@@ -323,7 +323,7 @@ public class Dancer : DefinedRoleTemplate, DefinedRole, IAssignableDocument
                     var icon = iconHolder.AllIcons.FirstOrDefault(icon => icon.Player == p);
                     if (icon == null) icon = iconHolder.AddPlayer(p);
                     icon.SetAlpha(true);
-                    icon.SetText(Mathf.CeilToInt(danceLookedTimer[p.PlayerId]).ToString());
+                    icon.SetText(Mathn.CeilToInt(danceLookedTimer[p.PlayerId]).ToString());
                 }
             }
         }
@@ -430,9 +430,9 @@ public class Dancer : DefinedRoleTemplate, DefinedRole, IAssignableDocument
         {
             //2人で踊る称号 互いに生存していて、近くでダンスを踊っている場合に進捗の進行度が進む
             if (!AmOwner && !MyPlayer.IsDead && !GamePlayer.LocalPlayer.IsDead && dancerDanceChecker.IsDancing && localDanceChecker.IsDancing &&
-                GamePlayer.LocalPlayer.VanillaPlayer.transform.position.Distance(MyPlayer.VanillaPlayer.transform.position) < 2f)
+                GamePlayer.LocalPlayer.Position.Distance(MyPlayer.Position) < 2f)
             {
-                pairDanceProgress += Time.deltaTime;
+                pairDanceProgress += ev.DeltaTime;
                 if (pairDanceProgress > 0.8f) acTokenCommon7.Value = true;
             }
             else
@@ -443,7 +443,7 @@ public class Dancer : DefinedRoleTemplate, DefinedRole, IAssignableDocument
             //死の預言の有効時間を減少させる
             if (AmOwner && !MeetingHud.Instance.AsBoolFast() && !ExileController.Instance.AsBoolFast())
             {
-                for (int i = 0; i < danceLookedTimer.Length; i++) danceLookedTimer[i] -= Time.deltaTime;
+                for (int i = 0; i < danceLookedTimer.Length; i++) danceLookedTimer[i] -= ev.DeltaTime;
                 if (activeDanceLooked.RemoveAll(p => !(danceLookedTimer[p.PlayerId] > 0f)) > 0)
                     RpcShareDanceState.Invoke((MyPlayer, ++danceShareVersion, activeDanceLooked.ToArray(), completedDanceLooked.ToArray()));
             }
@@ -493,7 +493,7 @@ public class Dancer : DefinedRoleTemplate, DefinedRole, IAssignableDocument
             //会議以外、自分以外のキルをDancerに通知する
             if(AmOwner && ShowDeahNotificationOption && !ev.Player.AmOwner && !MeetingHud.Instance.AsBoolFast() && !ExileController.Instance.AsBoolFast() && !(ev.Player.MyKiller?.AmOwner ?? false))
             {
-                AmongUsUtil.InstantiateNoisemakerArrow(ev.Player.VanillaPlayer.transform.position, false, 314f);
+                AmongUsUtil.InstantiateNoisemakerArrow(ev.Player.Position, false, 314f);
             }
         }
 

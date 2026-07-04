@@ -12,7 +12,7 @@ namespace Nebula.Roles.Impostor;
 
 public class Hadar : DefinedSingleAbilityRoleTemplate<Hadar.Ability>, DefinedRole, IAssignableDocument
 {
-    private Hadar() : base("hadar", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [DiveCoolDownOption, AccelRateUndergroundOption, GushFromVentsOption, VentDetectionRangeOption, LeftDivingEvidenceOption]) {
+    private Hadar() : base("hadar", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [DiveCoolDownOption, AccelRateUndergroundOption, GushFromVentsOption, VentDetectionRangeOption, LeftDivingEvidenceOption]) {
         GameActionTypes.HadarDisappearingAction = new("hadar.disappear", this, isPhysicalAction: true);
         GameActionTypes.HadarAppearingAction = new("hadar.appear", this, isPhysicalAction: true);
     }
@@ -102,12 +102,13 @@ public class Hadar : DefinedSingleAbilityRoleTemplate<Hadar.Ability>, DefinedRol
                 diveButton.Visibility = _ => !MyPlayer.IsDead && !IsDiving;
                 diveButton.OnClick = (button) =>
                 {
-                    NebulaGameManager.Instance?.RpcDoGameAction(MyPlayer, MyPlayer.Position, GameActionTypes.HadarDisappearingAction);
+                    var myPos = MyPlayer.Position;
+                    NebulaGameManager.Instance?.RpcDoGameAction(MyPlayer, myPos, GameActionTypes.HadarDisappearingAction);
 
                     if (NebulaGameManager.Instance!.CurrentTime - acToken2.Value.lastKill < 8f) acToken2.Value.cleared = true;
                     acTokenAnother.Value.triggered = true;
                     StatsDive.Progress();
-                    lastDivePoint = MyPlayer.VanillaPlayer.transform.position;
+                    lastDivePoint = myPos;
 
                     MyPlayer.VanillaPlayer.ModDive(true);
                     MyPlayer.VanillaPlayer.gameObject.layer = LayerExpansion.GetGhostLayer();
@@ -122,7 +123,7 @@ public class Hadar : DefinedSingleAbilityRoleTemplate<Hadar.Ability>, DefinedRol
                     {
                         NebulaManager.Instance.StartDelayAction(0.3f,() =>
                         {
-                            var localPos = AmongUsLLImpl.LocalPlayer.transform.localPosition;
+                            var localPos = GamePlayer.LocalPlayer!.Position;
                             NebulaSyncObject.RpcInstantiate(HadarEvidence.MyTag, [
                                 localPos.x,
                                 localPos.y - 0.35f
@@ -140,14 +141,14 @@ public class Hadar : DefinedSingleAbilityRoleTemplate<Hadar.Ability>, DefinedRol
                 void CheckGushAchievement()
                 {
                     new StaticAchievementToken("hadar.common3"); //通算称号
-                    if (MyPlayer.VanillaPlayer.transform.position.Distance(lastDivePoint) > 30f) new StaticAchievementToken("hadar.common5");
-                    if (NebulaGameManager.Instance!.AllPlayerInfo.Any(p => !p.AmOwner && !p.IsDead && p.VanillaPlayer.transform.position.Distance(MyPlayer.VanillaPlayer.transform.position) < 2f)) new StaticAchievementToken("hadar.common4");
+                    if (MyPlayer.Position.Distance(lastDivePoint) > 30f) new StaticAchievementToken("hadar.common5");
+                    if (NebulaGameManager.Instance!.AllPlayerInfo.Any(p => !p.AmOwner && !p.IsDead && p.Position.Distance(MyPlayer.Position) < 2f)) new StaticAchievementToken("hadar.common4");
                     acToken1.Value.lastGush = NebulaGameManager.Instance!.CurrentTime;
                 }
 
                 if (!GushFromVentsOption)
                 {
-                    gushButton.Availability = (button) => MyPlayer.VanillaPlayer.CanMove && MapData.GetCurrentMapData().CheckMapArea(AmongUsLLImpl.LocalPlayer.GetTruePosition());
+                    gushButton.Availability = (button) => MyPlayer.CanMove && MapData.GetCurrentMapData().CheckMapArea(AmongUsLLImpl.LocalPlayer.GetTruePosition());
                     gushButton.OnClick = (button) =>
                     {
                         NebulaGameManager.Instance?.RpcDoGameAction(MyPlayer, MyPlayer.Position, GameActionTypes.HadarAppearingAction);
@@ -164,9 +165,9 @@ public class Hadar : DefinedSingleAbilityRoleTemplate<Hadar.Ability>, DefinedRol
                 else
                 {
                     Arrow? ventArrow = new Arrow(null, true).Register(this);
-                    ventArrow.SetColor(new(Palette.ImpostorRed));
+                    ventArrow.SetColor(VColor.ImpostorColor);
                     ventArrow.IsActive = false;
-                    var tracker = ObjectTrackers.ForVents(this, VentDetectionRangeOption, MyPlayer, v => !v.TryGetComponent<InvalidVent>(out _), Palette.ImpostorRed, true);
+                    var tracker = ObjectTrackers.ForVents(this, VentDetectionRangeOption, MyPlayer, v => !v.TryGetComponent<InvalidVent>(out _), VColor.ImpostorColor.ToUnityColor(), true);
                     gushButton.Availability = (button) => MyPlayer.VanillaPlayer.CanMove && tracker.CurrentTarget != null;
                     gushButton.OnClick = button =>
                     {
@@ -267,9 +268,9 @@ public class Hadar : DefinedSingleAbilityRoleTemplate<Hadar.Ability>, DefinedRol
                     if (!IsDiving) yield break;
                     if (p.AmOwner || p.IsDead) continue;
                     if (p.IsDived || p.IsInvisible) continue;
-                    if (p.VanillaPlayer.transform.position.Distance(MyPlayer.VanillaPlayer.transform.position) < 6f)
+                    if (p.Position.Distance(MyPlayer.Position) < 6f)
                     {
-                        AmongUsUtil.Ping([p.VanillaPlayer.transform.position], false, playSE);
+                        AmongUsUtil.Ping([p.Position], false, playSE);
                         playSE = false;
                         yield return Effects.Wait(0.15f);
                     }

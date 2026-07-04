@@ -1,8 +1,10 @@
 ﻿using Nebula.Behavior;
 using Nebula.Map;
+using Nebula.Modules.Cosmetics;
 using Nebula.Modules.GUIWidget;
 using Nebula.Roles;
 using Nebula.Roles.Assignment;
+using Nebula.SpecialModes.PaintQuiz;
 using System.Linq;
 using Unity.IL2CPP.CompilerServices;
 using UnityEngine.Rendering;
@@ -371,7 +373,7 @@ public static class GeneralConfigurations
         ]);
 
     static public FloatConfiguration GuessTimeOption = NebulaAPI.Configurations.Configuration("options.aeroGuesser.guessTime", (5f, 60f, 5f), 20f, FloatConfigurationDecorator.Second);
-    static public IntegerConfiguration NumOfQuizOption = NebulaAPI.Configurations.Configuration("options.aeroGuesser.numOfQuiz", (1, 10), 5);
+    static public IntegerConfiguration NumOfAeroQuizOption = NebulaAPI.Configurations.Configuration("options.aeroGuesser.numOfQuiz", (1, 10), 5);
     static public BoolConfiguration MonochromeModeOption = NebulaAPI.Configurations.Configuration("options.aeroGuesser.monochromeMode", false);
     static public BoolConfiguration HurryTimerOption = NebulaAPI.Configurations.Configuration("options.aeroGuesser.hurryTimer", false);
     static public FloatConfiguration HurryTimerDurationOption = NebulaAPI.Configurations.Configuration("options.aeroGuesser.hurryTimerDuration", (10f, 40f, 5f), 10f, FloatConfigurationDecorator.Second, () => HurryTimerOption);
@@ -383,7 +385,7 @@ public static class GeneralConfigurations
     static public IntegerConfiguration AeroGuesserNormalOption = NebulaAPI.Configurations.Configuration("options.aeroGuesser.normal", (0, 10, 1), 1, decorator: num => num + "x");
     static public IntegerConfiguration AeroGuesserHardOption = NebulaAPI.Configurations.Configuration("options.aeroGuesser.hard", (0, 10, 1), 1, decorator: num => num + "x");
     static internal IConfigurationHolder AeroGuesserOption = NebulaAPI.Configurations.Holder("options.aeroGuesser", [ConfigurationTab.Settings], [GameModes.AeroGuesser]).AppendConfigurations([
-        GuessTimeOption, NumOfQuizOption, MonochromeModeOption,
+        GuessTimeOption, NumOfAeroQuizOption, MonochromeModeOption,
         Group("options.aeroGuesser.group.hurryTimer",
             HurryTimerOption,
             HurryTimerDurationOption
@@ -402,6 +404,76 @@ public static class GeneralConfigurations
 
         ]);
 
+    public static IntegerConfiguration NumOfPaintQuizOption = NebulaAPI.Configurations.Configuration("options.paintQuiz.numOfQuiz", (1, 10), 5);
+    public static ValueConfiguration<int> PaintQuizCategoryOption = NebulaAPI.Configurations.Configuration("options.paintQuiz.category", ["options.paintQuiz.category.flavorToRole", "options.paintQuiz.category.titleToRole", "options.paintQuiz.category.challengeToRole", "options.paintQuiz.category.roleToFlavor", "options.paintQuiz.category.roleToChallenge"], 0);
+    public static BoolConfiguration RestrictToSpawnablesOption = NebulaAPI.Configurations.Configuration("options.paintQuiz.restrictToSpawnables", true, () => {
+        return PaintQuizCategoryOption.GetValue() switch
+        {
+            0 or 3 => true,
+            _ => false
+        };
+    });
+    static internal IConfigurationHolder PaintQuizOptions = NebulaAPI.Configurations.Holder(
+    "options.paintQuiz", [ConfigurationTab.Settings], [GameModes.PaintQuiz]).AppendConfigurations([
+            NumOfPaintQuizOption, PaintQuizCategoryOption, RestrictToSpawnablesOption,
+            Group("options.paintQuiz.group.stamps", [
+                MakeStampConfig(4, "+2pt"),
+                MakeStampConfig(3, "+1pt"),
+                MakeStampConfig(2, "+0.5pt"),
+                MakeStampConfig(1, "-1pt"),
+                ])
+    ]);
+    private static IConfiguration MakeStampConfig(byte grade, string displayLabel)
+        => NebulaAPI.Configurations.Configuration(
+            () => null,
+            () =>
+            {
+                var currentStamp = PaintQuizStampConfig.GetStamp(grade);
+                GUIWidget preview = currentStamp != null
+                    ? currentStamp.GetStampWidget(null, PlayerControl.LocalPlayer?.PlayerId ?? 0, GUIAlignment.Center, true, 0.36f)
+                    : GUI.API.RawText(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.OverlayContent), "未設定");
+
+                byte capturedGrade = grade;
+                return GUI.API.HorizontalHolder(GUIAlignment.Left,
+                    GUI.API.RawText(GUIAlignment.Left, GUI.API.GetAttribute(AttributeAsset.OptionsTitleHalf), displayLabel),
+                    GUI.API.HorizontalMargin(0.15f),
+                    preview,
+                    GUI.API.HorizontalMargin(0.15f),
+                    GUI.API.RawButton(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.SmallWideButtonMasked), "変更",
+                        _ => OpenStampPicker(capturedGrade))
+                );
+            });
+
+    private static void OpenStampPicker(byte grade)
+    {
+        var window = MetaScreen.GenerateWindow(new(7.5f, 4.5f),
+            AmongUsLLImpl.TryGetHudManager(out _, out var bridge) ? bridge.MyTransform : null,
+            Vector3.zero, true, true, withMask: true);
+
+        List<GUIWidget> widgets = [GUI.API.HorizontalMargin(7.4f)];
+
+        var allStamps = MoreCosmic.AllStamps.Values.Where(s => !(s.IsHidden ?? false));
+        var groups = allStamps.GroupBy(s => s.Package);
+
+        foreach (var package in MoreCosmic.AllPackages.OrderBy(p => p.Value.Priority))
+        {
+            if (!groups.Find(g => g.Key == package.Key, out var group)) continue;
+            if (widgets.Count > 1) widgets.Add(GUI.API.VerticalMargin(0.15f));
+            widgets.Add(GUI.API.RawText(GUIAlignment.Left, GUI.API.GetAttribute(AttributeAsset.DocumentBold), package.Value.DisplayName));
+            widgets.Add(GUI.API.Arrange(GUIAlignment.Left,
+                group.Select<CosmicStamp, GUIWidget>(s =>
+                    s.GetStampWidget(s.ProductId, PlayerControl.LocalPlayer?.PlayerId ?? 0, GUIAlignment.Center, true, 0.55f,
+                        _ =>
+                        {
+                            PaintQuizStampConfig.SetStampId(grade, s.ProductId);
+                            NebulaAPI.Configurations.RequireUpdateSettingScreen();
+                            window.CloseScreen();
+                        }).WithRoom(new(0.08f, 0.08f))), 11));
+        }
+
+        window.SetWidget(new GUIScrollView(GUIAlignment.Center, new(7.5f, 4.5f),
+            new VerticalWidgetsHolder(GUIAlignment.Left, [.. widgets])), out _);
+    }
 
     static private readonly XOnlyDividedSpriteLoader mapCustomizationSprite = XOnlyDividedSpriteLoader.FromResource("Nebula.Resources.MapCustomizations.png", 100f, 50, true);
     

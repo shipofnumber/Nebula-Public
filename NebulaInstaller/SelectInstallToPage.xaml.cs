@@ -21,10 +21,12 @@ namespace NebulaInstaller
     public partial class SelectInstallToPage : Page
     {
         string vanillaDirectoryPath;
-        public SelectInstallToPage(string vanillaDirectoryPath)
+        GamePlatform platform;
+        public SelectInstallToPage(string vanillaDirectoryPath, GamePlatform platform)
         {
             InitializeComponent();
             this.vanillaDirectoryPath = vanillaDirectoryPath;
+            this.platform = platform;
         }
 
         private void ClickInstall(object sender, RoutedEventArgs e)
@@ -33,7 +35,7 @@ namespace NebulaInstaller
 
             if(installTo != null)
             {
-                MainWindow.Instance.OpenPage(new InstallingPage(vanillaDirectoryPath, installTo));
+                MainWindow.Instance.OpenPage(new InstallingPage(vanillaDirectoryPath, installTo, platform));
             }
             else
             {
@@ -47,7 +49,7 @@ namespace NebulaInstaller
 
             if (installTo != null)
             {
-                MainWindow.Instance.OpenPage(new InstallingPage(vanillaDirectoryPath, installTo));
+                MainWindow.Instance.OpenPage(new InstallingPage(vanillaDirectoryPath, installTo, platform));
             }
             else
             {
@@ -57,7 +59,7 @@ namespace NebulaInstaller
 
         private void ClickPrev(object sender, RoutedEventArgs e)
         {
-            MainWindow.Instance.OpenPage(new SelectVanillaPage());
+            MainWindow.Instance.OpenPage(new SelectPlatformPage(vanillaDirectoryPath));
         }
     }
 }

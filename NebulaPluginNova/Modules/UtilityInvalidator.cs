@@ -196,9 +196,9 @@ public class UtilityInvalidationSystem : AbstractModule<Virial.Game.Game>, IGame
         CurrentInvalidDoor = null;
         if (doorMap.Count > 0)
         {
-            var pos = GamePlayer.LocalPlayer!.VanillaPlayer.transform.position;
-            var nearbyDoor = doorMap.Values.MinBy(door => pos.Distance(door.transform.position));
-            if (nearbyDoor != null && nearbyDoor.transform.position.Distance(pos) < 1f)
+            var pos = GamePlayer.LocalPlayer!.Position;
+            var nearbyDoor = doorMap.Values.MinBy(door => pos.Distance(door.ModGameObject(false).Position));
+            if (nearbyDoor != null && (nearbyDoor.ModGameObject(false).Position).Distance(pos) < 1f)
             {
                 CurrentInvalidDoor = nearbyDoor;
             }

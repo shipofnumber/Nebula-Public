@@ -18,7 +18,7 @@ namespace Nebula.Roles.Crewmate;
 
 internal class JekyllAndHyde : DefinedRoleTemplate, DefinedRole, IAssignableDocument
 {
-    private JekyllAndHyde() : base("jekyllAndHyde", Virial.Color.White, RoleCategory.CrewmateRole, Crewmate.MyTeam, [NumOfKillOption, KillCoolDownOption, HasImpostorVisionOption, CanUseVentsOption, CanMoveInVentsOption, TaskConfiguration.AsGroup(new(GroupConfigurationColor.Gray))])
+    private JekyllAndHyde() : base("jekyllAndHyde", Virial.Color.White, RoleCategory.CrewmateRole, Crewmate.MyTeam, [NumOfKillOption, KillCoolDownOption, HasImpostorVisionOption, CanUseVentsOption, CanMoveInVentsOption, TaskConfiguration.AsGroup(GroupConfigurationColor.Gray)])
     {
     }
 

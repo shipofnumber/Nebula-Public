@@ -124,14 +124,14 @@ internal class AmongUsLLImpl : AmongUsLL
     static public bool TryGetLocalPlayer(out PlayerControl val) => Instance.localPlayer.Get(out val);
     private AmongUsLLImpl()
     {
-        amongUsClient = new(() => { var instance = AmongUsClient.Instance; return (instance, instance != null); }, false);
-        soundManager = new(() => { var instance = SoundManager.Instance; return (instance, instance != null); }, false);
+        amongUsClient = new(() => { var instance = AmongUsClient.Instance; return (instance, instance.AsBoolFast()); }, false);
+        soundManager = new(() => { var instance = SoundManager.Instance; return (instance, instance.AsBoolFast()); }, false);
         gameOptionsManager = new(() => { var instance = GameOptionsManager.Instance; return (instance, instance != null); });
-        gameManager = new(() => { var instance = GameManager.Instance; return (instance, instance != null); });
-        shipStatus = new(() => { var instance = ShipStatus.Instance; return (instance, instance); });
+        gameManager = new(() => { var instance = GameManager.Instance; return (instance, instance.AsBoolFast()); });
+        shipStatus = new(() => { var instance = ShipStatus.Instance; return (instance, instance.AsBoolFast()); });
         hudManager = new(() => { var instanceExists = HudManager.InstanceExists; return (instanceExists ? HudManager.Instance : null!, instanceExists); });
         hudManagerBridge = new(() => hudManager.Get(out var val) ? (new BHudManager(val), true) : (null!, false));
-        lobbyBehaviour = new(() => { var instance = LobbyBehaviour.Instance; return (instance, instance); });
+        lobbyBehaviour = new(() => { var instance = LobbyBehaviour.Instance; return (instance, instance.AsBoolFast()); });
         currentGameOptions = new(() =>
         {
             var exists = gameOptionsManager.Get(out var instance);
@@ -149,7 +149,7 @@ internal class AmongUsLLImpl : AmongUsLL
             var val = currentGameOptions.Get().MapId;
             return (val, shipStatus.HasBeenInitialized);
         });
-        localPlayer = new(() => { var instance = PlayerControl.LocalPlayer; return (instance, instance); });
+        localPlayer = new(() => { var instance = PlayerControl.LocalPlayer; return (instance, instance.AsBoolFast()); });
 
         screenWidth = new(() => (Screen.width, true), false);
         screenHeight = new(() => (Screen.height, true), false);

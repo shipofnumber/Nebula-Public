@@ -13,7 +13,7 @@ namespace Nebula.Roles.Impostor;
 
 public class Cleaner : DefinedSingleAbilityRoleTemplate<Cleaner.Ability>, HasCitation, DefinedRole, IAssignableDocument
 {
-    private Cleaner() : base("cleaner", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [CleanCoolDownOption, SyncKillAndCleanCoolDownOption]){
+    private Cleaner() : base("cleaner", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [CleanCoolDownOption, SyncKillAndCleanCoolDownOption]){
         GameActionTypes.CleanCorpseAction = new("cleaner.clean", this, isCleanDeadBodyAction: true);
     }
 

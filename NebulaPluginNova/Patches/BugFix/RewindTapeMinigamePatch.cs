@@ -24,7 +24,7 @@ internal static class RewindTapeMinigameUpdatePatch
     {
         if (shouldHelp)
         {
-            var absDirection = Mathf.Abs(lastDirection);
+            var absDirection = Mathn.Abs(lastDirection);
             if (0f < absDirection && absDirection < 120f)
             {
                 float vanillaDirection = __instance.direction;

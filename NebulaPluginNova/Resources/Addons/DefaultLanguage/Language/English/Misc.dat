@@ -94,6 +94,7 @@
 "gamemode.standard" : "Standard"
 "gamemode.freeplay" : "Free Play"
 "gamemode.aeroguesser" : "AeroGuesser"
+"gamemode.paintquiz" : "Paint Quiz"
 
 # Notification
 
@@ -192,6 +193,7 @@
 "stats.group.roles" : "Roles"
 "stats.group.perks" : "Perks"
 "stats.group.aeroGuesser" : "Aero Guesser"
+"stats.group.paintQuiz" : "Paint Quiz"
 "stats.role.common.assigned" : "Played %ROLE%"
 "stats.role.common.won" : "Won as %ROLE%"
 "stats.modifier.common.assigned" : "Played %MODIFIER%"
@@ -209,6 +211,19 @@
 "stats.aeroGuesser.gamePlay" : "Play Games"
 "stats.aeroGuesser.totalScore" : "Total Score"
 "stats.aeroGuesser.perfectScore" : "Number of Perfect Score Recoreded"
+"stats.paintQuiz.gamePlay" : "Play Games"
+"stats.paintQuiz.gamePlay.host" : "Play As Host"
+"stats.paintQuiz.totalScore.double" : "Total Score"
+"stats.paintQuiz.score.give.1" : "-1pt Gave"
+"stats.paintQuiz.score.give.0" : "0pt Gave"
+"stats.paintQuiz.score.give.2" : "0.5pt Gave"
+"stats.paintQuiz.score.give.3" : "1pt Gave"
+"stats.paintQuiz.score.give.4" : "2pt Gave"
+"stats.paintQuiz.score.get.1" : "-1pt Got"
+"stats.paintQuiz.score.get.0" : "0pt Got"
+"stats.paintQuiz.score.get.2" : "0.5pt Got"
+"stats.paintQuiz.score.get.3" : "1pt Got"
+"stats.paintQuiz.score.get.4" : "2pt Got"
 
 # Common UI
 

@@ -42,7 +42,7 @@ public class ObjectPool<T> where T : Component
         else
         {
             T result = generator.Invoke();
-            var entry = new ObjectEntry(result, result.GetInstanceID(), result.gameObject);
+            var entry = new ObjectEntry(result, result.GetInstanceIdFast(), result.gameObject);
             OnInstantiated?.Invoke(result);
             activatedObjects.Add(entry);
             return result;
@@ -61,7 +61,7 @@ public class ObjectPool<T> where T : Component
 
     public void Inactivate(T obj)
     {
-        var instanceId = obj.GetInstanceID();
+        var instanceId = obj.GetInstanceIdFast();
         var entry = activatedObjects.Find(entry => entry.InstanceId == instanceId);
         if (entry != null)
         {

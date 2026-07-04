@@ -734,20 +734,21 @@ public static class ShipExtension
         Transform meetingRoom = ship.FastRooms[SystemTypes.MeetingRoom].transform;
         Transform gapRoom = ship.FastRooms[SystemTypes.GapRoom].transform;
 
-        float diffX = (meetingRoom.position.x - gapRoom.transform.position.x) / 0.7f;
+        float diffX = (meetingRoom.GetPositionFast().x - gapRoom.transform.GetPositionFast().x) / 0.7f;
         float[] shadowX = new float[2] { 0f, 0f };
 
         //画像を更新する
         GameObject customRendererObj = new GameObject("meeting_custom");
-        customRendererObj.transform.SetParent(meetingRoom);
-        customRendererObj.transform.localPosition = new Vector3(9.58f, -2.86f, 4.8f);
-        customRendererObj.transform.localScale = new Vector3(1f, 1f, 1f);
+        var customRendererTransform = customRendererObj.transform;
+        customRendererTransform.SetParent(meetingRoom);
+        customRendererTransform.localPosition = new Vector3(9.58f, -2.86f, 4.8f);
+        customRendererTransform.localScale = new Vector3(1f, 1f, 1f);
         customRendererObj.AddComponent<SpriteRenderer>().sprite = customMeetingSideSprite.GetSprite(); ;
         customRendererObj.layer = LayerExpansion.GetShipLayer();
 
         //はしごを生成
         GameObject originalLadderObj = meetingRoom.FindChild("ladder_meeting").gameObject;
-        GameObject ladderObj = GameObject.Instantiate(meetingRoom.FindChild("ladder_meeting").gameObject, meetingRoom);
+        GameObject ladderObj = GameObject.Instantiate(originalLadderObj, meetingRoom);
         ladderObj.name = "ladder_meeting_custom";
         ladderObj.transform.position += new Vector3(10.9f, 0);
         ladderObj.GetComponent<SpriteRenderer>().sprite = customMeetingLadderSprite.GetSprite();

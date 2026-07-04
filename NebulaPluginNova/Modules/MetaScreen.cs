@@ -892,7 +892,7 @@ public class MetaWidgetOld : IMetaWidgetOld, IMetaParallelPlacableOld
         public float Generate(GameObject screen, VVector2 cursor, VVector2 size, out (float min, float max) width)
         {
             VVector2 actualSize = ActualSize;
-            Generate(screen.transform, ReflectAlignment(Alignment, actualSize, cursor, size).AsVector2());
+            Generate(screen.transform, ReflectAlignment(Alignment, actualSize, cursor, size));
             width = CalcWidth(Alignment, cursor, size, actualSize.x, -actualSize.x / 2f, actualSize.x / 2f);
 
             return actualSize.y + 0.05f;

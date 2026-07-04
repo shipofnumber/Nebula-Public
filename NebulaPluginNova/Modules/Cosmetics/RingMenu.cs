@@ -101,7 +101,7 @@ internal class RingMenu
             {
                 var pos = UnityHelper.ScreenToLocalPoint(Input.mousePosition, LayerExpansion.GetUILayer(), obj.transform);
                 pos.z = 0f;
-                if (pos.magnitude > 0.3f && PassiveButtonManager.Instance.currentOver && PassiveButtonManager.Instance.currentOver.GetInstanceID() == button.GetInstanceID())
+                if (pos.magnitude > 0.3f && PassiveButtonManager.Instance.currentOver.AsBoolFast(out var currentOver) && currentOver.GetInstanceIdFast() == button.GetInstanceIdFast())
                 {
                     int length = elements.Length;
                     var nextSelection = (int)((float)(Mathn.Atan2(pos.y, pos.x) + Mathn.PI) / (Mathn.PI * 2.0) * length);

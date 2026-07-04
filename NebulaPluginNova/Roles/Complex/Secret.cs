@@ -61,7 +61,7 @@ public class Secret : DefinedRoleTemplate, DefinedRole
     bool AssignableFilterHolder.CanLoadDefault(Virial.Assignable.DefinedAssignable assignable) => false;
 
     public Secret(bool isEvil) : base("secretInGame", 
-        new(isEvil ? Palette.ImpostorRed : Palette.CrewmateBlue), 
+        isEvil ? VColor.ImpostorColor : VColor.CrewmateColor, 
         isEvil ? RoleCategory.ImpostorRole : RoleCategory.CrewmateRole,
         isEvil ? Impostor.Impostor.MyTeam : Crewmate.Crewmate.MyTeam, withAssignmentOption: false, withOptionHolder: false)
     {

@@ -23,7 +23,7 @@ namespace Nebula.Roles.Impostor;
 
 internal class Creeping : DefinedSingleAbilityRoleTemplate<Creeping.Ability>, HasCitation, DefinedRole, IAssignableDocument
 {
-    private Creeping() : base("creeping", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [PoisonDelayOption, DepoisonDurationOption, PoisonCooldownOption])
+    private Creeping() : base("creeping", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [PoisonDelayOption, DepoisonDurationOption, PoisonCooldownOption])
     {
     }
     Citation? HasCitation.Citation => Citations.TownOfImpostors;
@@ -70,7 +70,7 @@ internal class Creeping : DefinedSingleAbilityRoleTemplate<Creeping.Ability>, Ha
                         if (ModSingleton<DepoisonBoxManager>.Instance?.AmPoisoned ?? false) poisonedInPoison.Add(target.RealPlayer);
                         DepoisonBoxManager.RpcPoison.Invoke((MyPlayer, target.RealPlayer));
                         if (Constants.ShouldPlaySfx()) AmongUsLLImpl.SoundManagerInstance.PlaySoundImmediate(ViperAudio, false);
-                        MyPlayer.VanillaPlayer.NetTransform.RpcSnapTo(target.RealPlayer.VanillaPlayer.transform.position);
+                        MyPlayer.VanillaPlayer.NetTransform.RpcSnapTo(target.RealPlayer.Position);
                         NebulaAPI.CurrentGame?.KillButtonLikeHandler.StartCooldown();
                     }).SetAsUsurpableButton(this);
                 (poisonButton.CoolDownTimer as GameTimer)?.SetAsKillCoolTimer();

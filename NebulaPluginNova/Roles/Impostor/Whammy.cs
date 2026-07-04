@@ -63,7 +63,7 @@ internal class Balloon
         UpdateBalloonColor();
     }
 
-    public VVector2 HandPos => stringRenderer.transform.position;
+    public VVector2 HandPos => stringRenderer.transform.GetPositionFast();
     public VVector2 CenterPos => HandPos + new VVector2(0f, DefaultStringLength);
     
     /// <summary>
@@ -73,13 +73,13 @@ internal class Balloon
     {
         balloonRenderer.transform.position = CenterPos.AsVector3(BalloonZ);
     }
-    private float BalloonZ => target.AmOwner ? -15f : target.VanillaPlayer.transform.position.z - 0.1f;
+    private float BalloonZ => target.AmOwner ? -15f : (target.Position.y / 1000f) - 0.1f;
     /// <summary>
     /// 糸の位置を調整します。
     /// </summary>
     private void ReflectString()
     {
-        VVector2 diff = balloonRenderer.transform.position - stringRenderer.transform.position;
+        VVector2 diff = balloonRenderer.transform.GetPositionFast() - stringRenderer.transform.GetPositionFast();
         stringRenderer.transform.localEulerAngles = new(0f, 0f, Mathn.Atan2(diff.y, diff.x).RadToDeg() - 90f);
         var mag = diff.Magnitude;
         stringRenderer.sprite = BalloonStringSprite.GetSprite(Variation.FindIndex(num => num < mag));
@@ -128,7 +128,7 @@ internal class Balloon
         stringRenderer.transform.localPosition = (HandCenter + new VVector2(0f, yDiff)).AsUnityVector3(0f);
 
 
-        VVector2 lastPos = balloonRenderer.transform.position;
+        VVector2 lastPos = balloonRenderer.transform.GetPositionFast();
         var targetPos = CenterPos;
         var diff = lastPos - targetPos;
         var lastDistance = diff.Magnitude;
@@ -137,7 +137,7 @@ internal class Balloon
         var isMoving = lastPlayerPos.Distance(currentPlayerPos) > 0.005f;
         lastPlayerPos = currentPlayerPos;
 
-        var deltaTime = Time.deltaTime;
+        var deltaTime = FastMethods.GetDeltaTimeFast();
 
         if (!lastActive || lastDistance > 3f) ResetToDefaultPos();
         else
@@ -162,7 +162,7 @@ internal class Balloon
             balloonRenderer.transform.position -= (diff.Delta(4.4f, 0f) * speedP).AsUnityVector3();
 
             //範囲外の位置を調整
-            VVector2 currentPos = balloonRenderer.transform.position;
+            VVector2 currentPos = balloonRenderer.transform.GetPositionFast();
             VVector2 handPos = HandPos;
             VVector2 currentDiff = currentPos - handPos;
             float currentDistance = currentDiff.Magnitude;
@@ -177,10 +177,10 @@ internal class Balloon
         }
 
         ReflectString();
-        UpdateAngle(deltaTime, lastPos, balloonRenderer.transform.position, CenterPos);
+        UpdateAngle(deltaTime, lastPos, balloonRenderer.transform.GetPositionFast(), CenterPos);
     }
 
-    public VVector2 BalloonPos => balloonRenderer.transform.position;
+    public VVector2 BalloonPos => balloonRenderer.transform.GetPositionFast();
     public float Scale => balloonRenderer.transform.localScale.x;
     public void UpdateAlpha(float alpha)
     {
@@ -456,7 +456,7 @@ internal class BalloonHolder : AbstractModule<GamePlayer>, IGameOperator, IBindP
                     float scale = Balloon.DefaultBalloonSize + h * 1.4f;
                     balloonRenderer.transform.localScale = new(scale, scale, 1f);
 
-                    var z = balloonHolder.transform.position.z;
+                    var z = balloonHolder.transform.GetPositionFast().z;
                     balloonHolder.transform.position = (position + new VVector2(0f, h + p * 0.12f * Mathn.Sin(Time.time * 0.92f))).AsVector3(z);
                     yield return null;
                 }
@@ -566,12 +566,12 @@ public class BalloonManager : AbstractModule<Virial.Game.Game>, IGameOperator
 
     void OnOpenConsoleLocal(PlayerBeginMinigameByConsoleLocalEvent ev)
     {
-        if (IsAvailable) RpcCheckConsole.Invoke((ev.Player, ev.Console.name, ev.Console.transform.position));
+        if (IsAvailable) RpcCheckConsole.Invoke((ev.Player, ev.Console.name, ev.Console.transform.GetPositionFast()));
     }
 
-    public bool ConsoleHasTrap(Console console) => localTrappedConsoles.Any(c => c.Console.GetInstanceID() == console.GetInstanceID());
+    public bool ConsoleHasTrap(Console console) => localTrappedConsoles.Any(c => c.Console.GetInstanceIdFast() == console.GetInstanceIdFast());
     public void EntrapToConsole(Console console) {
-        bool flip = console!.transform.position.x > AmongUsLLImpl.LocalPlayer.transform.position.x;
+        bool flip = console!.transform.GetPositionFast().x > GamePlayer.LocalPlayer!.Position.x;
         VVector3 pos = GetConsoleBalloonPos(console, ref flip);
 
         var renderer = UnityHelper.SimpleAnimator(console!.transform, pos, 0.2f, num => BalloonManager.BalloonTrapSprite.GetSprite(num % 4));
@@ -601,7 +601,7 @@ public class BalloonManager : AbstractModule<Virial.Game.Game>, IGameOperator
             var trappedConsoles = instance.localTrappedConsoles;
             foreach(var c in trappedConsoles)
             {
-                if(c.Console.name == message.name && c.Console.transform.position.Distance(message.pos) < 1f)
+                if(c.Console.name == message.name && c.Console.transform.GetPositionFast().Distance(message.pos) < 1f)
                 {
                     instance.ReleaseTrap(c);
                     RpcBalloon.Invoke((message.player, GamePlayer.LocalPlayer!));
@@ -1222,7 +1222,7 @@ internal class SlingshotMinigame : Minigame
 
 public class Whammy : DefinedSingleAbilityRoleTemplate<Whammy.Ability>, DefinedRole, IAssignableDocument
 {
-    private Whammy() : base("whammy", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [
+    private Whammy() : base("whammy", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [
         new GroupConfiguration("options.role.whammy.group.place", [PlaceDurationOption,PlaySEOnPlacingBalloonOption, SEStrengthOption, AdditionalKillCooldownByPlacementOption], GroupConfigurationColor.ImpostorRed),
         new GroupConfiguration("options.role.whammy.group.gaining", [NumOfBalloonsInStartingOption, NumOfBalloonsByKillingOption], GroupConfigurationColor.ImpostorRed),
         new GroupConfiguration("options.role.whammy.group.balloon", [TimeLimitOption, NumOfMaxMinigameConsolesOption, NumOfMaxMinigameToBreakBalloonOption, StoneAssignmentOption], GroupConfigurationColor.ImpostorRed),
@@ -1282,7 +1282,7 @@ public class Whammy : DefinedSingleAbilityRoleTemplate<Whammy.Ability>, DefinedR
                 Virial.Components.ObjectTracker<Console> consoleTracker = new ObjectTrackerUnityImpl<Console, Console>(
                     MyPlayer.VanillaPlayer, AmongUsLLImpl.Instance.VanillaKillDistance, () => AmongUsLLImpl.ShipStatusInstance.AllConsoles,
                     c => !ModSingleton<BalloonManager>.Instance.ConsoleHasTrap(c), c => !c.IsFast<VentCleaningConsole>() && !c.IsFast<AutoTaskConsole>() && !c.IsFast<StoreArmsTaskConsole>(), c => c,
-                    c => [c.transform.position], c => c.Image, UnityEngine.Color.yellow,
+                    c => [c.transform.GetPositionFast()], c => c.Image, UnityEngine.Color.yellow,
                     true, false).Register(this);
                 
                 

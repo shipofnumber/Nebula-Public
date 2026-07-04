@@ -17,8 +17,8 @@ namespace Nebula.Game;
 public class NebulaGameEnd
 {
     static private VColor InvalidColor = new VColor(72f / 255f, 78f / 255f, 84f / 255f);
-    static public readonly GameEnd CrewmateWin = new(16, "crewmate", new(Palette.CrewmateBlue), 16);
-    static public readonly GameEnd ImpostorWin = new(17, "impostor", new(Palette.ImpostorRed), 16);
+    static public readonly GameEnd CrewmateWin = new(16, "crewmate", VColor.CrewmateColor, 16);
+    static public readonly GameEnd ImpostorWin = new(17, "impostor", VColor.ImpostorColor, 16);
     static public readonly GameEnd JackalWin = new(26, "jackal", Roles.Neutral.Jackal.MyRole.Color, 18);
     static public readonly GameEnd VultureWin = new(24, "vulture", Roles.Neutral.Vulture.MyRole.Color, 32);
     static public readonly GameEnd JesterWin = new(25, "jester", Roles.Neutral.Jester.MyRole.Color, 32);
@@ -34,7 +34,7 @@ public class NebulaGameEnd
     static public readonly GameEnd TyrantWin = new(36, "tyrant", Roles.Neutral.Tyrant.MyRole.Color, 32);
     static public readonly GameEnd VanityWin = new(37, "vanity", Roles.Neutral.Vanity.MyRole.Color, 18);
     static public readonly GameEnd PlagueWin = new(38, "plague", Roles.Neutral.Plague.MyRole.Color, 32);
-    static public readonly GameEnd GameEnd = new(62, "gameEnd", new(Palette.CrewmateBlue), 128) { AlternativeClip = () => NebulaAsset.GetAudioClip(NebulaAudioClip.AeroGuesserGameEnd)};
+    static public readonly GameEnd GameEnd = new(62, "gameEnd", VColor.CrewmateColor, 128) { AlternativeClip = () => NebulaAsset.GetAudioClip(NebulaAudioClip.AeroGuesserGameEnd)};
     static public readonly GameEnd NoGame = new(63, "nogame", InvalidColor, 128) { AllowWin = false };
 
     static public readonly ExtraWin ExtraLoversWin = new(0, "lover", Roles.Modifier.Lover.MyRole.Color);
@@ -385,7 +385,7 @@ public class EndGameManagerSetUpPatch
         // テキストを追加する
         GameObject bonusText = UnityEngine.Object.Instantiate(__instance.WinText.gameObject);
         bonusText.transform.SetParent(null);
-        var winTextPos = __instance.WinText.transform.position;
+        var winTextPos = __instance.WinText.transform.GetPositionFast();
         bonusText.transform.position = new Vector3(winTextPos.x, winTextPos.y - 0.5f, winTextPos.z);
         bonusText.transform.localScale = new Vector3(0.7f, 0.7f, 1f);
         TMPro.TMP_Text textRenderer = bonusText.GetComponent<TMPro.TMP_Text>();
@@ -404,8 +404,8 @@ public class EndGameManagerSetUpPatch
         var customWinText = NebulaGameManager.Instance?.GameMode?.GetAlternativeWinOrLoseText();
         if (customWinText == null)
         {
-            __instance.WinText.text = (winners.Count == 0 && (endCondition?.SpecifyNobodyWins ?? true)) ? Language.Translate("end.status.noWinners") : DestroyableSingleton<TranslationController>.Instance.GetString(amWin ? StringNames.Victory : StringNames.Defeat);
-            __instance.WinText.color = amWin ? new Color(0f, 0.549f, 1f, 1f) : Color.red;
+            __instance.WinText.text = (winners.Count == 0 && (endCondition?.SpecifyNobodyWins ?? true)) ? Language.Translate("end.status.noWinners") : VanillaTranslationCache.GetString(amWin ? StringNames.Victory : StringNames.Defeat);
+            __instance.WinText.color = amWin ? new Color(0f, 0.549f, 1f, 1f) : new Color(1f, 0f, 0f);
         }
         else
         {

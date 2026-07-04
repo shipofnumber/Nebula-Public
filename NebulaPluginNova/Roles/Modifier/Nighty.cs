@@ -15,7 +15,7 @@ namespace Nebula.Roles.Modifier;
 
 internal class Nighty : DefinedAllocatableModifierTemplate, DefinedAllocatableModifier, HasCitation, IAssignableDocument
 {
-    private Nighty() : base("nighty", "NHT", new(Palette.ImpostorRed), [PlaceCooldownOption, MineSizeOption, MineDurationOption, BlindDurationOption], allocateToCrewmate: false, allocateToNeutral: false)
+    private Nighty() : base("nighty", "NHT", VColor.ImpostorColor, [PlaceCooldownOption, MineSizeOption, MineDurationOption, BlindDurationOption], allocateToCrewmate: false, allocateToNeutral: false)
     {
         GameActionTypes.BlindTrapPlaceAction = new("nighty.place", this, isPlacementAction: true);
     }

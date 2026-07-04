@@ -49,7 +49,7 @@ public class DynamicPalette
         SavedColor = new (ModColor, ColorEntry)[5];
         for (int i = 0; i < SavedColor.Length; i++) SavedColor[i] = (new("savedColor" + i), new("savedColor" + i + ".visor"));
 
-        VanillaColorsPalette = Palette.PlayerColors.Select(c => new VColor((Color)c)).ToArray();
+        VanillaColorsPalette = Palette.PlayerColors.Select(c => (VColor)(Color)c).ToArray();
         VanillaVisorColor = new VColor(Palette.VisorColor);
 
         List<RestorableColor> vanillaCatalogue = [];
@@ -964,7 +964,7 @@ public class NebulaPlayerTab : MonoBehaviour
         {
             if (DynamicPalette.MyColor.GetShadowPattern() == byte.MaxValue) return;
 
-            var pos = UnityHelper.ScreenToWorldPoint(Input.mousePosition, LayerExpansion.GetUILayer()) - BrPaletteBackButton.transform.position;
+            var pos = (VVector3)UnityHelper.ScreenToWorldPoint(Input.mousePosition, LayerExpansion.GetUILayer()) - (VVector3)BrPaletteBackButton.ModGameObject(false).Position;
             var b = ToBrightness(pos.y);
             DynamicPalette.MyColor.EditColor(editingShadowColor, null, null, b, null);
 
@@ -1054,7 +1054,7 @@ public class NebulaPlayerTab : MonoBehaviour
 
     private Vector2 GetOnPalettePosition()
     {
-        return UnityHelper.ScreenToWorldPoint(Input.mousePosition, LayerExpansion.GetUILayer()) - DynamicPaletteRenderer.transform.position;
+        return UnityHelper.ScreenToWorldPoint(Input.mousePosition, LayerExpansion.GetUILayer()) - DynamicPaletteRenderer.transform.GetPositionFast();
     }
 
     public static Vector3 ToPalettePosition(byte hue, byte distance)
@@ -1085,7 +1085,7 @@ public class NebulaPlayerTab : MonoBehaviour
         //マウスボタン押下中でカーソルが明度パレット上にある
         if (Input.GetMouseButton(0) && PassiveButtonManager.Instance.currentOver == BrPaletteBackButton)
         {
-            var currentPos = UnityHelper.ScreenToWorldPoint(Input.mousePosition, LayerExpansion.GetUILayer()) - BrPaletteBackButton.transform.position;
+            var currentPos = (VVector3)UnityHelper.ScreenToWorldPoint(Input.mousePosition, LayerExpansion.GetUILayer()) - (VVector3)BrPaletteBackButton.transform.GetPositionFast();
             var b = ToBrightness(currentPos.y);
             if (Mathn.Abs(lastPreviewB - b) > 0.001f)
             {

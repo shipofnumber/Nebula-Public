@@ -7,7 +7,7 @@ public class DamnedImpostor : DefinedRoleTemplate, DefinedRole
 {
     static public readonly DamnedImpostor MyRole = new();
 
-    private DamnedImpostor():base("damnedImpostor", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, null, false, false) { }
+    private DamnedImpostor():base("damnedImpostor", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, null, false, false) { }
     
 
     RuntimeRole RuntimeAssignableGenerator<RuntimeRole>.CreateInstance(GamePlayer player, int[] arguments) => new Instance(player);

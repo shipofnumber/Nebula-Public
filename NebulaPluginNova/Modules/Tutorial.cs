@@ -138,7 +138,8 @@ public class TutorialBuilder : TutorialParameter
             () => UnityHelper.WorldToScreenPoint(NebulaGameManager.Instance!.WideCamera.ConvertToWideCameraPos(worldPosition.Invoke()), LayerExpansion.GetObjectsLayer());
     }
 
-    public TutorialBuilder() : this(() => HudManager.Instance.transform.position + new UnityEngine.Vector3(0f, 4f), true) { }
+    public TutorialBuilder() : this(() => (VVector3)AmongUsLLImpl.HudManagerBridge.MyTransform.GetPositionFast() + new VVector3(0f, 4f), true) { }
+    public TutorialBuilder(VVector3 stickedPosition) : this(() => (VVector3)AmongUsLLImpl.HudManagerBridge.MyTransform.GetPositionFast() + stickedPosition, true) { }
 }
 
 public static class Tutorial

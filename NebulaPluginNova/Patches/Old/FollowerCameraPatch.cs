@@ -5,7 +5,6 @@ static public class FollowerCameraPatch
 {
     public static void Prefix(FollowerCamera __instance)
     {
-        NebulaProfiler.LapTimer("Before FollowerCamera.Update");
         try
         {
             MonoBehaviour target = __instance.Target;
@@ -23,12 +22,11 @@ static public class FollowerCameraPatch
                 {
                     var lightSourceTransform = lightSource.transform;
                     lightSourceTransform.SetParent(null);
-                    lightSourceTransform.position = target.transform.position;
+                    lightSourceTransform.position = target.transform.GetPositionFast();
                 }
             }
         }
         catch { }
-        NebulaProfiler.LapTimer("FollowerCamera.Update");
     }
 
     public static void Postfix(FollowerCamera __instance)

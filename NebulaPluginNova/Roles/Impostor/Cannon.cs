@@ -15,7 +15,7 @@ namespace Nebula.Roles.Impostor;
 [NebulaRPCHolder]
 public class Cannon : DefinedSingleAbilityRoleTemplate<Cannon.Ability>, DefinedRole, IAssignableDocument
 {
-    public Cannon() : base("cannon", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [MarkCoolDownOption, CannonCoolDownOption, NumOfMarksOption, CannonPowerOption, CannonPowerAttenuationOption, CanBlowPlayerUsingConsoleOption])
+    public Cannon() : base("cannon", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [MarkCoolDownOption, CannonCoolDownOption, NumOfMarksOption, CannonPowerOption, CannonPowerAttenuationOption, CanBlowPlayerUsingConsoleOption])
     {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagBeginner);
 
@@ -265,13 +265,13 @@ public class Cannon : DefinedSingleAbilityRoleTemplate<Cannon.Ability>, DefinedR
     }
 
     //壁等の当たり判定を考慮して実際の吹き飛ばし先を決定する
-    public static Vector2 SuggestMoveToPos(Vector2 playerPos, Vector2 maxVector)
+    public static VVector2 SuggestMoveToPos(VVector2 playerPos, VVector2 maxVector)
     {
         var currentData = MapData.GetCurrentMapData();
-        bool CanWarpTo(Vector2 pos) => currentData.CheckMapArea(pos, 0.25f);
+        bool CanWarpTo(VVector2 pos) => currentData.CheckMapArea(pos, 0.25f);
 
-        int length = Mathn.Max((int)(maxVector.magnitude * 4), 100);
-        Vector2[] pos = new Vector2[length];
+        int length = Mathn.Max((int)(maxVector.Magnitude * 4), 100);
+        VVector2[] pos = new VVector2[length];
         for (int i = 0; i < length; i++) pos[i] = playerPos + maxVector * (i + 1) / length;
 
         for(int i = 0; i < length; i++)
@@ -386,8 +386,8 @@ public class Cannon : DefinedSingleAbilityRoleTemplate<Cannon.Ability>, DefinedR
 
         var powerVec = CalcPowerVector(message.pos, modPlayer.Position, CannonPowerOption, CannonPowerAttenuationOption);
         if (powerVec.magnitude < 0.5f) return; //たいして移動しない場合は何もしない。(計算の量を減らすための早期リターン)
-        var moveTo = SuggestMoveToPos(modPlayer.TruePosition, powerVec) - (UnityEngine.Vector2)(modPlayer.TruePosition - modPlayer.Position);
-        if ((moveTo - (UnityEngine.Vector2)modPlayer.Position).magnitude < 0.5f) return; //たいして移動しない場合は何もしない。
+        var moveTo = SuggestMoveToPos(modPlayer.TruePosition, powerVec) - (modPlayer.TruePosition - modPlayer.Position);
+        if ((moveTo - modPlayer.Position).Magnitude < 0.5f) return; //たいして移動しない場合は何もしない。
 
         //ミニゲームを開いている場合は閉じてから考える
         bool isPlayerTask = false;
@@ -400,7 +400,7 @@ public class Cannon : DefinedSingleAbilityRoleTemplate<Cannon.Ability>, DefinedR
         }
         if (myPlayer.CanMove)
         {
-            if (myPlayer.transform.position.Distance(moveTo) > 10f && isPlayerTask) new StaticAchievementToken("cannon.another2");
+            if (new VVector2(myPlayer.transform.GetPositionFast()).Distance(moveTo) > 10f && isPlayerTask) new StaticAchievementToken("cannon.another2");
                 RpcCannon.Invoke((modPlayer, moveTo, message.cannonId, message.num));
         }
     });

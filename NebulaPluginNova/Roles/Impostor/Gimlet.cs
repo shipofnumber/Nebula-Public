@@ -22,7 +22,7 @@ namespace Nebula.Roles.Impostor;
 
 internal class Gimlet : DefinedSingleAbilityRoleTemplate<Gimlet.Ability>, DefinedRole, IAssignableDocument
 {
-    private Gimlet() : base("gimlet", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [DrillCooldownOption, DrillSizeOption, DrillSpeedOption, DrillFrictionResistanceOption, DrillSEStrengthOption, CanKillImpostorOption])
+    private Gimlet() : base("gimlet", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [DrillCooldownOption, DrillSizeOption, DrillSpeedOption, DrillFrictionResistanceOption, DrillSEStrengthOption, CanKillImpostorOption])
     {
         GameActionTypes.DrillAction = new("gimlet.drill", this, isPhysicalAction: true);
 
@@ -217,8 +217,8 @@ internal class Gimlet : DefinedSingleAbilityRoleTemplate<Gimlet.Ability>, Define
         startDrill = true;
         drillRenderer.sprite = DrillImage.GetSprite(1);
 
-        var lastPos = player.VanillaPlayer.transform.position;
-        var walkTo = player.VanillaPlayer.MyPhysics.WalkPlayerTo(pos + dir * 100f, 0.01f, DrillSpeedOption * 2f).WrapToManaged();
+        var lastPos = player.Position;
+        var walkTo = player.VanillaPhysics.WalkPlayerTo(pos + dir * 100f, 0.01f, DrillSpeedOption * 2f).WrapToManaged();
         int count = 3;
         var localPlayer = GamePlayer.LocalPlayer!;
         var killInvoked = false;
@@ -230,15 +230,15 @@ internal class Gimlet : DefinedSingleAbilityRoleTemplate<Gimlet.Ability>, Define
         while (walkTo.MoveNext())
         {
             count++;
-            var currentPos = player.VanillaPlayer.transform.position;
-            if (MeetingHud.Instance || player.IsDead) break;
+            var currentPos = player.Position;
+            if (MeetingHud.Instance.AsBoolFast() || player.IsDead) break;
             if (count > 5)
             {
                 if (currentPos.Distance(lastPos) < 0.005f)
                 {
                     break;
                 }
-                float dotProd = Vector2.Dot((currentPos - lastPos).normalized, dir);
+                float dotProd = VVector2.Dot((currentPos - lastPos).Normalized, dir);
                 //1未満で擦れる音、0.6未満で終了
                 if (dotProd < (0.9f - frictionResistance))
                 {
@@ -247,7 +247,7 @@ internal class Gimlet : DefinedSingleAbilityRoleTemplate<Gimlet.Ability>, Define
 
                 fricVolume -= (fricVolume - (dotProd < 0.995f ? 1f : 0f)).Delta(dotProd < 0.995f ? 2f : 3f, 0.001f);
                 drillFricSE.volume = fricVolume;
-                if (dotProd < 0.995f) frictionTime += Time.deltaTime;
+                if (dotProd < 0.995f) frictionTime += FastMethods.GetDeltaTimeFast();
             }
 
             lastPos = currentPos;

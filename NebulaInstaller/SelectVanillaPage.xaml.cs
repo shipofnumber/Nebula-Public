@@ -34,7 +34,7 @@ namespace NebulaInstaller
             if (!AUInstalling.IsVanillaAmongUsDirectory(path!))
                 MainWindow.Instance.OpenPage(new SelectVanillaPageAgain());
             else
-                MainWindow.Instance.OpenPage(new SelectInstallToPage(path!));
+                MainWindow.Instance.OpenPage(new SelectPlatformPage(path!));
         }
 
         private void ClickPrev(object sender, RoutedEventArgs e)

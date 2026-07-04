@@ -10,7 +10,7 @@ namespace Nebula.Roles.Impostor;
 
 public class Painter : DefinedSingleAbilityRoleTemplate<Painter.Ability>, DefinedRole, IAssignableDocument
 {
-    private Painter() : base("painter", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [SampleCoolDownOption, PaintCoolDownOption, LoseSampleOnMeetingOption, TransformAfterMeetingOption]) { }
+    private Painter() : base("painter", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [SampleCoolDownOption, PaintCoolDownOption, LoseSampleOnMeetingOption, TransformAfterMeetingOption]) { }
 
 
     static private FloatConfiguration SampleCoolDownOption = NebulaAPI.Configurations.Configuration("options.role.painter.sampleCoolDown", (0f, 60f, 2.5f), 15f, FloatConfigurationDecorator.Second);

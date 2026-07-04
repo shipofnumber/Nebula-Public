@@ -46,7 +46,7 @@ public class Confused : DefinedAllocatableModifierTemplate, DefinedAllocatableMo
 
             var alives = NebulaGameManager.Instance!.AllPlayerInfo.Where(p => !p.IsDead && !p.AmOwner).ToArray();
             var randomArray = Helpers.GetRandomArray(alives.Length);
-            int maxPairs = Mathf.Min(NumOfMaxShuffledPairsOption, alives.Length / 2);
+            int maxPairs = Mathn.Min(NumOfMaxShuffledPairsOption, alives.Length / 2);
 
             float prob = ChanceOfShuffleOption;
 

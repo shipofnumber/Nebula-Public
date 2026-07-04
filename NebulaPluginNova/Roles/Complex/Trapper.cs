@@ -52,7 +52,7 @@ file static class TrapperSystem
 
             if (Trapper.KillTrapSoundDistanceOption > 0f)
             {
-                if (buttonVariation[buttonIndex].id == KillTrapId) NebulaAsset.RpcPlaySE.Invoke((NebulaAudioClip.TrapperKillTrap, AmongUsLLImpl.LocalPlayer.transform.position, Trapper.KillTrapSoundDistanceOption * 0.6f, Trapper.KillTrapSoundDistanceOption));
+                if (buttonVariation[buttonIndex].id == KillTrapId) NebulaAsset.RpcPlaySE.Invoke((NebulaAudioClip.TrapperKillTrap, GamePlayer.LocalPlayer?.Position ?? VVector2.Zero, Trapper.KillTrapSoundDistanceOption * 0.6f, Trapper.KillTrapSoundDistanceOption));
             }
 
             if (isEvil && buttonVariation[buttonIndex].id == DecelTrapId)
@@ -95,7 +95,7 @@ public class Trapper : DefinedSingleAbilityRoleTemplate<IUsurpableAbility>, Defi
 {
     private Trapper(bool isEvil) : base(
         isEvil ? "evilTrapper" : "niceTrapper",
-        isEvil ? new(Palette.ImpostorRed) : new(206,219,96),
+        isEvil ? VColor.ImpostorColor : new(206,219,96),
         isEvil ? RoleCategory.ImpostorRole : RoleCategory.CrewmateRole,
         isEvil ? Impostor.Impostor.MyTeam : Crewmate.Crewmate.MyTeam,
         [NumOfChargesOption, isEvil ? CostOfKillTrapOption : CostOfCommTrapOption, PlaceCoolDownOption, PlaceDurationOption, SpeedTrapSizeOption, isEvil ? KillTrapSizeOption : CommTrapSizeOption, SpeedTrapDurationOption, AccelRateOption, DecelRateOption])

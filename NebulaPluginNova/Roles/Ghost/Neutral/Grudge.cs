@@ -29,8 +29,8 @@ public class Grudge : DefinedGhostRoleTemplate, DefinedGhostRole
         public bool IsActive { get; set; } = true;
         private float Alpha { get; set; } = 0f;
 
-        public GrudgeIllusion(GamePlayer player, Vector3 position, bool flipX) {
-            this.player = AmongUsUtil.GetPlayerIcon(player.DefaultOutfit.outfit, null, position, new(0.35f, 0.35f, 0.001f), flipX, false);
+        public GrudgeIllusion(GamePlayer player, VVector2 position, bool flipX) {
+            this.player = AmongUsUtil.GetPlayerIcon(player.DefaultOutfit.outfit, null, position.AsUnityVector3(position.y / 1000f), new(0.35f, 0.35f, 0.001f), flipX, false);
             UnityHelper.DoForAllChildren(this.player.gameObject, obj => obj.layer = LayerExpansion.GetPlayersLayer());
             allRenderers = this.player.gameObject.GetComponentsInChildren<SpriteRenderer>();
             SetAlpha(0f);
@@ -101,15 +101,15 @@ public class Grudge : DefinedGhostRoleTemplate, DefinedGhostRole
             {
                 if (!MeetingHud.Instance.AsBoolFast() && !ExileController.Instance.AsBoolFast())
                 {
-                    standingCoolDown -= Time.deltaTime;
+                    standingCoolDown -= ev.DeltaTime;
                 }
                 standingTime = 0f;
             }
             else
             {
-                if (MyPlayer.IsDead && !MeetingHud.Instance.AsBoolFast() && !ExileController.Instance.AsBoolFast() && MyPlayer.VanillaPlayer.MyPhysics.Velocity.magnitude < 0.001f)
+                if (MyPlayer.IsDead && !MeetingHud.Instance.AsBoolFast() && !ExileController.Instance.AsBoolFast() && MyPlayer.VanillaPhysics.Velocity.magnitude < 0.001f)
                 {
-                    standingTime += Time.deltaTime;
+                    standingTime += ev.DeltaTime;
                 }
                 else
                 {
@@ -119,19 +119,19 @@ public class Grudge : DefinedGhostRoleTemplate, DefinedGhostRole
 
             if(standingTime > 0.6f && currentIllusion == null)
             {
-                RpcShowIllusion.Invoke((MyPlayer, MyPlayer.VanillaPlayer.transform.position, MyPlayer.VanillaPlayer.cosmetics.FlipX));
+                RpcShowIllusion.Invoke((MyPlayer, MyPlayer.Position, MyPlayer.VanillaCosmetics.FlipX));
             }
             if(!(standingTime > 0f) && currentIllusion != null)
             {
                 RpcDisappearIllusion.Invoke(MyPlayer);
             }
 
-            var myPos = MyPlayer.Position.ToUnityVector();
+            var myPos = MyPlayer.Position;
             if(!canWin && standingTime > 0.8f)
             {
-                if (NebulaGameManager.Instance!.AllPlayerInfo.Any(p => !p.IsDead && p.VanillaPlayer.transform.position.Distance(myPos) < 1.5f))
+                if (GamePlayer.AllPlayers.Any(p => !p.IsDead && p.Position.Distance(myPos) < 1.5f))
                 {
-                    progress += Time.deltaTime;
+                    progress += ev.DeltaTime;
                     if (TotalStandingTimeToWin < progress)
                     {
                         RpcShareCanWin.Invoke(MyPlayer);
@@ -143,7 +143,7 @@ public class Grudge : DefinedGhostRoleTemplate, DefinedGhostRole
                 }
                 else
                 {
-                    bored += Time.deltaTime;
+                    bored += ev.DeltaTime;
                 }
             }
             else
@@ -187,7 +187,7 @@ public class Grudge : DefinedGhostRoleTemplate, DefinedGhostRole
             }
         }
         
-        static private readonly RemoteProcess<(GamePlayer player, Vector3 pos, bool flipX)> RpcShowIllusion = new("ShowGrudgeIllusion",
+        static private readonly RemoteProcess<(GamePlayer player, VVector2 pos, bool flipX)> RpcShowIllusion = new("ShowGrudgeIllusion",
             (message, _) =>
             {
                 var grudge = message.player.GhostRole as Grudge.Instance;

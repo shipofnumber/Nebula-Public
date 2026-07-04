@@ -20,7 +20,7 @@ namespace Nebula.Roles.Impostor;
 [NebulaRPCHolder]
 internal class Nightmare : DefinedSingleAbilityRoleTemplate<Nightmare.Ability>, DefinedRole, IAssignableDocument
 {
-    private Nightmare() : base("nightmare", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [placeCooldownOption, nightmareCooldownOption, nightmareDurationOption, darknessSizeOption, inShadowLightSizeOption, disposableNightSeedOption, numOfNightSeedOption])
+    private Nightmare() : base("nightmare", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [placeCooldownOption, nightmareCooldownOption, nightmareDurationOption, darknessSizeOption, inShadowLightSizeOption, disposableNightSeedOption, numOfNightSeedOption])
     {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagFunny);
         //ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Berserker.png");

@@ -11,7 +11,7 @@ internal class HydeImpostor : DefinedRoleTemplate, DefinedRole
 {
     static public readonly HydeImpostor MyRole = new();
 
-    private HydeImpostor() : base("hydeImpostor", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, null, false, false) { }
+    private HydeImpostor() : base("hydeImpostor", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, null, false, false) { }
 
 
     RuntimeRole RuntimeAssignableGenerator<RuntimeRole>.CreateInstance(GamePlayer player, int[] arguments) => new Instance(player);

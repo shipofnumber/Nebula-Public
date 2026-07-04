@@ -134,15 +134,15 @@ public class GameStatistics
 
             if (variation.ShowPlayerPosition)
             {
-                List<Tuple<byte, Virial.Compat.Vector2>> list = [];
-                foreach (var p in PlayerControl.AllPlayerControls.GetFastEnumerator())
+                List<Tuple<byte, VVector2>> list = [];
+                foreach (var p in GamePlayer.AllPlayers)
                 {
-                    if (p.Data.IsDead && p.PlayerId != sourceId && (TargetIdMask & 1 << p.PlayerId) == 0) continue;
+                    if (p.IsDead && p.PlayerId != sourceId && (TargetIdMask & 1 << p.PlayerId) == 0) continue;
 
                     if (positionTag != null)
-                        list.Add(new Tuple<byte, Virial.Compat.Vector2>(p.PlayerId, new(NebulaGameManager.Instance!.GameStatistics.Gathering[positionTag.Value][p.PlayerId])));
+                        list.Add(new Tuple<byte, VVector2>(p.PlayerId, new(NebulaGameManager.Instance!.GameStatistics.Gathering[positionTag.Value][p.PlayerId])));
                     else
-                        list.Add(new Tuple<byte, Virial.Compat.Vector2>(p.PlayerId, new(p.transform.position)));
+                        list.Add(new Tuple<byte, Virial.Compat.Vector2>(p.PlayerId, new(p.Position)));
                 }
                 Position = list.ToArray();
             }
@@ -168,7 +168,7 @@ public class GameStatistics
     public IEnumerable<Event> AllEvents => allEvents;
     public Event[] Sealed { get => allEvents.ToArray(); }
 
-    public Dictionary<GameStatisticsGatherTag, Dictionary<byte, Vector2>> Gathering { get; set; } = [];
+    public Dictionary<GameStatisticsGatherTag, Dictionary<byte, VVector2>> Gathering { get; set; } = [];
 
     public void RecordEvent(Event statisticsEvent)
     {

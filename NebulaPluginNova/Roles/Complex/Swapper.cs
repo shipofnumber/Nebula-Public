@@ -58,7 +58,7 @@ public class Swapper : DefinedSingleAbilityRoleTemplate<IUsurpableAbility>, Defi
 {
     private Swapper(bool isEvil) : base(
         isEvil ? "evilSwapper" : "niceSwapper",
-        isEvil ? new(Palette.ImpostorRed) : new(171, 74, 146),
+        isEvil ? VColor.ImpostorColor : new(171, 74, 146),
         isEvil ? RoleCategory.ImpostorRole : RoleCategory.CrewmateRole,
         isEvil ? Impostor.Impostor.MyTeam : Crewmate.Crewmate.MyTeam,
         [isEvil ? NumOfSwapEvilOption : NumOfSwapNiceOption, CanSelectSwapperOption])

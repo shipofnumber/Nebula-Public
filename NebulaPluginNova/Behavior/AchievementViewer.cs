@@ -28,7 +28,7 @@ internal class AchievementViewer : MonoBehaviour
 
     static public void Open(MainMenuManager mainMenu) => MainMenuManagerInstance.Open<AchievementViewer>("AchievementViewer", mainMenu, viewer => viewer.OnShown());
     
-    static private List<INebulaAchievement>? rolesAchsCache = null, seasonalAchsCache = null, perkAchsCache = null, costumeAchsCache = null, aeroGuesserAchsCache = null, othersAchsCache = null, innerslothAchsCache = null, sortedAchsCache = null;
+    static private List<INebulaAchievement>? rolesAchsCache = null, seasonalAchsCache = null, perkAchsCache = null, costumeAchsCache = null, aeroGuesserAchsCache = null, paintQuizAchsCache = null, othersAchsCache = null, innerslothAchsCache = null, sortedAchsCache = null;
     static private void CalcCategorizedAchievements()
     {
         if (rolesAchsCache == null)
@@ -38,6 +38,7 @@ internal class AchievementViewer : MonoBehaviour
             perkAchsCache = [];
             costumeAchsCache = [];
             aeroGuesserAchsCache = [];
+            paintQuizAchsCache = [];
             othersAchsCache = [];
             innerslothAchsCache = [];
 
@@ -58,8 +59,10 @@ internal class AchievementViewer : MonoBehaviour
                         costumeAchsCache!.Add(a);
                     else if (type == AchievementType.Perk)
                         perkAchsCache!.Add(a);
-                    else if(type == AchievementType.AeroGuesser)
+                    else if (type == AchievementType.AeroGuesser)
                         aeroGuesserAchsCache!.Add(a);
+                    else if (type == AchievementType.PaintQuiz)
+                        paintQuizAchsCache!.Add(a);
                     else
                         othersAchsCache!.Add(a);
                 }
@@ -385,6 +388,7 @@ internal class AchievementViewer : MonoBehaviour
                 AddGroup("perk", perkAchsCache!);
                 AddGroup("costume", costumeAchsCache!);
                 AddGroup("aeroGuesser", aeroGuesserAchsCache!);
+                AddGroup("paintQuiz", paintQuizAchsCache!);
                 AddGroup("others", othersAchsCache!);
                 AddGroup("innersloth", innerslothAchsCache!);
                 break;

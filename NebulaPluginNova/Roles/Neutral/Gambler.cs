@@ -64,7 +64,7 @@ internal class Gambler : DefinedRoleTemplate, DefinedRole, IAssignableDocument
 
             if (MeetingHud.Instance.TryGetPlayer(to, out var pva) && MeetingHud.Instance.TryGetPlayer(gambler.PlayerId, out var from))
             {
-                Vector3 fromPos = pva.transform.InverseTransformPoint(from.PlayerIcon.cosmetics.hat.transform.position);
+                Vector3 fromPos = pva.transform.InverseTransformPoint(from.PlayerIcon.cosmetics.hat.transform.GetPositionFast());
                 fromPos.z = -2f;
 
                 var renderer = UnityHelper.CreateObject<SpriteRenderer>("GamblerIcon", pva.transform, fromPos);
@@ -690,11 +690,11 @@ internal class Gambler : DefinedRoleTemplate, DefinedRole, IAssignableDocument
                 ExileController.Instance.StartCoroutine(ManagedEffects.Sequence(
                     ManagedEffects.Wait(1.5f + 0.45f * results.Length),
                     ManagedEffects.Lerp(1.2f, p => {
-                        UpdateLeftNum((int)Mathf.Lerp(lastChips, myChips, p));
+                        UpdateLeftNum((int)Mathn.Lerp(lastChips, myChips, p));
                     }),
                     ManagedEffects.Lerp(0.25f, p =>
                     {
-                        float coeff = 1f + Mathf.Sin(Mathf.PI * p) * 0.7f;
+                        float coeff = 1f + Mathn.Sin(Mathn.PI * p) * 0.7f;
                         leftHolder.transform.localScale = new(coeff, coeff, 1f);
                     })
                     ).WrapToIl2Cpp());

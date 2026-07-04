@@ -317,6 +317,13 @@ public abstract class RemoteProcessArgumentBase
             writer.Write(vec.z);
             writer.Write(vec.w);
         }, reader => new(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()));
+        new RemoteProcessArgument<VColor>((writer, vec) =>
+        {
+            writer.Write(vec.R);
+            writer.Write(vec.G);
+            writer.Write(vec.B);
+            writer.Write(vec.A);
+        }, reader => new(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()));
 
         new RemoteProcessArgument<OutfitCandidate>((writer, outfit) =>
         {

@@ -42,7 +42,8 @@
 
 
   <ItemGroup>
-	  <EmbeddedResource Include="Resources\Nebula.zip" />
+	  <EmbeddedResource Include="Resources\Nebula_Epic.zip" />
+	  <EmbeddedResource Include="Resources\Nebula_Steam.zip" />
   </ItemGroup>
 
 

@@ -96,7 +96,7 @@ internal class ItemSupplierManager : AbstractModule<Virial.Game.Game>, IGameOper
                 var functional = perk?.Instantiate(newInstance).Register(newInstance);
                 if (functional?.HasAction ?? false)
                 {
-                    var obj = ButtonEffect.AddKeyGuide(newInstance.RelatedGameObject, NebulaInput.GetInput(noncrewmate ? VirtualKeyInput.PerkAction2 : VirtualKeyInput.PerkAction1).TypicalKey, new(0f, -0.75f), false);
+                    var obj = ButtonEffect.AddKeyGuide(newInstance.RelatedGameObject.GetUnityObject(), NebulaInput.GetInput(noncrewmate ? VirtualKeyInput.PerkAction2 : VirtualKeyInput.PerkAction1).TypicalKey, new(0f, -0.75f), false);
                     if(obj != null) obj.transform.localScale = new(1f / 0.42f, 1 / 0.42f, 1f);
                     newInstance.Button.OnClick.AddListener(functional.OnClick);
                 }
@@ -123,7 +123,7 @@ internal class ItemSupplierManager : AbstractModule<Virial.Game.Game>, IGameOper
     {
         static void HandleKeyInput(PerkInstanceEntry? entry, VirtualInput input)
         {
-            if (entry != null && entry.instance.RelatedGameObject.active && (entry.functionalInstance?.HasAction ?? false) && input.KeyDownInGame) entry.functionalInstance.OnClick();
+            if (entry != null && entry.instance.RelatedGameObject.ActiveSelf && (entry.functionalInstance?.HasAction ?? false) && input.KeyDownInGame) entry.functionalInstance.OnClick();
         }
         HandleKeyInput(ActivePerk, perkInput1);
         HandleKeyInput(ActiveNoncrewPerk, perkInput2);
@@ -225,7 +225,7 @@ public class ItemSupplier : NebulaSyncStandardObject
                     origWidget);
             }
 
-            return (widget, () => UnityHelper.WorldToScreenPoint(HudManager.Instance.transform.position + new UnityEngine.Vector3(0f, -2.8f), LayerExpansion.GetUILayer()), null);
+            return (widget, () => UnityHelper.WorldToScreenPoint((VVector3)AmongUsLLImpl.HudManagerBridge.MyTransform.GetPositionFast() + new VVector3(0f, -2.8f), LayerExpansion.GetUILayer()), null);
         });
     }
 
@@ -335,7 +335,7 @@ public class ItemSupplierMinigame : Minigame
 
     public override void Begin(PlayerTask task)
     {
-        var supplier = ModSingleton<ItemSupplierManager>.Instance?.GetNearbySupplier(AmongUsLLImpl.LocalPlayer.transform.position);
+        var supplier = ModSingleton<ItemSupplierManager>.Instance?.GetNearbySupplier(GamePlayer.LocalPlayer.Position);
         supplier?.TryGainPerk();
 
         this.ForceClose();

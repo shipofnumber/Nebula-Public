@@ -48,7 +48,7 @@ public class Noiseghost : DefinedGhostRoleTemplate, DefinedGhostRole
                     new StaticAchievementToken("noiseghost.common1");
                     new StaticAchievementToken("noiseghost.common2");
                     StatsAlert.Progress();
-                    RpcGhostNoise.Invoke((MyPlayer, MyPlayer.VanillaPlayer.transform.position));
+                    RpcGhostNoise.Invoke((MyPlayer, MyPlayer.Position));
                     left--;
 
                     if (left > 0) noiseButton.UpdateUsesIcon(left.ToString());

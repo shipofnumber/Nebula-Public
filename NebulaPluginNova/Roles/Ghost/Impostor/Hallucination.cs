@@ -107,7 +107,7 @@ public class Hallucination : DefinedGhostRoleTemplate, DefinedGhostRole
             {
                 //ハルシネーション本人のみ
 
-                if(!acCommon3 && !originalPlayer.IsDead && originalPlayer.Position.ToUnityVector().Distance(display.transform.position) < 2f)
+                if(!acCommon3 && !originalPlayer.IsDead && originalPlayer.Position.Distance((VVector2)display.transform.GetPositionFast()) < 2f)
                 {
                     new StaticAchievementToken("hallucination.common3");
                     acCommon3 = true;
@@ -119,27 +119,26 @@ public class Hallucination : DefinedGhostRoleTemplate, DefinedGhostRole
         {
             display.Cosmetics.colorBlindText.gameObject.SetActive(DataManager.Settings.Accessibility.ColorBlindMode);
 
-            Vector2 currentPos = display.transform.position;
-            Vector2 targetPos = targetGhost.VanillaPlayer.transform.position;
+            VVector2 currentPos = display.transform.GetPositionFast();
+            VVector2 targetPos = targetGhost.Position;
             var diff = targetPos - currentPos;
-            var movement = diff.normalized * speed * Time.deltaTime;
+            var movement = diff.Normalized * speed * Time.deltaTime;
 
-            if (diff.magnitude < movement.magnitude)
+            if (diff.Magnitude < movement.Magnitude)
             {
                 display.Animations.PlayIdleAnimation();
                 display.Cosmetics.AnimateSkinIdle();
-                display.transform.position = targetGhost.VanillaPlayer.transform.position;
+                display.transform.position = targetPos.AsUnityVector3(targetPos.y / 1000f);
             }
             else
             {
                 var lastFlipX = display.Cosmetics.FlipX;
 
-                if (movement.magnitude > 0f) display.Cosmetics.SetFlipX(movement.x < 0f);
-                var gotoPos = display.transform.position + (Vector3)movement;
-                gotoPos.z = gotoPos.y / 1000f;
-                display.transform.position = gotoPos;
+                if (movement.Magnitude > 0f) display.Cosmetics.SetFlipX(movement.x < 0f);
+                var gotoPos = currentPos + movement;
+                display.transform.position = gotoPos.AsUnityVector3(gotoPos.y / 1000f);
 
-                if (movement.magnitude > 0f)
+                if (movement.Magnitude > 0f)
                 {
                     if (!display.Animations.IsPlayingRunAnimation() || lastFlipX != display.Cosmetics.FlipX)
                     {
@@ -164,7 +163,7 @@ public class Hallucination : DefinedGhostRoleTemplate, DefinedGhostRole
         }
     }
 
-    public Hallucination() : base("hallucination", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, [HallucinationCooldownOption, HallucinationDurationOption])
+    public Hallucination() : base("hallucination", VColor.ImpostorColor, RoleCategory.ImpostorRole, [HallucinationCooldownOption, HallucinationDurationOption])
     {
         GameActionTypes.HallucinationAction = new("hallucination.hallucination", this, isPhysicalAction: true);
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Hallucination.png");
@@ -204,7 +203,7 @@ public class Hallucination : DefinedGhostRoleTemplate, DefinedGhostRole
                 {
                     NebulaGameManager.Instance?.RpcDoGameAction(MyPlayer, MyPlayer.Position, GameActionTypes.HallucinationAction);
 
-                    var cand = NebulaGameManager.Instance!.AllPlayerInfo.Where(p => p.PlayerId != MyPlayer.PlayerId);
+                    var cand = GamePlayer.AllPlayers.Where(p => p.PlayerId != MyPlayer.PlayerId);
                     if (cand.Any(p => !p.IsDead)) cand = cand.Where(p => !p.IsDead);
                     if (cand.IsEmpty()) cand = [MyPlayer]; //フリープレイ対策
 
@@ -212,7 +211,7 @@ public class Hallucination : DefinedGhostRoleTemplate, DefinedGhostRole
                     RpcShowHallucination.Invoke((MyPlayer, random, MyPlayer.VanillaPlayer.transform.position));
 
                     StatsHallucinations.Progress();
-                    if (NebulaGameManager.Instance!.AllPlayerInfo.Any(p => !p.IsDead && ((Vector2)MyPlayer.VanillaPlayer.transform.position).Distance(p.Position) < 1f))
+                    if (GamePlayer.AllPlayers.Any(p => !p.IsDead && MyPlayer.Position.Distance(p.Position) < 1f))
                         new StaticAchievementToken("hallucination.common2");
 
                     acTokenAnother1.Value.mask |= 1u << random.PlayerId;

@@ -10,7 +10,7 @@ namespace Nebula.Roles.Impostor;
 
 public class Effacer : DefinedSingleAbilityRoleTemplate<Effacer.Ability>, HasCitation, DefinedRole, IAssignableDocument
 {
-    private Effacer() : base("effacer", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [EffaceCoolDownOption, EffaceDurationOption]) {
+    private Effacer() : base("effacer", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [EffaceCoolDownOption, EffaceDurationOption]) {
         ConfigurationHolder?.AddTags(ConfigurationTags.TagSNR);
         ConfigurationHolder!.Illustration = new NebulaSpriteLoader("Assets/NebulaAssets/Sprites/Configurations/Effacer.png");
     }

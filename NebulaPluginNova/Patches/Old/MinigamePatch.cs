@@ -236,7 +236,7 @@ public static class EmergencyUpdatePatch
 
         int num = Mathn.CeilToInt(leftTime);
         __instance.ButtonActive = false;
-        __instance.StatusText.text = translationController.GetString(StringNames.EmergencyNotReady);
+        __instance.StatusText.text = VanillaTranslationCache.GetString(StringNames.EmergencyNotReady);
         __instance.NumberText.text = translationController.GetString(StringNames.SecondsAbbv, num);
         __instance.ClosedLid.gameObject.SetActive(true);
         __instance.OpenLid.gameObject.SetActive(false);
@@ -257,7 +257,7 @@ public static class EmergencyUpdatePatch
         if (__instance.state == 2) return;
         __instance.state = 2;
         __instance.ButtonActive = false;
-        __instance.StatusText.text = DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.EmergencyDuringCrisis);
+        __instance.StatusText.text = VanillaTranslationCache.GetString(StringNames.EmergencyDuringCrisis);
         __instance.NumberText.text = string.Empty;
         __instance.ClosedLid.gameObject.SetActive(true);
         __instance.OpenLid.gameObject.SetActive(false);

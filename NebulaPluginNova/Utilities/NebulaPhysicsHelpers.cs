@@ -13,8 +13,9 @@ public static class NebulaPhysicsHelpers
     public static bool AnyShadowBetween(Vector2 source, Vector2 dirNorm, float mag, out float distance) => AnyNonTriggersBetween(source, dirNorm, mag, Constants.ShadowMask, out distance, collider => !IsOneWayShadow(collider));
     public static bool AnyNonTriggersBetween(Vector2 source, Vector2 dirNorm, float mag, int layerMask, out float distance, Func<Collider2D, bool>? predicate = null)
     {
-        int num = Physics2D.RaycastNonAlloc(source, dirNorm, PhysicsHelpers.castHits, mag, layerMask);
+        int num = FastMethods.RaycastNonAllocFast(source, dirNorm, PhysicsHelpers.castHits, mag, layerMask);
         bool result = false;
+
         distance = mag;
         for (int i = 0; i < num; i++)
         {
@@ -38,7 +39,7 @@ public static class NebulaPhysicsHelpers
 
     private static bool IsOneWayShadow(Collider2D collider)
     {
-        foreach(var key in LightSource.OneWayShadows.Keys) if (key.GetInstanceID() == collider.gameObject.GetInstanceID()) return true;
+        foreach(var key in LightSource.OneWayShadows.Keys) if (key.EqualsFast(collider.gameObject)) return true;
         return false;
     }
 }

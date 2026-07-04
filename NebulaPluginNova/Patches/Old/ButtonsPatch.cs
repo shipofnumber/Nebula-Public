@@ -85,11 +85,13 @@ public static class RevivePatch
     static bool Prefix(PlayerControl __instance)
     {
         __instance.Data.IsDead = false;
+        (GamePlayer.GetPlayer(__instance.PlayerId) as PlayerModInfo)?.UpdateModDead(false);
         __instance.gameObject.layer = LayerMask.NameToLayer("Players");
         __instance.MyPhysics.ResetMoveState(true);
         __instance.clickKillCollider.enabled = true;
-        __instance.cosmetics.SetPetSource(__instance);
-        __instance.cosmetics.SetNameMask(true);
+        var cosmetics = __instance.cosmetics;
+        cosmetics.SetPetSource(__instance);
+        cosmetics.SetNameMask(true);
         if (__instance.AmOwner)
         {
             if (AmongUsLLImpl.TryGetHudManager(out var hudManager, out var bridge))

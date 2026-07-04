@@ -11,7 +11,7 @@ namespace Nebula.Roles.Impostor;
 
 public class Morphing : DefinedSingleAbilityRoleTemplate<Morphing.Ability>, HasCitation, DefinedRole, IAssignableDocument
 {
-    private Morphing() : base("morphing", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [SampleCoolDownOption, MorphCoolDownOption, MorphDurationOption, LoseSampleOnMeetingOption]) { }
+    private Morphing() : base("morphing", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [SampleCoolDownOption, MorphCoolDownOption, MorphDurationOption, LoseSampleOnMeetingOption]) { }
     Citation? HasCitation.Citation => Citations.TheOtherRoles;
 
     static private FloatConfiguration SampleCoolDownOption = NebulaAPI.Configurations.Configuration("options.role.morphing.sampleCoolDown", (0f, 60f, 2.5f), 15f, FloatConfigurationDecorator.Second);

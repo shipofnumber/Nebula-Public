@@ -89,7 +89,7 @@ public class TrackerPlayerMapLayer : MonoBehaviour
 
 public class EvilTracker : DefinedSingleAbilityRoleTemplate<EvilTracker.Ability>, HasCitation, DefinedRole, IAssignableDocument
 {
-    private EvilTracker() : base("evilTracker", new(Palette.ImpostorRed), RoleCategory.ImpostorRole, Impostor.MyTeam, [
+    private EvilTracker() : base("evilTracker", VColor.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam, [
         ShowKillFlashOption, TrackImpostorsOption,
         new GroupConfiguration("options.role.evilTracker.group.playerTracking", [TrackCoolDownOption, CanChangeTargetOption, CanChangeTargetOnMeetingOption, UpdateArrowIntervalOption, ShowTrackingTargetOnMapOption, ShowWhereTrackingIsOption], GroupConfigurationColor.ImpostorRed),
         new GroupConfiguration("options.role.evilTracker.group.taskTracking", [TaskTrackingOption,CanCheckTrackingTasksInTaskPhaseOption], GroupConfigurationColor.ImpostorRed)
@@ -172,7 +172,7 @@ public class EvilTracker : DefinedSingleAbilityRoleTemplate<EvilTracker.Ability>
 
         private void TryRegisterArrow(GamePlayer player) {
             if (!MyPlayer.IsImpostor) return;
-            if(!impostorArrows.Any(a => a.MyPlayer == player)) impostorArrows.Add(new TrackingArrowAbility(player.Unbox(), 0f, new(Palette.ImpostorRed)).Register(this));
+            if(!impostorArrows.Any(a => a.MyPlayer == player)) impostorArrows.Add(new TrackingArrowAbility(player.Unbox(), 0f, VColor.ImpostorColor).Register(this));
         }
 
         //役職変化に応じて矢印を付ける
@@ -312,7 +312,7 @@ public class EvilTracker : DefinedSingleAbilityRoleTemplate<EvilTracker.Ability>
         [Local]
         void OnPlayerMurdered(PlayerMurderedEvent ev)
         {
-            if(ShowKillFlashOption && !ev.Murderer.AmOwner) AmongUsUtil.PlayQuickFlash(new(Palette.ImpostorRed));
+            if(ShowKillFlashOption && !ev.Murderer.AmOwner) AmongUsUtil.PlayQuickFlash(VColor.ImpostorColor);
         }
 
 
@@ -356,7 +356,7 @@ public class EvilTracker : DefinedSingleAbilityRoleTemplate<EvilTracker.Ability>
             //タスク周辺でキルしたらチャレンジ実績達成
             if (challengeToken != null && challengeToken.Value.locs != null && challengeToken.Value.target == ev.Dead.PlayerId)
             {
-                challengeToken.Value.cleared |= challengeToken.Value.locs.Any(l => l.Distance(ev.Dead.VanillaPlayer.transform.position) < 3f);
+                challengeToken.Value.cleared |= challengeToken.Value.locs.Any(l => l.Distance(ev.Dead.Position) < 3f);
             }
         }
 

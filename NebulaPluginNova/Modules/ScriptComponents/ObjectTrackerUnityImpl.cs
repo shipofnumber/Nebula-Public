@@ -70,7 +70,7 @@ public static class ObjectTrackers
 
     public static ObjectTracker<Vent> ForVents(ILifespan? lifespan, float? distance, GamePlayer tracker, Predicate<Vent> predicate, UnityEngine.Color color, bool ignoreColliders = false)
     {
-        return new ObjectTrackerUnityImpl<Vent, Vent>(tracker.VanillaPlayer, distance ?? AmongUsLLImpl.Instance.VanillaKillDistance, () => AmongUsLLImpl.ShipStatusInstance.AllVents, predicate, _ => true, v => v, v => [v.transform.position], v => v.myRend, color, ignoreColliders).Register(lifespan);
+        return new ObjectTrackerUnityImpl<Vent, Vent>(tracker.VanillaPlayer, distance ?? AmongUsLLImpl.Instance.VanillaKillDistance, () => AmongUsLLImpl.ShipStatusInstance.AllVents, predicate, _ => true, v => v, v => [v.transform.GetPositionFast()], v => v.myRend, color, ignoreColliders).Register(lifespan);
     }
 }
 
