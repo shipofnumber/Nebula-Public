@@ -89,6 +89,10 @@ internal static unsafe class FastMethods
     private static readonly FastIl2Cpp.Method time_timeArg;
     private static readonly delegate* unmanaged[Cdecl]<nint, float> time_time;
 
+    private static readonly FastIl2Cpp.Method gl_vertex3Arg;
+    private static readonly delegate* unmanaged[Cdecl]<float, float, float, nint, void> gl_vertex3;
+
+
 
 
     static FastMethods()
@@ -175,6 +179,9 @@ internal static unsafe class FastMethods
 
         time_timeArg = FastIl2Cpp.ResolveMethod<UnityEngine.Time>("get_time", typeof(float), Type.EmptyTypes, true);
         time_time = (delegate* unmanaged[Cdecl]<nint, float>)time_timeArg.MethodPointer;
+
+        gl_vertex3Arg = FastIl2Cpp.ResolveMethod<UnityEngine.GL>(nameof(UnityEngine.GL.Vertex3), typeof(void), [typeof(float), typeof(float), typeof(float)]);
+        gl_vertex3 = (delegate* unmanaged[Cdecl]<float, float, float, nint, void>)gl_vertex3Arg.MethodPointer;
     }
 
     internal static int GetInstanceIdNoBox(UnityEngine.Object? obj)
@@ -345,4 +352,7 @@ internal static unsafe class FastMethods
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static nint GetGameObjectFast(nint component) => component_getGameObject(component, component_getGameObjectArg.MethodInfo);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void GLVertex3Fast(float x, float y, float z) => gl_vertex3(x, y, z, gl_vertex3Arg.MethodInfo);
 }

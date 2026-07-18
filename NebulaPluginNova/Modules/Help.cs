@@ -710,7 +710,7 @@ public static class HelpScreen
         var maskedAttr = GUI.API.GetAttribute(AttributeAsset.DocumentStandard);
         var maskedTitleAttr = GUI.API.GetAttribute(AttributeAsset.DocumentTitle);
         var maskedSubtitleAttr = GUI.API.GetAttribute(AttributeAsset.DocumentSubtitle1);
-        Virial.Media.GUIWidget GetAssignableText(DefinedAssignable assignable, string? displayName = null) => new NoSGUIText(GUIAlignment.Center, maskedAttr, new RawTextComponent(assignable.GetRoleIconTag(true) + (displayName ?? assignable.DisplayColoredName)))
+        Virial.Media.GUIWidget GetAssignableText(DefinedAssignable assignable, string? displayName = null, AssignmentType? assignmentType = null) => new NoSGUIText(GUIAlignment.Center, maskedAttr, new RawTextComponent(assignable.GetRoleIconTag(assignmentType, true) + (displayName ?? assignable.DisplayColoredName)))
         {
             OverlayWidget = () => GetAssignableOverlay(assignable),
             OnClickText = (() => OpenAssignableHelp(assignable), false)
@@ -735,14 +735,14 @@ public static class HelpScreen
             }
         }
 
-        IEnumerable<Virial.Media.GUIWidget> GetRolesWidget(IEnumerable<ProbabilityAssignment> assignments, VColor? color)
+        IEnumerable<Virial.Media.GUIWidget> GetRolesWidget(IEnumerable<ProbabilityAssignment> assignments, VColor? color, AssignmentType? assignmentType = null)
         {
             foreach (var assignment in assignments)
             {
                 string numText = "x" + assignment.Count;
                 if(assignment.Chance != 100) numText += $", {assignment.Chance}%";
                 if (assignment.SecondaryCount != null) numText += $" (+{assignment.SecondaryCount}, {assignment.SecondaryChance}%)";
-                yield return GUI.API.HorizontalHolder(GUIAlignment.Left, GetAssignableText(assignment.Role, color.HasValue ? assignment.Role.DisplayName.Color(color.Value) : null), GUI.API.HorizontalMargin(0.1f), GUI.API.RawText(GUIAlignment.BottomLeft, maskedAttr, numText.Length >= 10 ? numText.Sized(80) : numText));
+                yield return GUI.API.HorizontalHolder(GUIAlignment.Left, GetAssignableText(assignment.Role, color.HasValue ? assignment.Role.DisplayName.Color(color.Value) : null, assignmentType), GUI.API.HorizontalMargin(0.1f), GUI.API.RawText(GUIAlignment.BottomLeft, maskedAttr, numText.Length >= 10 ? numText.Sized(80) : numText));
             }
         }
 
@@ -771,8 +771,8 @@ public static class HelpScreen
                 if (type.Category != category) continue;
                 if (!type.IsActive) continue;
 
-                var listC100 = GetRolesWidget(summary.Roles.Where(r => r.AssignmentType == type && r.Chance == 100), type.Color).ToList();
-                var listCRandom = GetRolesWidget(summary.Roles.Where(r => r.AssignmentType == type && r.Chance != 100), type.Color).ToList();
+                var listC100 = GetRolesWidget(summary.Roles.Where(r => r.AssignmentType == type && r.Chance == 100), type.Color, type).ToList();
+                var listCRandom = GetRolesWidget(summary.Roles.Where(r => r.AssignmentType == type && r.Chance != 100), type.Color, type).ToList();
 
                 if (listC100.Count > 0) result.Add(GUI.API.VerticalHolder(GUIAlignment.Center, [GUI.API.RawText(GUIAlignment.Center, maskedAttr, ("-" + Language.Translate($"help.rolePreview.inner.{type.Postfix}.100") + "-").Bold()), .. listC100, GUI.API.Margin(new(2f, 0.3f))]));
                 if (listCRandom.Count > 0) result.Add(GUI.API.VerticalHolder(GUIAlignment.Center, [GUI.API.RawText(GUIAlignment.Center, maskedAttr, ("-" + Language.Translate($"help.rolePreview.inner.{type.Postfix}.random") + "-").Bold()), .. listCRandom, GUI.API.Margin(new(2f, 0.3f))]));

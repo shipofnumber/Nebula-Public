@@ -30,7 +30,8 @@
 # Game
 
 "role.necromancer.phantomMessage" : "把我带到%ROOM%那里……"
-"role.necromancer.reviveRange" : "死灵法师<color=white>：尸体通知范围</color>"
+"role.necromancer.detectRange" : "死灵法师<color=white>：尸体通知范围</color>"
+"role.necromancer.reviveRange" : "死灵法师<color=white>：复活房间范围</color>"
 "gameAction.necromancer.revive" : "复活"
 
 # UI

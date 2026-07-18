@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Virial.Configuration;
+using Virial.Events.Configurations;
 using Virial.Runtime;
 
 namespace Nebula.Configuration;
@@ -145,11 +146,13 @@ internal static class ConfigurationValues
         "ShareOption",
        (message, isCalledByMe) =>
        {
-           if (!isCalledByMe) AllEntries[message.id].RpcValue = message.value;
+           var entry = AllEntries[message.id];
+           if (!isCalledByMe) entry.RpcValue = message.value;
            HelpScreen.OnUpdateOptions();
            if (isCalledByMe) PresetName.Value = "";
            CurrentPresetName = "";
            GameOptionsManager.Instance.currentGameOptions.SetInt(AmongUs.GameOptions.Int32OptionNames.RulePreset, (int)AmongUs.GameOptions.RulesPresets.Custom);
+           GameOperatorManager.Instance?.Run<SharableEntryUpdateEvent>(new(entry));
        }
     );
 

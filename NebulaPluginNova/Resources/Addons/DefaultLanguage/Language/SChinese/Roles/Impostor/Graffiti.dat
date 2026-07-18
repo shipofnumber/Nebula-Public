@@ -29,15 +29,12 @@
  
 # Titles
  
-"achievement.graffiti.common1.title" : ""
-"achievement.graffiti.common1.goal" : ""
-"achievement.graffiti.common1.cond" : ""
- 
-"achievement.graffiti.common2.title" : ""
-"achievement.graffiti.common2.goal" : ""
-"achievement.graffiti.common2.cond" : ""
- 
-"achievement.graffiti.challenge.title" : ""
-"achievement.graffiti.challenge.goal" : ""
-"achievement.graffiti.challenge.cond" : ""
+"achievement.graffiti.common1.title" : "街头艺术"
+"achievement.graffiti.common1.goal" : "使用一次涂鸦。"
+"achievement.graffiti.common1.flavor" : "“不被认可的艺术行为。”"
+
+"achievement.graffiti.challenge.title" : "垃圾桶中的遗憾"
+"achievement.graffiti.challenge.goal" : "在有玩家拥有“临终遗言”附加能力的对局中，<br>且该附加能力已经触发的情况下全员存活并获胜。"
+"achievement.graffiti.challenge.cond" : "提示：至少有1人，除自己以外。"
+"achievement.graffiti.challenge.splitted.1" : "垃圾桶中的"
  

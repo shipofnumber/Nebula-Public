@@ -149,7 +149,6 @@ public class NebulaInput
 
     private static KeyboardMap cachedKeyboardMap = null!;
     private static void RefreshKeyboardMapCache() {
-        LogUtils.WriteToConsole("State: " + Rewired.InputMapper.Default.status);
         cachedKeyboardMap = Rewired.ReInput.mapping.GetKeyboardMapInstanceSavedOrDefault(0, 0, 0);
     }
     static NebulaInput()

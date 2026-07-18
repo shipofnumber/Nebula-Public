@@ -43,14 +43,16 @@ internal class AeroGuesserSenario : AbstractModuleContainer, IModule, IGameModeA
             return String.Format("{0:N0}", ScoreOrderedPlayers[0].score) + "pt";
         }
         int rank = 0;
+        int players = 0;
         int score = -1;
         foreach(var p in ScoreOrderedPlayers)
         {
             if (score != p.score)
             {
-                rank++;
+                rank = players + 1;
                 score = p.score;
             }
+            players++;
             if (p.player.AmOwner) break;
         }
         return Language.Translate("aeroGuesser.rank." + rank) + ": " + String.Format("{0:N0}", score) + "pt";
@@ -67,11 +69,14 @@ internal class AeroGuesserSenario : AbstractModuleContainer, IModule, IGameModeA
         StringBuilder sb = new();
 
         int rank = 0;
+        int players = 0;
         int lastScore = orderedPlayers[0].score;
         foreach(var entry in orderedPlayers)
         {
             int score = entry.score;
-            if (lastScore != score) rank++;
+            if (lastScore != score) rank = players;
+            lastScore = score;
+            players++;
 
             sb.Append(Language.Translate("aeroGuesser.rank." + (rank + 1)).Color(rank < RankColor.Length ? RankColor[rank] : VColor.White));
             sb.Append("<indent=3.4em>");

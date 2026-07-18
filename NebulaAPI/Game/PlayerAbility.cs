@@ -11,6 +11,20 @@ public interface IPlayerAbility : IBindPlayer, IGameOperator, ILifespan
     bool IgnoreBlackout => false;
     bool BlockCallingEmergencyMeeting => false;
     bool BlockUsingUtility => false;
+
+    /// <summary>
+    /// プレイヤーが通報ボタンを持つとき、trueを返します。
+    /// falseを返すアビリティが1つでもあれば、プレイヤーは通報ボタンを持ちません。
+    /// </summary>
+    bool HasReportButton => true;
+
+    /// <summary>
+    /// プレイヤーが通報ボタンを押せうるとき、trueを返します。
+    /// falseを返すアビリティが1つでもあれば、プレイヤーは通報ボタンを押せません。
+    /// 通報可能な死体が無ければこのプロパティの値によらず通報ボタンは光らず、押しても何も起こりません。
+    /// </summary>
+    bool CanReport => true;
+
     IEnumerable<IPlayerAbility> SubAbilities => [];
     IEnumerable<DefinedAssignable> SubAssignableOnHelp => [];
 

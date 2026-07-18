@@ -373,6 +373,7 @@ public class NebulaGUIWidgetEngine : Virial.Media.GUI
                 AttributeAsset.OptionsButtonMedium => new TextAttribute(Virial.Text.TextAlignment.Center, GetFont(FontAsset.GothicMasked), Virial.Text.FontStyle.Bold, new(1.8f, 1f, 2f), new(0.9f, 0.22f), new(255, 255, 255), false),
                 AttributeAsset.OptionsFlexible => new TextAttribute(Virial.Text.TextAlignment.Center, GetFont(FontAsset.GothicMasked), Virial.Text.FontStyle.Bold, new(1.8f, 1f, 2f), new(6f, 0.22f), new(255, 255, 255), true),
                 AttributeAsset.OptionsGroupTitle => new TextAttribute(Virial.Text.TextAlignment.Center, GetFont(FontAsset.GothicMasked), Virial.Text.FontStyle.Normal, new(1.5f, 1f, 1.6f), new(6f, 0.22f), new(255, 255, 255), true, 0f),
+                AttributeAsset.OptionsDetailInSelectionWindow => new TextAttribute(Virial.Text.TextAlignment.Left, GetFont(FontAsset.Gothic), Virial.Text.FontStyle.Normal, new(1.5f, 1f, 1.6f), new(6f, 0.55f), new(255, 255, 255), false),
 
                 AttributeAsset.MarketplaceTitle => new TextAttribute(Virial.Text.TextAlignment.Left, GetFont(FontAsset.GothicMasked), Virial.Text.FontStyle.Bold, new(2.6f, 1f, 2f), new(3.8f, 0.4f), new(255, 255, 255), false),
                 AttributeAsset.MarketplaceDeveloper => new TextAttribute(Virial.Text.TextAlignment.Left, GetFont(FontAsset.GothicMasked), Virial.Text.FontStyle.Normal, new(1.4f, 1f, 1.4f), new(2f, 0.32f), new(255, 255, 255), false),

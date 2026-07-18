@@ -29,7 +29,7 @@ public static class HudManagerExtension
         GamePlayer? modPlayer = GamePlayer.LocalPlayer;
         RuntimeRole? modRole = modPlayer?.Role;
 
-        bridge.ReportButton.ToggleVisible(!flag && (modRole?.CanReport ?? false) && AmongUsLLImpl.ShipStatusInstance.AsBoolFast());
+        bridge.ReportButton.ToggleVisible(!flag && (NebulaGameManager.Instance?.LocalStatus.HasReportButton ?? false) && AmongUsLLImpl.ShipStatusInstance.AsBoolFast());
         bridge.KillButton.ToggleVisible((modPlayer?.ShowKillButton ?? true) && !flag);
         bridge.SabotageButton.ToggleVisible((modRole?.CanInvokeSabotage ?? false));
 

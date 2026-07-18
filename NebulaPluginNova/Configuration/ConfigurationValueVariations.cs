@@ -27,6 +27,7 @@ internal abstract class ConfigurationValueBase<T, LocalEntry> : ISharableVariabl
 
     int ISharableEntry.RpcValue { get => RpcValue; set => RpcValue = value; }
     protected abstract int RpcValue { get; set; }
+    string ISharableEntry.DisplayValue => currentValue.ToString() ?? "";
 
     T Virial.Compat.Reference<T>.Value => currentValue;
 
@@ -209,6 +210,7 @@ internal class RawIntegerSharableVariable : ISharableVariable<int>
 
     int ISharableEntry.Id { get => id; set => id = value; }
     int ISharableEntry.RpcValue { get => currentValue; set => currentValue = value; }
+    string ISharableEntry.DisplayValue => "";
 
     int ISharableVariable<int>.CurrentValue
     { get => currentValue; set {

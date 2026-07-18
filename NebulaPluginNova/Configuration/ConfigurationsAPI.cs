@@ -77,9 +77,9 @@ public class ConfigurationsAPI : Virial.Configuration.Configurations
         return config;
     }
 
-    ValueConfiguration<int> Configurations.Configuration(string id, string[] selection, int defualtIndex, Func<bool>? predicate, TextComponent? title)
+    ValueConfiguration<int> Configurations.Configuration(string id, string[] selection, int defualtIndex, Func<bool>? predicate, TextComponent? title, bool useSelectionWindow)
     {
-        var config = new StringConfigurationImpl(id, selection, defualtIndex, title);
+        var config = new StringConfigurationImpl(id, selection, defualtIndex, title, useSelectionWindow);
         config.Predicate = predicate;
         return config;
     }

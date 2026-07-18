@@ -94,7 +94,6 @@ public class NebulaAddon : VariableResourceAllocator, IDisposable, IResourceAllo
     {
         if (!NebulaPlugin.AllowHttpCommunication) yield break;
 
-        LogUtils.WriteToConsole("Start Download: " + url);
 
         GitHubReleaseContent assets = null!;
         yield return NebulaWebRequest.CoGet(url, true, json =>

@@ -163,7 +163,7 @@ public interface Configurations
     FloatConfiguration FloatOption(string id, FloatSelection selection, float defaultValue, Func<bool>? predicate) => FloatOption(id, selection, defaultValue, predicate: predicate);
     FloatConfiguration Configuration(string id, FloatSelection selection, float defaultValue, FloatConfigurationDecorator decorator = FloatConfigurationDecorator.None, Func<bool>? predicate = null, TextComponent? title = null);
     FloatConfiguration Configuration(string id, FloatSelection selection, float defaultValue, Func<float, string> decorator, Func<bool>? predicate = null, TextComponent? title = null);
-    ValueConfiguration<int> Configuration(string id, string[] selection, int defualtIndex, Func<bool>? predicate = null, TextComponent? title = null);
+    ValueConfiguration<int> Configuration(string id, string[] selection, int defualtIndex, Func<bool>? predicate = null, TextComponent? title = null, bool useSelectionWindow = false);
     IConfiguration Configuration(Func<string?> displayShower, GUIWidgetSupplier editor, Func<bool>? predicate = null);
 
     IVentConfiguration VentConfiguration(string id, bool isOptional, IntegerSelection? usesSelection, int usesDefaultValue, FloatSelection? coolDownSelection, float coolDownDefaultValue, FloatSelection? durationSelection, float durationDefaultValue);

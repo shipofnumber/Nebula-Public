@@ -48,9 +48,7 @@ internal class PaintQuizReviewPhase
         GUIWidgetSupplier? relatedInformation,
         Transform parent,
         (byte id, (byte r, byte g, byte b, byte width, byte beginX, byte beginY, byte[] trajectory)[] trajectories)[] drawings,
-        string questionText,
-        string answerText,
-        bool amHost)
+        string questionText, string answerText, bool amHost, bool hasAnswer)
     {
         this.allDrawings = drawings;
         this.amHost = amHost;
@@ -86,7 +84,7 @@ internal class PaintQuizReviewPhase
 
         answerObj = new NoSGUIText(GUIAlignment.Center,
             GUI.API.GetAttribute(AttributeAsset.OverlayContent),
-            new RawTextComponent($"{Language.Translate("paintQuiz.ui.answer")}：{answerText}"))
+            new RawTextComponent(hasAnswer ? $"{Language.Translate("paintQuiz.ui.answer")}：{answerText}" : Language.Translate("paintQuiz.ui.noAnswer")))
         { OverlayWidget = relatedInformation }
             .Instantiate(new(9f, 0.4f), out _);
         if (answerObj != null)
@@ -217,8 +215,9 @@ internal class PaintQuizReviewPhase
                 {
                     var transform = t.transform;
                     transform.SetParent(cellHolder.transform);
-                    transform.localPosition = new(0f, drawH * 0.5f + 0.1f, -0.1f);
+                    transform.localPosition = new(0f, drawH * 0.5f - 0.01f, -0.1f);
                     transform.gameObject.SetActive(false);
+                    scoreText = t;
                 }
             }.Instantiate(new(cellW, 0.35f), out _);
 
@@ -403,7 +402,7 @@ internal class PaintQuizReviewPhase
             if (cell.ScoreText != null)
             {
                 cell.ScoreText.gameObject.SetActive(true);
-                cell.ScoreText.text = grade == 0 ? "0pt" : PaintQuizScoreMap.FormatScoreWithSign(pts) + "pt";
+                cell.ScoreText.text = grade == 0 ? "" : PaintQuizScoreMap.FormatScoreWithSign(pts) + "pt";
                 cell.ScoreText.color = pts > 0 ? new Color(0.2f, 0.9f, 0.2f) : pts < 0 ? new Color(0.9f, 0.2f, 0.2f) : new(0.5f, 0.5f, 0.5f);
             }
 

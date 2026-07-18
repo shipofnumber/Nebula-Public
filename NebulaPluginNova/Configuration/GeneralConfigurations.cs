@@ -405,11 +405,11 @@ public static class GeneralConfigurations
         ]);
 
     public static IntegerConfiguration NumOfPaintQuizOption = NebulaAPI.Configurations.Configuration("options.paintQuiz.numOfQuiz", (1, 10), 5);
-    public static ValueConfiguration<int> PaintQuizCategoryOption = NebulaAPI.Configurations.Configuration("options.paintQuiz.category", ["options.paintQuiz.category.flavorToRole", "options.paintQuiz.category.titleToRole", "options.paintQuiz.category.challengeToRole", "options.paintQuiz.category.roleToFlavor", "options.paintQuiz.category.roleToChallenge"], 0);
+    public static ValueConfiguration<int> PaintQuizCategoryOption = NebulaAPI.Configurations.Configuration("options.paintQuiz.category", ["options.paintQuiz.category.blurbToRole", "options.paintQuiz.category.roleToIcon", "options.paintQuiz.category.titleToRole", "options.paintQuiz.category.challengeToRole", "options.paintQuiz.category.roleToBlurb", "options.paintQuiz.category.roleToChallenge", "options.paintQuiz.category.playerToBlurb", "options.paintQuiz.category.playerToTitle"], 0, useSelectionWindow: true);
     public static BoolConfiguration RestrictToSpawnablesOption = NebulaAPI.Configurations.Configuration("options.paintQuiz.restrictToSpawnables", true, () => {
         return PaintQuizCategoryOption.GetValue() switch
         {
-            0 or 3 => true,
+            0 or 1 or 4 => true,
             _ => false
         };
     });

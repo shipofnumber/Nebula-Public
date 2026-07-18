@@ -738,13 +738,6 @@ public interface RuntimeAssignable : ILifespan, IBindPlayer, IGameOperator, IRel
     bool CanCallEmergencyMeeting => true;
 
     /// <summary>
-    /// 通報できる場合trueを返します。
-    /// </summary>
-    [Obsolete(AttributeConstants.ObsoleteText)]
-    bool CanReport => true;
-
-
-    /// <summary>
     /// 役職が、元の役職名を書き換える場合に呼び出されます。
     /// </summary>
     /// <param name="lastRoleName"></param>

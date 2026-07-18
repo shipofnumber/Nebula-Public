@@ -213,19 +213,71 @@ internal class StringConfigurationImpl : Virial.Configuration.ValueConfiguration
     private IOrderedSharableVariable<int> val;
     private string[] mySelection;
 
-    public StringConfigurationImpl(string id, string[] selection, int defaultIndex, TextComponent? title)
+    public StringConfigurationImpl(string id, string[] selection, int defaultIndex, TextComponent? title, bool useSelectionWindow = false)
     {
         this.mySelection = selection;
         this.Title = title ?? new TranslateTextComponent(id);
         this.val = new SelectionConfigurationValue(id, defaultIndex, selection.Length);
-        this.editor = () => new HorizontalWidgetsHolder(GUIAlignment.Left,
-            ConfigurationAssets.GetOptionTitle(Title, id),
-            new NoSGUIText(GUIAlignment.Center, GUI.API.GetAttribute(Virial.Text.AttributeAsset.OptionsFlexible), new RawTextComponent(":")),
-            new NoSGUIMargin(GUIAlignment.Center, new(0.1f,0f)),
-            new GUIButton(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.OptionsButton), ConfigurationAssets.LeftArrow) { OnClick = _ => { val.ChangeValue(false, true); NebulaAPI.Configurations.RequireUpdateSettingScreen(); } },
-            new NoSGUIText(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.OptionsValue), new LazyTextComponent(() => ValueAsDisplayString)),
-            new GUIButton(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.OptionsButton), ConfigurationAssets.RightArrow) { OnClick = _ => { val.ChangeValue(true, true); NebulaAPI.Configurations.RequireUpdateSettingScreen(); } }
+
+        if (useSelectionWindow)
+        {
+            this.editor = () => new HorizontalWidgetsHolder(GUIAlignment.Left,
+                ConfigurationAssets.GetOptionTitle(Title, id),
+                new NoSGUIText(GUIAlignment.Center, GUI.API.GetAttribute(Virial.Text.AttributeAsset.OptionsFlexible), new RawTextComponent(":")),
+                new NoSGUIMargin(GUIAlignment.Center, new(0.1f, 0f)),
+                new NoSGUIText(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.OptionsButtonLonger), new LazyTextComponent(() => ValueAsDisplayString)),
+                new GUIButton(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.OptionsButton), new TranslateTextComponent("options.selection.open")) { OnClick = _ => OpenSelectionWindow(id) }
+                );
+        }
+        else 
+        { 
+            this.editor = () => new HorizontalWidgetsHolder(GUIAlignment.Left,
+                ConfigurationAssets.GetOptionTitle(Title, id),
+                new NoSGUIText(GUIAlignment.Center, GUI.API.GetAttribute(Virial.Text.AttributeAsset.OptionsFlexible), new RawTextComponent(":")),
+                new NoSGUIMargin(GUIAlignment.Center, new(0.1f, 0f)),
+                new GUIButton(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.OptionsButton), ConfigurationAssets.LeftArrow) { OnClick = _ => { val.ChangeValue(false, true); NebulaAPI.Configurations.RequireUpdateSettingScreen(); } },
+                new NoSGUIText(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.OptionsValue), new LazyTextComponent(() => ValueAsDisplayString)),
+                new GUIButton(GUIAlignment.Center, GUI.API.GetAttribute(AttributeAsset.OptionsButton), ConfigurationAssets.RightArrow) { OnClick = _ => { val.ChangeValue(true, true); NebulaAPI.Configurations.RequireUpdateSettingScreen(); } }
+                );
+        }
+    }
+
+    private void OpenSelectionWindow(string id)
+    {
+        var window = MetaScreen.GenerateWindow(new(7.6f, 4.6f), HudManager.Instance.transform, Vector3.zero, true, true, background: BackgroundSetting.Modern);
+
+        List<GUIWidget?> headerWidgets = [GUI.API.Text(GUIAlignment.Left, GUI.API.GetAttribute(AttributeAsset.OverlayTitle), Title)];
+        if (!Language.TryTranslate(id + ".detail", out var description)) description = "";
+
+        headerWidgets.Add(GUI.API.VerticalMargin(0.02f));
+        headerWidgets.Add(GUI.API.RawText(GUIAlignment.Left, AttributeAsset.OptionsDetailInSelectionWindow, description));
+    
+        List<GUIWidget?> entries = [];
+        for (int i = 0; i < mySelection.Length; i++)
+        {
+            int index = i;
+            List<GUIWidget?> entryWidgets = [
+                new GUIButton(GUIAlignment.Left, GUI.API.GetAttribute(AttributeAsset.OptionsButtonLonger), new TranslateTextComponent(mySelection[index]))
+                {
+                    OnClick = _ => { val.CurrentValue = index; NebulaAPI.Configurations.RequireUpdateSettingScreen(); window.CloseScreen(); },
+                    Color = index == val.CurrentValue ? VColor.Lerp(VColor.White, VColor.Cyan, 0.65f) : null
+                }
+            ];
+
+            var itemDescription = Language.Translate(mySelection[index] + ".detail");
+            entryWidgets.Add(GUI.API.RawText(GUIAlignment.Left, AttributeAsset.DocumentStandard, itemDescription));
+
+            entries.Add(new HorizontalWidgetsHolder(GUIAlignment.Left, entryWidgets.ToArray()));
+            if (i != mySelection.Length - 1) entries.Add(GUI.API.VerticalMargin(0.03f));
+        }
+
+        var content = new VerticalWidgetsHolder(GUIAlignment.Left,
+            new VerticalWidgetsHolder(GUIAlignment.Left, headerWidgets.ToArray()),
+            GUI.API.VerticalMargin(0.15f),
+            new GUIScrollView(GUIAlignment.Center, new(7.6f, 3.5f), new VerticalWidgetsHolder(GUIAlignment.Left, entries.ToArray()))
             );
+
+        window.SetWidget(content, out _);
     }
 
     protected virtual string ValueAsDisplayString => Language.Translate(mySelection[val.CurrentValue]);

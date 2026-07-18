@@ -163,6 +163,10 @@ public static class PlayerUpdatePatch
                 hudManager.ReportButton.SetDisabled();
                 hudManager.PetButton.SetDisabled();
             }
+            else if (!NebulaGameManager.Instance.LocalStatus.CanReport)
+            {
+                hudManager.ReportButton.SetDisabled();
+            }
 
             if (__instance.inVent && Vent.currentVent.AsBoolFast(out var currentVent))
             {

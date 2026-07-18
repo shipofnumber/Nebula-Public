@@ -30,14 +30,16 @@ internal class PaintQuizSenario : AbstractModuleContainer, IModule, IGameModePai
             return String.Format("{0:N0}", ScoreOrderedPlayers[0].score) + "pt";
         }
         int rank = 0;
+        int players = 0;
         float score = -1;
         foreach (var p in ScoreOrderedPlayers)
         {
             if (score != p.score)
             {
-                rank++;
+                rank = players + 1;
                 score = p.score;
             }
+            players++;
             if (p.player.AmOwner) break;
         }
         return Language.Translate("aeroGuesser.rank." + rank) + ": " + String.Format("{0:0.#}", score) + "pt";
@@ -53,11 +55,14 @@ internal class PaintQuizSenario : AbstractModuleContainer, IModule, IGameModePai
         StringBuilder sb = new();
 
         int rank = 0;
+        int players = 0;
         var lastScore = orderedPlayers[0].score;
         foreach (var entry in orderedPlayers)
         {
             var score = entry.score;
-            if (lastScore != score) rank++;
+            if (lastScore != score) rank = players;
+            lastScore = score;
+            players++;
 
             sb.Append(Language.Translate("aeroGuesser.rank." + (rank + 1)).Color(rank < RankColor.Length ? RankColor[rank] : VColor.White));
             sb.Append("<indent=3.4em>");
@@ -99,15 +104,15 @@ internal class PaintQuizSenario : AbstractModuleContainer, IModule, IGameModePai
 
     static public IEnumerator CoIntro(bool amHost)
     {
-        if (amHost) RpcIntro.Invoke(((QuizCategories)GeneralConfigurations.PaintQuizCategoryOption.GetValue(), GeneralConfigurations.NumOfPaintQuizOption));
+        if (amHost) RpcIntro.Invoke(((QuizCategories)GeneralConfigurations.PaintQuizCategoryOption.GetValue(), GeneralConfigurations.NumOfPaintQuizOption, System.Random.Shared.Next(10000)));
 
         SpecialModeFunctions.IntroSetUp();
         yield break;
     }
 
-    private void SetUp(QuizCategories quizCategory, int quizCount)
+    private void SetUp(QuizCategories quizCategory, int quizCount, int randomSeed)
     {
-        category = QuizCategoryStrategy.Create(quizCategory);
+        category = QuizCategoryStrategy.Create(quizCategory, randomSeed);
         numOfQuizzes = quizCount;
     }
 
@@ -323,7 +328,7 @@ internal class PaintQuizSenario : AbstractModuleContainer, IModule, IGameModePai
             .OrderBy(e => e.id)
             .ToArray();
 
-        var reviewPhase = new PaintQuizReviewPhase(category.RelatedInformation(quizSeed), baseObject.transform, drawingsArray, questionTexts.question, answerText, amHost);
+        var reviewPhase = new PaintQuizReviewPhase(category.RelatedInformation(quizSeed), baseObject.transform, drawingsArray, questionTexts.question, answerText, amHost, category.HasAnswer);
 
         yield return reviewPhase.CoRenderAllDrawings();
 
@@ -394,14 +399,14 @@ internal class PaintQuizSenario : AbstractModuleContainer, IModule, IGameModePai
     }
 
     private bool AllDrawingsReceived()
-        => GamePlayer.AllPlayers.All(p => collectedDrawings.ContainsKey(p.PlayerId));
+        => GamePlayer.AllPlayers.All(p => collectedDrawings.ContainsKey(p.PlayerId) || p.IsDisconnected);
 
     // ─────────────────── RPC ───────────────────
 
-    static private readonly RemoteProcess<(QuizCategories category, int numOfQuizzes)> RpcIntro = new("PaintQuiz.Intro", (message, _) =>
+    static private readonly RemoteProcess<(QuizCategories category, int numOfQuizzes, int randomSeed)> RpcIntro = new("PaintQuiz.Intro", (message, _) =>
     {
         SpecialModeFunctions.InRpcSetUp();
-        ModSingleton<PaintQuizSenario>.Instance!.SetUp(message.category, message.numOfQuizzes);
+        ModSingleton<PaintQuizSenario>.Instance!.SetUp(message.category, message.numOfQuizzes, message.randomSeed);
     });
 
     static private readonly RemoteProcess<string[]> RpcShareStamps = new("PaintQuiz.ShareStamps", (stampIds, _) =>

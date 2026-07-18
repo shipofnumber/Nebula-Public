@@ -45,6 +45,7 @@ public abstract class AssignableFilterConfigurationValue<T> where T : class, Vir
 
         int ISharableEntry.Id { get => id; set => id = value; }
         int ISharableEntry.RpcValue { get => currentValue; set => currentValue = value; }
+        string ISharableEntry.DisplayValue => "";
 
         int ISharableVariable<int>.CurrentValue
         {
@@ -310,6 +311,7 @@ public class SimpleRoleFilterConfiguration : IConfiguration, IExclusiveAssignmen
 
         int ISharableEntry.Id { get => id; set => id = value; }
         int ISharableEntry.RpcValue { get => currentValue; set => currentValue = value; }
+        string ISharableEntry.DisplayValue => "";
 
         int ISharableVariable<int>.CurrentValue
         {

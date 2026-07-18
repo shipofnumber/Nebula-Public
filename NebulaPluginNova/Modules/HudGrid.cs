@@ -91,7 +91,7 @@ public class HudGrid : MonoBehaviour
             bool ShouldBeShown(HudContent c)
             {
                 if (!c.IsActive) return false;
-                if (MeetingHud.Instance.AsBoolFast() && !c.ModGameObject(false).ActiveSelf) return false; //会議中はstaticContents以外除外する
+                if ((MeetingHud.Instance.AsBoolFast() || ExileController.Instance.AsBoolFast()) && (!c.ModGameObject(false).ActiveInHierarchy || !c.IsStaticContent)) return false; //会議中はstaticContents以外除外する
                 return true;
             }
             for (int e = 0; e < Contents[i].Count; e++)

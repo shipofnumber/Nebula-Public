@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine.Rendering;
+using UnityEngine.TextCore.Text;
 using Virial.Assignable;
 using Virial.Runtime;
 using static Il2CppSystem.Xml.Schema.FacetsChecker.FacetsCompiler;
@@ -66,9 +67,10 @@ static public class RoleIcon
         return mat;
     }
 
-    static public string GetRoleIconTag(this DefinedAssignable assignable, bool masked = false, int size = 100)
+    static public string GetRoleIconTag(this DefinedAssignable assignable, bool masked = false, int size = 100) => GetRoleIconTag(assignable, null, masked, size);
+    static public string GetRoleIconTag(this DefinedAssignable assignable, AssignmentType? assignmentType, bool masked = false, int size = 100)
     {
-        var tag = RuntimeSpriteGenerator.SpriteTagFromAssignable(assignable, masked);
+        var tag = RuntimeSpriteGenerator.SpriteTagFromAssignable(assignable, masked, assignmentType);
         if (size == 100) return tag;
         return (tag).Sized(size);
     }
@@ -81,9 +83,10 @@ static public class RoleIcon
     [NebulaPreprocess(PreprocessPhase.PostFixStructure)]
     public static class RuntimeSpriteGenerator
     {
+        const float iconOutlineWidth = 0.45f;
         static private void Preprocess(NebulaPreprocessor preprocessor)
         {
-            (SpriteAsset, MaskedAsset) = CreateSpriteAsset(Roles.AllAssignables().Select(a => (a.GetRoleIcon()?.GetSprite(), GetRoleIconMaterial(a, 0.45f, 0f), a.InternalName)).ToArray()!);
+            CreateSpriteAsset(Roles.AllAssignables().Select(a => (a.GetRoleIcon()?.GetSprite(), GetRoleIconMaterial(a, iconOutlineWidth, 0f), a.InternalName)).ToArray()!);
             SpriteAsset.MarkDontUnload();
         }
 
@@ -94,14 +97,26 @@ static public class RoleIcon
         private const int ImageLines = 20;
 
         static private Dictionary<string, int> idMap = [];
-        static public string SpriteTagFromAssignable(DefinedAssignable assignable, bool masked) => masked ? $"<sprite name=\"masked_{assignable.InternalName}\">" : $"<sprite name=\"{assignable.InternalName}\">";
+        static public string SpriteTagFromAssignable(DefinedAssignable assignable, bool masked, AssignmentType? type) => masked ? $"<sprite name=\"masked_{(type != null ? type.Postfix + "_" : "")}{assignable.InternalName}\">" : $"<sprite name=\"{(type != null ? type.Postfix + "_" : "")}{assignable.InternalName}\">";
 
         static public TMP_SpriteAsset SpriteAsset { get; private set; } = null!;
         static public TMP_SpriteAsset MaskedAsset { get; private set; } = null!;
+
+        private record RoleIconSheet(Material Mat, string? Prefix)
+        {
+            public TMP_SpriteAsset SpriteAsset { get; } = ScriptableObject.CreateInstance<TMP_SpriteAsset>();
+            public TMP_SpriteAsset MaskedAsset { get; } = ScriptableObject.CreateInstance<TMP_SpriteAsset>();
+            public List<TMP_SpriteCharacter> CharacterList { get; } = [];
+            public List<TMP_Sprite> InfoList { get; } = [];
+            public List<TMP_SpriteCharacter> MaskedCharacterList { get; } = [];
+            public List<TMP_Sprite> MaskedInfoList { get; } = [];
+            public string PrefixNotNull => Prefix != null ? Prefix + "_" : "";
+        }
+
         /// <summary>
         /// Texture2Dのリストからアトラスを作成し、TMP_SpriteAssetを構築する
         /// </summary>
-        static private (TMP_SpriteAsset, TMP_SpriteAsset) CreateSpriteAsset((Sprite sprite, Material material, string name)[] images)
+        static private void CreateSpriteAsset((Sprite sprite, Material material, string name)[] images)
         {
             int layer = 20;
             GameObject holder = UnityHelper.CreateObject("Holder", null, Vector3.zero);
@@ -113,23 +128,13 @@ static public class RoleIcon
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = Color.clear;
 
-            TMP_SpriteAsset spriteAsset = ScriptableObject.CreateInstance<TMP_SpriteAsset>();
-            TMP_SpriteAsset maskedAsset = ScriptableObject.CreateInstance<TMP_SpriteAsset>();
-
-            Shader shader = Shader.Find("Sprites/Default");
-            Material material = new Material(shader);
-            material.MarkDontUnload();
-
-            Material maskedMaterial = new Material(UnityHelper.GetMeshRendererMaskedMaterial());
-            maskedMaterial.MarkDontUnload();
+            RoleIconSheet defaultSheet = new(null!, null);
+            RoleIconSheet[] extraSheets = AssignmentType.AllTypes.Select(type => new RoleIconSheet(GetRoleIconMaterial(type.Color.ToUnityColor(), new(1f, 1f, 1f), iconOutlineWidth, 0f), type.Postfix)).ToArray();
+            IEnumerable<RoleIconSheet> allSheets = [defaultSheet, .. extraSheets];
 
             var glyphList = new List<TMP_SpriteGlyph>();
-            var characterList = new List<TMP_SpriteCharacter>();
-            var infoList = new List<TMP_Sprite>();
 
-            var maskedCharacterList = new List<TMP_SpriteCharacter>();
-            var maskedInfoList = new List<TMP_Sprite>();
-
+            List<SpriteRenderer> renderers = [];
             for (int i = 0; i < images.Length; i++)
             {
                 var entry = images[i];
@@ -143,111 +148,124 @@ static public class RoleIcon
                 renderer.material = entry.material;
                 renderer.gameObject.layer = layer;
                 renderer.transform.localScale = new(0.48f, 0.48f, 1f);
+                renderers.Add(renderer);
 
                 var rectX = x * imageSize.x;
                 var rectY = (ImageLines - (y + 1)) * imageSize.y;
                 var rectW = imageSize.x;
                 var rectH = imageSize.y;
 
-                
                 TMP_SpriteGlyph glyph = new();
                 glyph.index = (uint)i;
                 glyph.glyphRect = new((int)rectX, (int)rectY, (int)rectW, (int)rectH);
                 glyph.metrics = new(rectW, rectH, 0f, rectH * 0.8f, rectW);
                 glyphList.Add(glyph);
-                
-                TMP_SpriteCharacter character = new(0xf0000 + (uint)i, glyph);
-                character.name = entry.name;
-                character.glyphIndex = glyph.index;
-                character.scale = 1.4f;
-                characterList.Add(character);
 
-                TMP_SpriteCharacter maskedCharacter = new(0xf0000 + (uint)i, glyph);
-                character.name = "masked_" + entry.name;
-                character.glyphIndex = glyph.index;
-                character.scale = 1.4f;
-                maskedCharacterList.Add(maskedCharacter);
-
-                TMP_Sprite sprite = new() { x = rectX, y = rectY, width = rectW, height = rectH, id = i, pivot = new(0.5f, 0.5f), xAdvance = rectW, xOffset = 0f, yOffset = rectH * 0.8f, scale = 1.4f, name = entry.name, hashCode = i, unicode = 0xf0000 + i };
-                infoList.Add(sprite);
-
-                TMP_Sprite maskedSprite = new() { x = rectX, y = rectY, width = rectW, height = rectH, id = i, pivot = new(0.5f, 0.5f), xAdvance = rectW, xOffset = 0f, yOffset = rectH * 0.8f, scale = 1.4f, name = "masked_" + entry.name, hashCode = i, unicode = 0xf0000 + i };
-                maskedInfoList.Add(maskedSprite);
-            }
-
-            //撮影
-            RenderTexture rt = RenderTexture.GetTemporary(imageSize.x * ImagePerLines, imageSize.y * ImageLines, 24);
-            cam.targetTexture = rt;
-
-            cam.Render();
-
-            RenderTexture.active = rt;
-            Texture2D atlas = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
-            atlas.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
-            atlas.Apply();
-            atlas.MarkDontUnload();
-            atlas.name = "RoleIconAtlas";
-
-            RenderTexture.active = null;
-
-            //撮影終了
-            cam.targetTexture = null;
-            RenderTexture.ReleaseTemporary(rt);
-
-            /*
-            for (int i = 0; i < infoList.Count; i++)
-            {
-                var info = infoList[i];
-                info.sprite = atlas.ToSprite(new Rect(info.x, info.y, info.width, info.height), 100f);
-                info.sprite.MarkDontUnload();
-            }
-            */
-
-            spriteAsset.name = "NoSRoleIcons";
-            material.mainTexture = atlas;
-            spriteAsset.material = material;
-            spriteAsset.spriteSheet = atlas;
-            spriteAsset.spriteGlyphTable = glyphList.ToIl2CppList();
-            spriteAsset.spriteCharacterTable = characterList.ToIl2CppList();
-            spriteAsset.spriteInfoList = infoList.ToIl2CppList();
-
-            maskedAsset.name = "NoSMaskedRoleIcons";
-            maskedMaterial.mainTexture = atlas;
-            maskedAsset.material = maskedMaterial;
-            maskedAsset.spriteSheet = atlas;
-            maskedAsset.spriteGlyphTable = glyphList.ToIl2CppList();
-            maskedAsset.spriteCharacterTable = maskedCharacterList.ToIl2CppList();
-            maskedAsset.spriteInfoList = maskedInfoList.ToIl2CppList();
-
-            spriteAsset.fallbackSpriteAssets = new List<TMP_SpriteAsset>([maskedAsset]).ToIl2CppList();
-
-            try
-            {
-                spriteAsset.UpdateLookupTables();
-
-                for (int i = 0; i < spriteAsset.spriteCharacterTable.Count; i++)
+                foreach (var sheets in allSheets)
                 {
-                    spriteAsset.spriteCharacterTable[i].glyphIndex = (uint)i;
-                    spriteAsset.spriteCharacterTable[i].glyph = spriteAsset.spriteGlyphTable[i];
+                    TMP_SpriteCharacter character = new(0xf0000 + (uint)i, glyph);
+                    character.name = sheets.PrefixNotNull + entry.name;
+                    character.glyphIndex = glyph.index;
+                    character.scale = 1.4f;
+                    sheets.CharacterList.Add(character);
+
+                    TMP_SpriteCharacter maskedCharacter = new(0xf0000 + (uint)i, glyph);
+                    character.name = "masked_" + sheets.PrefixNotNull + entry.name;
+                    character.glyphIndex = glyph.index;
+                    character.scale = 1.4f;
+                    sheets.MaskedCharacterList.Add(maskedCharacter);
+
+                    TMP_Sprite sprite = new() { x = rectX, y = rectY, width = rectW, height = rectH, id = i, pivot = new(0.5f, 0.5f), xAdvance = rectW, xOffset = 0f, yOffset = rectH * 0.8f, scale = 1.4f, name = sheets.PrefixNotNull + entry.name, hashCode = i, unicode = 0xf0000 + i };
+                    sheets.InfoList.Add(sprite);
+
+                    TMP_Sprite maskedSprite = new() { x = rectX, y = rectY, width = rectW, height = rectH, id = i, pivot = new(0.5f, 0.5f), xAdvance = rectW, xOffset = 0f, yOffset = rectH * 0.8f, scale = 1.4f, name = "masked_" + sheets.PrefixNotNull + entry.name, hashCode = i, unicode = 0xf0000 + i };
+                    sheets.MaskedInfoList.Add(maskedSprite);
                 }
-
-                maskedAsset.UpdateLookupTables();
-
-                for (int i = 0; i < maskedAsset.spriteCharacterTable.Count; i++)
-                {
-                    maskedAsset.spriteCharacterTable[i].glyphIndex = (uint)i;
-                    maskedAsset.spriteCharacterTable[i].glyph = maskedAsset.spriteGlyphTable[i];
-                }
-
             }
-            catch(Exception e)
+
+            //撮影する
+            void PrintTexture(RoleIconSheet sheet)
             {
-                LogUtils.WriteToConsole(e.ToString());
+                RenderTexture rt = RenderTexture.GetTemporary(imageSize.x * ImagePerLines, imageSize.y * ImageLines, 24);
+                cam.targetTexture = rt;
+
+                cam.Render();
+
+                RenderTexture.active = rt;
+                Texture2D atlas = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
+                atlas.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+                atlas.Apply();
+                atlas.MarkDontUnload();
+                atlas.name = "RoleIconAtlas";
+
+                RenderTexture.active = null;
+
+                //撮影終了
+                cam.targetTexture = null;
+                RenderTexture.ReleaseTemporary(rt);
+
+                Shader shader = Shader.Find("Sprites/Default");
+                Material material = new Material(shader);
+                material.MarkDontUnload();
+
+                Material maskedMaterial = new Material(UnityHelper.GetMeshRendererMaskedMaterial());
+                maskedMaterial.MarkDontUnload();
+
+                sheet.SpriteAsset.name = "NoSRoleIcons";
+                material.mainTexture = atlas;
+                sheet.SpriteAsset.material = material;
+                sheet.SpriteAsset.spriteSheet = atlas;
+                sheet.SpriteAsset.spriteGlyphTable = glyphList.ToIl2CppList();
+                sheet.SpriteAsset.spriteCharacterTable = sheet.CharacterList.ToIl2CppList();
+                sheet.SpriteAsset.spriteInfoList = sheet.InfoList.ToIl2CppList();
+
+                sheet.MaskedAsset.name = "NoSMasked" + (sheet.Prefix ?? "") +  "RoleIcons";
+                maskedMaterial.mainTexture = atlas;
+                sheet.MaskedAsset.material = maskedMaterial;
+                sheet.MaskedAsset.spriteSheet = atlas;
+                sheet.MaskedAsset.spriteGlyphTable = glyphList.ToIl2CppList();
+                sheet.MaskedAsset.spriteCharacterTable = sheet.MaskedCharacterList.ToIl2CppList();
+                sheet.MaskedAsset.spriteInfoList = sheet.MaskedInfoList.ToIl2CppList();
+
+                try
+                {
+                    sheet.SpriteAsset.UpdateLookupTables();
+
+                    for (int i = 0; i < sheet.SpriteAsset.spriteCharacterTable.Count; i++)
+                    {
+                        sheet.SpriteAsset.spriteCharacterTable[i].glyphIndex = (uint)i;
+                        sheet.SpriteAsset.spriteCharacterTable[i].glyph = sheet.SpriteAsset.spriteGlyphTable[i];
+                    }
+
+                    sheet.MaskedAsset.UpdateLookupTables();
+
+                    for (int i = 0; i < sheet.MaskedAsset.spriteCharacterTable.Count; i++)
+                    {
+                        sheet.MaskedAsset.spriteCharacterTable[i].glyphIndex = (uint)i;
+                        sheet.MaskedAsset.spriteCharacterTable[i].glyph = sheet.MaskedAsset.spriteGlyphTable[i];
+                    }
+
+                }
+                catch (Exception e)
+                {
+                    LogUtils.WriteToConsole(e.ToString());
+                }
             }
+
+            PrintTexture(defaultSheet);
+            foreach(var sheet in extraSheets)
+            {
+                foreach (var r in renderers) r.sharedMaterial = sheet.Mat;
+                PrintTexture(sheet);
+            }
+
+            defaultSheet.SpriteAsset.fallbackSpriteAssets = new List<TMP_SpriteAsset>([defaultSheet.MaskedAsset, ..extraSheets.Select(sheet => sheet.SpriteAsset)]).ToIl2CppList();
+            defaultSheet.MaskedAsset.fallbackSpriteAssets = new List<TMP_SpriteAsset>(extraSheets.Select(sheet => sheet.MaskedAsset)).ToIl2CppList();
 
             GameObject.Destroy(holder);
 
-            return (spriteAsset, maskedAsset);
+            SpriteAsset = defaultSheet.SpriteAsset;
+            MaskedAsset = defaultSheet.MaskedAsset;
         }
     }
 }

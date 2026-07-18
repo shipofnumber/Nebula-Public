@@ -28,26 +28,33 @@ namespace Nebula.Roles.Abilities;
 public record DyingMessageBrush(VColor Color, float Width);
 public class DyingMessageCanvasRenderRequest : MonoBehaviour
 {
+    private record LineOrDot(VVector2 Pos, VVector2? To);
     static DyingMessageCanvasRenderRequest() => ClassInjector.RegisterTypeInIl2Cpp<DyingMessageCanvasRenderRequest>();
-    private List<VVector2> requests = [];
-    private Queue<(DyingMessageBrush brush, List<VVector2> dots)> storedQueue = [];
-    public void AddPoint(VVector2 point) => requests.Add(point);
-    public void AddPoint(VVector2 point, DyingMessageBrush brush)
+    private List<LineOrDot> requests = [];
+    private Queue<(DyingMessageBrush brush, List<LineOrDot> dots)> storedQueue = [];
+    private void Add(LineOrDot request) => requests.Add(request);
+    public void AddPoint(VVector2 point) => Add(new(point, null));
+    public void AddLine(VVector2 from, VVector2 to) => Add(new(from, to));
+    private void Add(LineOrDot request, DyingMessageBrush brush)
     {
-        if (storedQueue.Count == 0) {
+        if (storedQueue.Count == 0)
+        {
             if (brush.Equals(this.brush))
-                requests.Add(point);
+                requests.Add(request);
             else
-                storedQueue.Enqueue((brush, [point]));
+                storedQueue.Enqueue((brush, [request]));
         }
-        else {
+        else
+        {
             var last = storedQueue.Last();
             if (last.brush.Equals(brush))
-                last.dots.Add(point);
+                last.dots.Add(request);
             else
-                storedQueue.Enqueue((brush, [point]));
+                storedQueue.Enqueue((brush, [request]));
         }
     }
+    public void AddPoint(VVector2 point, DyingMessageBrush brush) => Add(new(point, null), brush);
+    public void AddLine(VVector2 from, VVector2 to, DyingMessageBrush brush) => Add(new(from, to), brush);
     public bool HasNoRequest => requests.Count == 0 && storedQueue.Count == 0;
     private RenderTexture myTexture;
     private Material glMaterial;
@@ -91,35 +98,53 @@ public class DyingMessageCanvasRenderRequest : MonoBehaviour
 
             foreach (var pos in requests)
             {
-                int quarterSegments = 3; // 1/4円の滑らかさ
-                for (int i = 0; i <= quarterSegments; i++)
+                if (pos.To.HasValue)
                 {
-                    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                    void DrawTriangle(VVector2 center, VVector3 offset1, VVector3 offset2)
+                    var from = pos.Pos;
+                    var to = pos.To.Value;
+                    VVector2 diff = to - from;
+                    VVector2 normal = new VVector2(-diff.y, diff.x).Normalized * brushRadius;
+
+                    FastMethods.GLVertex3Fast(from.x + normal.x, from.y + normal.y, 0);
+                    FastMethods.GLVertex3Fast(from.x - normal.x, from.y - normal.y, 0);
+                    FastMethods.GLVertex3Fast(to.x - normal.x, to.y - normal.y, 0);
+
+                    FastMethods.GLVertex3Fast(to.x - normal.x, to.y - normal.y, 0);
+                    FastMethods.GLVertex3Fast(to.x + normal.x, to.y + normal.y, 0);
+                    FastMethods.GLVertex3Fast(from.x + normal.x, from.y + normal.y, 0);
+                }
+                else
+                {
+                    int quarterSegments = 3; // 1/4円の滑らかさ
+                    for (int i = 0; i <= quarterSegments; i++)
                     {
-                        GL.Vertex3(center.x, center.y, 0);
-                        GL.Vertex3(center.x + offset1.x, center.y + offset1.y, 0);
-                        GL.Vertex3(center.x + offset2.x, center.y + offset2.y, 0);
+                        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                        void DrawTriangle(VVector2 center, VVector3 offset1, VVector3 offset2)
+                        {
+                            FastMethods.GLVertex3Fast(center.x, center.y, 0);
+                            FastMethods.GLVertex3Fast(center.x + offset1.x, center.y + offset1.y, 0);
+                            FastMethods.GLVertex3Fast(center.x + offset2.x, center.y + offset2.y, 0);
+                        }
+
+                        // 現在のステップと次のステップの角度を計算（第1象限のみ）
+                        float a1 = i * (Mathn.PI * 0.5f) / quarterSegments;
+                        float a2 = (i + 1) * (Mathn.PI * 0.5f) / quarterSegments;
+
+                        float c1 = Mathn.Cos(a1) * brushRadius;
+                        float s1 = Mathn.Sin(a1) * brushRadius;
+                        float c2 = Mathn.Cos(a2) * brushRadius;
+                        float s2 = Mathn.Sin(a2) * brushRadius;
+
+                        // 4つの象限に対して三角形をスタンプ
+                        // 第1象限 (+, +)
+                        DrawTriangle(pos.Pos, new(c1, s1), new(c2, s2));
+                        // 第2象限 (-, +)
+                        DrawTriangle(pos.Pos, new(-s1, c1), new(-s2, c2));
+                        // 第3象限 (-, -)
+                        DrawTriangle(pos.Pos, new(-c1, -s1), new(-c2, -s2));
+                        // 第4象限 (+, -)
+                        DrawTriangle(pos.Pos, new(s1, -c1), new(s2, -c2));
                     }
-
-                    // 現在のステップと次のステップの角度を計算（第1象限のみ）
-                    float a1 = i * (Mathn.PI * 0.5f) / quarterSegments;
-                    float a2 = (i + 1) * (Mathn.PI * 0.5f) / quarterSegments;
-
-                    float c1 = Mathn.Cos(a1) * brushRadius;
-                    float s1 = Mathn.Sin(a1) * brushRadius;
-                    float c2 = Mathn.Cos(a2) * brushRadius;
-                    float s2 = Mathn.Sin(a2) * brushRadius;
-
-                    // 4つの象限に対して三角形をスタンプ
-                    // 第1象限 (+, +)
-                    DrawTriangle(pos, new(c1, s1), new(c2, s2));
-                    // 第2象限 (-, +)
-                    DrawTriangle(pos, new(-s1, c1), new(-s2, c2));
-                    // 第3象限 (-, -)
-                    DrawTriangle(pos, new(-c1, -s1), new(-c2, -s2));
-                    // 第4象限 (+, -)
-                    DrawTriangle(pos, new(s1, -c1), new(s2, -c2));
                 }
             }
         }catch(Exception e)
@@ -148,9 +173,9 @@ internal class DyingMessageCanvas : MonoBehaviour
     static DyingMessageCanvas() => ClassInjector.RegisterTypeInIl2Cpp<DyingMessageCanvas>(); 
 
     public const float DyingMessageMinDistance = 0.01f;
-    public const float PaintQuizMinDistance = 0.0035f;
+    public const float PaintQuizMinDistance = 0.005f;
     public const int DyingMessageSerializeScale = 2;
-    public const int PaintQuizSerializeScale = 8;
+    public const int PaintQuizSerializeScale = 4;
 
     private int TextureSize = 512;
     private float rendererSize = 3.5f;
@@ -317,13 +342,8 @@ internal class DyingMessageCanvas : MonoBehaviour
         float dist = VVector2.Distance(lastPos.Value, mousePos);
         if (dist > minDistance)
         {
-            // 点の間を補間して描画（円を並べる）
-            int steps = Mathn.CeilToInt(dist / (minDistance * 0.5f));
-            for (int i = 1; i <= steps; i++)
-            {
-                VVector2 lerpPos = VVector2.Lerp(lastPos.Value, mousePos, (float)i / steps);
-                DrawPoint(lerpPos, i == steps);
-            }
+            DrawLine(lastPos.Value, mousePos);
+            DrawPoint(mousePos, true);
             lastPos = mousePos;
         }
     }
@@ -335,6 +355,7 @@ internal class DyingMessageCanvas : MonoBehaviour
             allStrokes.Add(currentStroke);
             allStrokeBrushes.Add(currentStrokeBrush);
         }
+
         lastPos = null;
         currentStrokeBrush = null;
     }
@@ -422,6 +443,14 @@ internal class DyingMessageCanvas : MonoBehaviour
             request.Value.AddPoint(pos, brush!);
         else 
             request.Value.AddPoint(pos);
+    }
+
+    void DrawLine(Vector2 from, Vector2 to)
+    {
+        if (asQuizCanvas)
+            request.Value.AddLine(from, to, brush!);
+        else
+            request.Value.AddLine(from, to);
     }
 
     [HideFromIl2Cpp]
@@ -723,7 +752,7 @@ internal static class DyingMessages
         });
     });
 
-    static void DecodeTrajectory(int serializeScale, byte beginX, byte beginY, byte[] trajectory, float minDistance, Action<VVector2> drawPoint)
+    static void DecodeTrajectory(int serializeScale, byte beginX, byte beginY, byte[] trajectory, float minDistance, Action<VVector2> drawPoint, Action<VVector2, VVector2> drawLine)
     {
         VVector2 currentPos = new(beginX / 255f, beginY / 255f);
         drawPoint(currentPos); 
@@ -744,11 +773,7 @@ internal static class DyingMessages
             if (dist > drawStepThreshold)
             {
                 int subSteps = Mathn.CeilToInt(dist / drawStepThreshold);
-                for (int s = 1; s < subSteps; s++)
-                {
-                    VVector2 lerpPos = VVector2.Lerp(currentPos, targetPos, (float)s / subSteps);
-                    drawPoint(lerpPos);
-                }
+                if (subSteps > 1) drawLine(currentPos, targetPos);
             }
 
             drawPoint(targetPos);
@@ -765,12 +790,14 @@ internal static class DyingMessages
         var rt = new RenderTexture(PaintQuizTextureSize, PaintQuizTextureSize, 32, RenderTextureFormat.ARGB32);
         request.SetUp(rt, DyingMessageCanvasRenderRequest.DefaultBrushRadius, new(200, 200, 200));
 
+        int num = 0;
         foreach (var entry in encoded)
         {
             float decodedWidth = entry.width / 10000f;
             var brush = new DyingMessageBrush(new VColor(entry.r / 255f, entry.g / 255f, entry.b / 255f), decodedWidth);
-            DecodeTrajectory(DyingMessageCanvas.PaintQuizSerializeScale, entry.beginX, entry.beginY, entry.trajectory, DyingMessageCanvas.PaintQuizMinDistance, pos => request.AddPoint(pos, brush));
+            DecodeTrajectory(DyingMessageCanvas.PaintQuizSerializeScale, entry.beginX, entry.beginY, entry.trajectory, DyingMessageCanvas.PaintQuizMinDistance, pos => { request.AddPoint(pos, brush); num++; }, (from, to) => { request.AddLine(from, to, brush); });
         }
+
 
         IEnumerator CoWaitDrawing()
         {
@@ -791,7 +818,7 @@ internal static class DyingMessages
         var rt = new RenderTexture(TextureSize, TextureSize, 32, RenderTextureFormat.ARGB32);
         request.SetUp(rt, DyingMessageCanvasRenderRequest.DefaultBrushRadius, VColor.Clear);
 
-        foreach (var entry in encoded) DecodeTrajectory(DyingMessageCanvas.DyingMessageSerializeScale, entry.beginX, entry.beginY, entry.trajectory, DyingMessageCanvas.DyingMessageMinDistance, request.AddPoint);
+        foreach (var entry in encoded) DecodeTrajectory(DyingMessageCanvas.DyingMessageSerializeScale, entry.beginX, entry.beginY, entry.trajectory, DyingMessageCanvas.DyingMessageMinDistance, request.AddPoint, request.AddLine);
 
         IEnumerator CoWaitDrawing()
         {

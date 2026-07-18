@@ -59,9 +59,8 @@ internal class PaintQuizDrawingPhase
     public PaintQuizDrawingPhase(Transform parent, string questionText, string? achievedText, Func<int> getSubmittedCount)
     {
         this.getSubmittedCount = getSubmittedCount;
-        int cnt = 0;
-        foreach (var _ in GamePlayer.AllPlayers) cnt++;
-        this.totalPlayers = cnt;
+        
+        this.totalPlayers = GamePlayer.AllPlayers.Count(p => !p.IsDisconnected);
 
         holder = UnityHelper.CreateObject("DrawingPhase", parent, new(0f, 0f, -50f));
 
@@ -121,7 +120,7 @@ internal class PaintQuizDrawingPhase
             var coll = sr.gameObject.AddComponent<BoxCollider2D>();
             coll.size = new(0.62f, 0.38f);
             coll.isTrigger = true;
-            sr.gameObject.SetUpButton(true, sr, PaletteColors[i]).OnClick.AddListener(() => SelectColor(idx));
+            sr.gameObject.SetUpButton(true, sr, PaletteColors[i], PaletteColors[i].RGBMultiplied(0.95f)).OnClick.AddListener(() => SelectColor(idx));
         }
 
         void GenerateButton(string objName, string label, float x, Sprite buttonSprite, Action onClick, VColor color)

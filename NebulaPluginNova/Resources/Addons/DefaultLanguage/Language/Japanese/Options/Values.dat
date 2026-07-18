@@ -3,6 +3,7 @@
 "options.switch.nonCrewmateOnly" : "非クルーのみ"
 "options.switch.nonCrewmate" : "非クルー"
 "options.switch.impostor" : "インポスター"
+"options.selection.open" : "変更"
 "options.percentage" : "%"
 "options.cross" : "x"
 "options.sec" : "s"

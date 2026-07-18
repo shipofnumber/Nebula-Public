@@ -226,9 +226,9 @@ internal class AirshipMultipleExilePatch
             cosmetics.GetComponent<NebulaCosmeticsLayer>().IsExileCut = true;
 
             HatParent hp = cosmetics.hat;
-            if (!hp.Hat.AsBoolFast()) return;
+            if (!hp.Hat.AsBoolFast(out var hatData)) return;
 
-            if (MoreCosmic.AllHats.TryGetValue(hp.Hat.ProductId, out var modHat) && modHat.HideHands)
+            if (MoreCosmic.AllHats.TryGetValue(hatData.ProductId, out var modHat) && modHat.HideHands)
                 p.gameObject.transform.FindChild("HandSlot").gameObject.SetActive(false);
         });
     }

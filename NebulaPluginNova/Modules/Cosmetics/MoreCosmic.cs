@@ -1571,8 +1571,8 @@ public class HatLateUpdatePatch
     {
         try
         {
-            if (!__instance.Hat.AsBoolFast()) return true;
-            return !MoreCosmic.AllHats.ContainsKey(__instance.Hat.ProductId);
+            if (!__instance.Hat.AsBoolFast(out var hat)) return true;
+            return !MoreCosmic.AllHats.ContainsKey(hat.ProductId);
         }
         catch { return true; }
     }
@@ -1583,7 +1583,7 @@ public class SetHatPatch
 {
     public static bool Prefix(HatParent __instance, [HarmonyArgument(0)] int color)
     {
-        if (!__instance.Hat.AsBoolFast() || !MoreCosmic.AllHats.TryGetValue(__instance.Hat.ProductId, out var value)) return true;
+        if (!__instance.Hat.AsBoolFast(out var hat) || !MoreCosmic.AllHats.TryGetValue(hat.ProductId, out var value)) return true;
 
         __instance.SetMaterialColor(color);
         __instance.UnloadAsset();
@@ -2321,9 +2321,9 @@ public class NebulaCosmeticsLayer : MonoBehaviour
         if (hatIsActive) hat.transform.SetLocalZ(0f);
 
         //内部的なコスチュームの変化に追随する。
-        if (hatIsActive && !CurrentHat.EqualsFast(hat.Hat))
+        if (hatIsActive && hat.Hat.AsBoolFast(out var hatData) && !CurrentHat.EqualsFast(hatData))
         {
-            CurrentHat = hat.Hat;
+            CurrentHat = hatData;
             MoreCosmic.AllHats.TryGetValue(CurrentHat.ProductId, out CurrentModHat);
             HatFrontIndex = HatBackIndex = 0;
 
@@ -2331,9 +2331,9 @@ public class NebulaCosmeticsLayer : MonoBehaviour
         }
 
         bool visorIsActive = origVisor.AsBoolFast(out var visor);
-        if (visorIsActive && !CurrentVisor.EqualsFast(visor.visorData))
+        if (visorIsActive && visor.visorData.AsBoolFast(out var visorData) && !CurrentVisor.EqualsFast(visorData))
         {
-            CurrentVisor = visor.visorData;
+            CurrentVisor = visorData;
             MoreCosmic.AllVisors.TryGetValue(visor.visorData.ProductId, out CurrentModVisor);
             VisorIndex = VisorBackIndex = 0;
 

@@ -166,6 +166,5 @@ internal class AmongUsLLImpl : AmongUsLL
     {
         screenWidth.Clear();
         screenHeight.Clear();
-        LogUtils.WriteToConsole("OnScreenSizeChanged");
     }
 }

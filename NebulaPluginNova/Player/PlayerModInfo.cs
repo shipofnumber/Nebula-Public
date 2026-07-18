@@ -1518,9 +1518,9 @@ internal class PlayerModInfo : AbstractModuleContainer, IRuntimePropertyHolder, 
     string IPlayerlike.Name => DefaultName;
     string IPlayerlike.ColoredName => ColoredDefaultName;
     
-    Virial.Compat.Vector2 IGameObject.Position => MyControlObj.Position;
-    Virial.Compat.Vector2 IPlayerlike.TruePosition => new(MyControl.GetTruePosition());
-    UnityEngine.Vector2 IPlayerlike.UnityTruePosition => MyControl.GetTruePosition();
+    Virial.Compat.Vector2 IGameObject.Position => IsDisconnected ? VVector2.Zero : MyControlObj.Position;
+    Virial.Compat.Vector2 IPlayerlike.TruePosition => IsDisconnected ? VVector2.Zero : new(MyControl.GetTruePosition());
+    UnityEngine.Vector2 IPlayerlike.UnityTruePosition => IsDisconnected ? UnityEngine.Vector2.zero : MyControl.GetTruePosition();
     bool GamePlayer.CanMove => MyControl.CanMove;
     bool GamePlayer.IsDisconnected => IsDisconnected;
     float? GamePlayer.DeathTime => DeathTimeStamp;

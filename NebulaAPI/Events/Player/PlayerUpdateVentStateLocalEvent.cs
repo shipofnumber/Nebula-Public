@@ -13,9 +13,9 @@ public class PlayerUpdateVentStateLocalEvent : AbstractPlayerEvent
     public bool CannotUseVentTemporary { get; set; }
     public bool ShouldShowVentButton => CanUseVent;
     public bool CanUseVentButton => CanUseVent && !CannotUseVentTemporary;
-    internal PlayerUpdateVentStateLocalEvent(Virial.Game.Player player) : base(player)
+    internal PlayerUpdateVentStateLocalEvent(Virial.Game.Player? player) : base(player!)
     {
-        CanUseVent = player.Role.CanUseVent;
+        CanUseVent = player?.Role?.CanUseVent ?? true;
         CannotUseVentTemporary = false;
     }
 }

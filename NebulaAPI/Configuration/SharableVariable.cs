@@ -21,6 +21,11 @@ public interface ISharableEntry
     internal int RpcValue { get; set; }
 
     /// <summary>
+    /// このエントリが表す値を文字列で返します。
+    /// </summary>
+    string DisplayValue { get; }
+
+    /// <summary>
     /// ローカルに保存されている値を復元します。
     /// </summary>
     internal void RestoreSavedValue();

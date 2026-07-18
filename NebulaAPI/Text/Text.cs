@@ -207,6 +207,11 @@ public enum AttributeAsset
     OptionsGroupTitle,
 
     /// <summary>
+    /// 文字列オプションの選択画面のオプション説明で使用される固定長テキスト属性です。
+    /// </summary>
+    OptionsDetailInSelectionWindow,
+
+    /// <summary>
     /// マーケットプレイスのタイトルで使われている固定長テキスト属性です。
     /// </summary>
     MarketplaceTitle,

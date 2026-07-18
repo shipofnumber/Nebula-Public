@@ -322,6 +322,7 @@ internal class NebulaGameManager : AbstractModuleContainer, IRuntimePropertyHold
     public ConsoleRestriction ConsoleRestriction { get; private set; } = new();
     public AttributeShower AttributeShower { get; private set; } = new();
     public RPCScheduler Scheduler { get; private set; } = new();
+    public LocalStatus LocalStatus { get; private set; } = new();
     public FakeSabotageStatus? LocalFakeSabotage => GamePlayer.LocalPlayer?.Unbox().FakeSabotage;
     public IRoleAllocator? RoleAllocator { get; internal set; } = null;
 
