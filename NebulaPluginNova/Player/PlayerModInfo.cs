@@ -200,12 +200,29 @@ internal class PlayerModInfo : AbstractModuleContainer, IRuntimePropertyHolder, 
     public RuntimeRole Role => myRole;
     private RuntimeRole myRole = null!;
 
+    public RoleTeam Team
+    {
+        get
+        {
+            RoleTeam defaultTeam = this.Role.Role.Team;
+
+            var validModifiers = myModifiers.Where(m => m.OverrideTeam != null).ToArray();
+            if (validModifiers.Length == 0)
+                return defaultTeam;
+
+            int maxPriority = validModifiers.Max(m => m.OverridePriority);
+            var selected = validModifiers.Last(m => m.OverridePriority == maxPriority);
+            return selected.OverrideTeam ?? defaultTeam;
+        }
+    }
+
     public RuntimeGhostRole? GhostRole => myGhostRole;
     private RuntimeGhostRole? myGhostRole = null;
 
     private List<RuntimeModifier> myModifiers = new();
 
     RuntimeRole Virial.Game.Player.Role => myRole;
+    RoleTeam Virial.Game.Player.Team => this.Team;
     IEnumerable<RuntimeModifier> Virial.Game.Player.Modifiers => myModifiers;
     public Vector2 PreMeetingPoint { get; private set; } = Vector2.zero;
 
