@@ -953,6 +953,9 @@ public interface RuntimeModifier : RuntimeAssignable
     DefinedModifier Modifier { get; }
     DefinedAssignable RuntimeAssignable.Assignable => Modifier;
 
+    RoleTeam? OverrideTeam => null;
+    int OverridePriority => 0;
+
     /// <summary>
     /// ゲーム開始時に割り当てられているとき、役職開示画面で表示されます。
     /// </summary>
