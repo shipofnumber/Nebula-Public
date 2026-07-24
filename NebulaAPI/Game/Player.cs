@@ -578,6 +578,7 @@ public interface Player : ICommandExecutor, IArchivedPlayer, IPlayerlike
     /// 現在割り当てられている役職です。
     /// </summary>
     RuntimeRole Role { get; }
+    RoleTeam Team { get; }
     /// <summary>
     /// 現在割り当てられている幽霊役職です。
     /// </summary>
